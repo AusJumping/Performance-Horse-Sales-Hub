@@ -3,12 +3,14 @@ import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
   List, 
-  Settings, 
   LogOut,
-  Menu
+  Menu,
+  ExternalLink,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { clearAdminToken } from "@/hooks/use-admin-auth";
 const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
 interface AdminLayoutProps {
@@ -16,12 +18,17 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
 
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Submissions", href: "/admin/submissions", icon: List },
   ];
+
+  const handleLogout = () => {
+    clearAdminToken();
+    navigate("/admin/login");
+  };
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col gap-4">
@@ -31,6 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <span className="text-base text-primary font-semibold">PHS Admin</span>
         </Link>
       </div>
+
       <div className="flex-1 overflow-auto py-2">
         <nav className="grid items-start px-4 text-sm font-medium gap-2">
           {navigation.map((item) => {
@@ -51,14 +59,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </Link>
             );
           })}
+
+          <div className="my-2 border-t" />
+
+          <a
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-primary transition-all"
+          >
+            <ClipboardList className="h-4 w-4" />
+            <span>View Seller Form</span>
+            <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+          </a>
         </nav>
       </div>
+
       <div className="mt-auto p-4">
-        <Button variant="outline" className="w-full justify-start gap-2" asChild>
-          <Link href="/">
-            <LogOut className="h-4 w-4" />
-            Back to Public Site
-          </Link>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 text-muted-foreground"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
         </Button>
       </div>
     </div>
@@ -82,9 +106,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <SidebarContent />
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
-            {/* Top bar search or other elements could go here */}
-          </div>
+          <div className="w-full flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2 text-muted-foreground hidden md:flex"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/20">
           {children}

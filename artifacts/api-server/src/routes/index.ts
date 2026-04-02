@@ -5,10 +5,12 @@ import dashboardRouter from "./dashboard";
 import mediaRouter from "./media";
 import aiRouter from "./ai";
 import pdfRouter from "./pdf";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(authRouter);
 router.use("/submissions", submissionsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/media", mediaRouter);
