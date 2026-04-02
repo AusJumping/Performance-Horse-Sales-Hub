@@ -12,6 +12,7 @@ import Dashboard from "./pages/admin/dashboard";
 import SubmissionsList from "./pages/admin/submissions/index";
 import SubmissionDetail from "./pages/admin/submissions/detail";
 import AiEditor from "./pages/admin/submissions/ai-editor";
+import ReelTemplatesSettings from "./pages/admin/settings/reel-templates";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,11 @@ function Router() {
             <SubmissionDetail />
           </AdminGuard>
         )}
+      </Route>
+      <Route path="/admin/settings/reel-templates">
+        <AdminGuard>
+          <ReelTemplatesSettings />
+        </AdminGuard>
       </Route>
       <Route component={NotFound} />
     </Switch>

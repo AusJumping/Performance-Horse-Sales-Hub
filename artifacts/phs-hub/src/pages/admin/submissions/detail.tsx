@@ -18,7 +18,7 @@ import {
   getListSubmissionMediaQueryKey,
   getGetAiOutputQueryKey
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,10 +48,29 @@ export default function SubmissionDetail() {
 
   // Creatomate reel state
   const [reelRenderId, setReelRenderId] = useState<string | null>(null);
+  const [reelTemplateDbId, setReelTemplateDbId] = useState<number | null>(null);
   const [reelStatus, setReelStatus] = useState<"idle" | "pending" | "polling" | "succeeded" | "failed">("idle");
   const [reelUrl, setReelUrl] = useState<string | null>(null);
   const [reelError, setReelError] = useState<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const { data: reelTemplates = [] } = useQuery<{ id: number; name: string; description: string | null; isDefault: boolean }[]>({
+    queryKey: ["reel-templates"],
+    queryFn: async () => {
+      const res = await fetch("/api/reel-templates");
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
+  // Auto-select default or first template
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  useEffect(() => {
+    if (reelTemplates.length > 0 && !selectedTemplateId) {
+      const def = reelTemplates.find((t) => t.isDefault) ?? reelTemplates[0];
+      setSelectedTemplateId(String(def.id));
+    }
+  }, [reelTemplates, selectedTemplateId]);
 
   const stopPolling = () => {
     if (pollIntervalRef.current) {
@@ -62,12 +81,12 @@ export default function SubmissionDetail() {
 
   useEffect(() => () => stopPolling(), []);
 
-  const pollReelStatus = useCallback((renderId: string) => {
+  const pollReelStatus = useCallback((renderId: string, templateDbId: number) => {
     stopPolling();
     setReelStatus("polling");
     pollIntervalRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/submissions/${submissionId}/reel/${renderId}`);
+        const res = await fetch(`/api/submissions/${submissionId}/reel/${renderId}?templateId=${templateDbId}`);
         if (!res.ok) throw new Error("Poll failed");
         const data = await res.json();
         if (data.status === "succeeded") {
@@ -87,11 +106,21 @@ export default function SubmissionDetail() {
   }, [submissionId, toast]);
 
   const handleGenerateReel = async () => {
+    if (!selectedTemplateId) {
+      toast({ title: "Select a reel template first.", variant: "destructive" });
+      return;
+    }
+    const templateDbId = parseInt(selectedTemplateId);
     setReelStatus("pending");
     setReelError(null);
     setReelUrl(null);
+    setReelTemplateDbId(templateDbId);
     try {
-      const res = await fetch(`/api/submissions/${submissionId}/reel`, { method: "POST" });
+      const res = await fetch(`/api/submissions/${submissionId}/reel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: templateDbId }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to start render");
       setReelRenderId(data.renderId);
@@ -99,7 +128,7 @@ export default function SubmissionDetail() {
         setReelStatus("succeeded");
         setReelUrl(data.url);
       } else {
-        pollReelStatus(data.renderId);
+        pollReelStatus(data.renderId, templateDbId);
       }
       toast({ title: "Reel render started!", description: "This usually takes 30–60 seconds." });
     } catch (err: any) {
@@ -607,16 +636,43 @@ export default function SubmissionDetail() {
 
               {reelStatus === "idle" || reelStatus === "failed" ? (
                 <>
-                  <Button
-                    className="w-full bg-rose-600 hover:bg-rose-700 text-white"
-                    onClick={handleGenerateReel}
-                    data-testid="button-generateReel"
-                  >
-                    <Film className="h-4 w-4 mr-2" />
-                    {reelStatus === "failed" ? "Retry Reel" : "Generate Reel"}
-                  </Button>
-                  {reelError && (
-                    <p className="text-xs text-red-500 text-center">{reelError}</p>
+                  {reelTemplates.length === 0 ? (
+                    <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                      No reel templates configured.{" "}
+                      <a href="/admin/settings/reel-templates" className="underline font-medium">
+                        Add one in Reel Templates settings.
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      {reelTemplates.length > 1 && (
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-muted-foreground">Template</label>
+                          <select
+                            value={selectedTemplateId}
+                            onChange={(e) => setSelectedTemplateId(e.target.value)}
+                            className="w-full text-sm rounded-md border border-input bg-background px-3 py-1.5 text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                          >
+                            {reelTemplates.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.name}{t.description ? ` — ${t.description}` : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <Button
+                        className="w-full bg-rose-600 hover:bg-rose-700 text-white"
+                        onClick={handleGenerateReel}
+                        data-testid="button-generateReel"
+                      >
+                        <Film className="h-4 w-4 mr-2" />
+                        {reelStatus === "failed" ? "Retry Reel" : "Generate Reel"}
+                      </Button>
+                      {reelError && (
+                        <p className="text-xs text-red-500 text-center">{reelError}</p>
+                      )}
+                    </>
                   )}
                 </>
               ) : reelStatus === "pending" || reelStatus === "polling" ? (

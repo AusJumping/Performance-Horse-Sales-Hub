@@ -6,7 +6,8 @@ import {
   LogOut,
   Menu,
   ExternalLink,
-  ClipboardList
+  ClipboardList,
+  Film
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -59,6 +60,20 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </Link>
             );
           })}
+
+          <div className="my-2 border-t" />
+
+          <Link
+            href="/admin/settings/reel-templates"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${
+              location.startsWith("/admin/settings/reel-templates")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-primary"
+            }`}
+          >
+            <Film className="h-4 w-4" />
+            Reel Templates
+          </Link>
 
           <div className="my-2 border-t" />
 
