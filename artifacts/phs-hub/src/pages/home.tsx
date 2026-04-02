@@ -1821,7 +1821,7 @@ export default function Home() {
           className="mx-auto mb-4 h-28 w-28 rounded-full object-cover shadow-lg"
         />
         <h1 className="text-2xl sm:text-3xl font-bold">Performance Horse Sales</h1>
-        <p className="text-blue-200 text-sm mt-1">Marketing Form — Official Seller Submission</p>
+        <p className="text-white text-sm mt-1">Marketing Form — Official Seller Submission</p>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
