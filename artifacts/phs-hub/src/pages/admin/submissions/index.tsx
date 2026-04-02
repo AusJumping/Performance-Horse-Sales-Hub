@@ -29,7 +29,7 @@ export default function SubmissionsList() {
       case "awaiting_review": return <Badge variant="outline" className="text-amber-500 border-amber-500">Awaiting Review</Badge>;
       case "needs_edit": return <Badge variant="destructive">Needs Edit</Badge>;
       case "approved": return <Badge variant="outline" className="text-emerald-500 border-emerald-500">Approved</Badge>;
-      case "published": return <Badge className="bg-green-600 hover:bg-green-700">Published</Badge>;
+      case "published": return <Badge className="bg-[#24384e] hover:bg-[#1a2d3f]">Published</Badge>;
       case "archived": return <Badge variant="outline" className="text-gray-500">Archived</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }

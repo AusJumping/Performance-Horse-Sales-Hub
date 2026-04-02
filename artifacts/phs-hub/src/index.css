@@ -73,33 +73,33 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* Warm Earthy Tones & Rich Dark Greens */
+  /* Brand Navy + Warm Earthy Tones */
   --background: 40 20% 98%;
-  --foreground: 155 30% 15%;
+  --foreground: 211 37% 15%;
 
   --border: 40 20% 85%;
   --input: 40 20% 85%;
-  --ring: 155 30% 25%;
+  --ring: 211 37% 30%;
 
   --card: 0 0% 100%;
-  --card-foreground: 155 30% 15%;
+  --card-foreground: 211 37% 15%;
   --card-border: 40 20% 85%;
 
-  --sidebar: 155 30% 18%;
+  --sidebar: 211 37% 16%;
   --sidebar-foreground: 40 20% 95%;
-  --sidebar-border: 155 30% 15%;
+  --sidebar-border: 211 37% 12%;
   --sidebar-primary: 40 30% 85%;
-  --sidebar-primary-foreground: 155 30% 15%;
-  --sidebar-accent: 155 30% 22%;
+  --sidebar-primary-foreground: 211 37% 15%;
+  --sidebar-accent: 211 37% 22%;
   --sidebar-accent-foreground: 40 20% 95%;
   --sidebar-ring: 45 80% 50%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 155 30% 15%;
+  --popover-foreground: 211 37% 15%;
   --popover-border: 40 20% 85%;
 
-  /* Dark Green Primary */
-  --primary: 155 30% 25%;
+  /* Brand Navy Primary */
+  --primary: 211 37% 22%;
   --primary-foreground: 40 20% 98%;
 
   /* Warm Tan Secondary */
@@ -167,12 +167,12 @@
   --card-foreground: 40 20% 95%;
   --card-border: 155 20% 25%;
 
-  --sidebar: 155 30% 10%;
+  --sidebar: 211 37% 10%;
   --sidebar-foreground: 40 20% 95%;
-  --sidebar-border: 155 30% 15%;
+  --sidebar-border: 211 37% 15%;
   --sidebar-primary: 40 30% 85%;
-  --sidebar-primary-foreground: 155 30% 15%;
-  --sidebar-accent: 155 30% 18%;
+  --sidebar-primary-foreground: 211 37% 15%;
+  --sidebar-accent: 211 37% 18%;
   --sidebar-accent-foreground: 40 20% 95%;
   --sidebar-ring: 45 80% 50%;
 

@@ -50,7 +50,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Published</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-[#24384e]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats?.published || 0}</div>

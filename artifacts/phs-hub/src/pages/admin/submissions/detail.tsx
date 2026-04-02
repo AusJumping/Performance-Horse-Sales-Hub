@@ -184,7 +184,7 @@ export default function SubmissionDetail() {
             <Button onClick={() => handleStatusChange('processing')} variant="outline" data-testid="button-startProcessing">Start Processing</Button>
           )}
           {(sub.status === 'processing' || sub.status === 'awaiting_review') && (
-            <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700" data-testid="button-approve">
+            <Button onClick={handleApprove} className="bg-[#24384e] hover:bg-[#1a2d3f]" data-testid="button-approve">
               <CheckCircle className="mr-2 h-4 w-4" /> Approve
             </Button>
           )}

@@ -33,7 +33,7 @@ function CheckboxGroup({
             value={opt}
             checked={values.includes(opt)}
             onChange={() => toggle(opt)}
-            className="mt-1 h-4 w-4 rounded border-stone-300 text-green-800 focus:ring-green-700 shrink-0 accent-green-800"
+            className="mt-1 h-4 w-4 rounded border-stone-300 text-[#24384e] focus:ring-[#24384e] shrink-0 accent-[#24384e]"
             data-testid={`checkbox-${name}-${opt.slice(0, 20).replace(/[\s/]+/g, "-").toLowerCase()}`}
           />
           <span className="text-sm text-stone-700 group-hover:text-stone-900 leading-snug">{opt}</span>
@@ -68,7 +68,7 @@ function RadioGroup({
             value={opt}
             checked={value === opt}
             onChange={() => onChange(opt)}
-            className="mt-1 h-4 w-4 border-stone-300 text-green-800 focus:ring-green-700 shrink-0 accent-green-800"
+            className="mt-1 h-4 w-4 border-stone-300 text-[#24384e] focus:ring-[#24384e] shrink-0 accent-[#24384e]"
             data-testid={`radio-${name}-${opt.slice(0, 20).replace(/[\s/]+/g, "-").toLowerCase()}`}
           />
           <span className="text-sm text-stone-700 group-hover:text-stone-900 leading-snug">{opt}</span>
@@ -107,7 +107,7 @@ function FieldLabel({
 function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-5 pb-3 border-b border-stone-200">
-      <h3 className="text-sm font-bold text-green-900 uppercase tracking-widest">
+      <h3 className="text-sm font-bold text-[#24384e] uppercase tracking-widest">
         {title}
       </h3>
       {sub && <p className="text-xs text-stone-500 mt-1">{sub}</p>}
@@ -148,7 +148,7 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       data-testid={`input-${name}`}
-      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700"
+      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#24384e] focus:outline-none focus:ring-1 focus:ring-[#24384e]"
     />
   );
 }
@@ -176,7 +176,7 @@ function TextArea({
       placeholder={placeholder}
       rows={rows}
       data-testid={`textarea-${name}`}
-      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700 resize-y"
+      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-[#24384e] focus:outline-none focus:ring-1 focus:ring-[#24384e] resize-y"
     />
   );
 }
@@ -639,7 +639,7 @@ export default function Home() {
                   href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-green-800 underline font-medium"
+                  className="text-[#24384e] underline font-medium"
                 >
                   Terms and Conditions of Listing Process, Commission etc
                 </a>{" "}
@@ -739,12 +739,12 @@ export default function Home() {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-5 text-sm text-stone-700 space-y-2">
-              <p className="font-semibold text-green-900">
+            <div className="bg-[#eef2f6] border border-[#b8cad8] rounded-lg p-5 text-sm text-stone-700 space-y-2">
+              <p className="font-semibold text-[#24384e]">
                 Our Listing Service includes all administration including contract of sale,
                 marketing, communication including negotiation and advice/support for both parties.
               </p>
-              <p className="font-bold text-green-900">Listing Service</p>
+              <p className="font-bold text-[#24384e]">Listing Service</p>
               <p>Cost: $0 upfront</p>
               <p>
                 Then 5% commission/completion fee - minimum $500/capped at $2000.
@@ -1749,7 +1749,7 @@ export default function Home() {
                   href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-green-800 underline"
+                  className="text-[#24384e] underline"
                 >
                   Listing Terms and Conditions PDF
                 </a>
@@ -1763,7 +1763,7 @@ export default function Home() {
                   checked={b("generalTermsAgreed")}
                   onChange={(e) => setField("generalTermsAgreed")(e.target.checked)}
                   data-testid="checkbox-generalTermsAgreed"
-                  className="mt-1 h-4 w-4 rounded border-stone-300 text-green-800 focus:ring-green-700 shrink-0 accent-green-800"
+                  className="mt-1 h-4 w-4 rounded border-stone-300 text-[#24384e] focus:ring-[#24384e] shrink-0 accent-[#24384e]"
                 />
                 <span className="text-sm font-semibold text-stone-800">
                   I agree. <span className="text-amber-700">*</span>
@@ -1813,12 +1813,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <div className="bg-green-900 text-white py-8 px-4 text-center">
+      <div className="bg-[#24384e] text-white py-8 px-4 text-center">
         <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-1">
           Australia &amp; New Zealand
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold">Performance Horse Sales</h1>
-        <p className="text-green-200 text-sm mt-1">Marketing Form — Official Seller Submission</p>
+        <p className="text-blue-200 text-sm mt-1">Marketing Form — Official Seller Submission</p>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -1832,7 +1832,7 @@ export default function Home() {
           </div>
           <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden">
             <div
-              className="h-full rounded-full bg-green-800 transition-all duration-500"
+              className="h-full rounded-full bg-[#24384e] transition-all duration-500"
               style={{ width: `${progress}%` }}
               data-testid="progress-bar"
             />
@@ -1860,7 +1860,7 @@ export default function Home() {
                 type="button"
                 onClick={next}
                 data-testid="button-next"
-                className="px-6 py-2 rounded-md bg-green-800 text-white text-sm font-semibold hover:bg-green-900 transition-colors shadow-sm"
+                className="px-6 py-2 rounded-md bg-[#24384e] text-white text-sm font-semibold hover:bg-[#1a2d3f] transition-colors shadow-sm"
               >
                 Next
               </button>
@@ -1880,7 +1880,7 @@ export default function Home() {
 
         <p className="text-center text-xs text-stone-400 mt-4">
           Questions? Call us on{" "}
-          <a href="tel:0428239317" className="text-green-800 font-medium">
+          <a href="tel:0428239317" className="text-[#24384e] font-medium">
             0428239317
           </a>{" "}
           — we respond within 12 hours.
