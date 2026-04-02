@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -25,8 +26,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const SidebarContent = () => (
     <div className="flex h-full flex-col gap-4">
       <div className="flex h-14 items-center px-4 lg:h-16">
-        <Link href="/admin" className="flex items-center gap-2 font-semibold">
-          <span className="text-xl text-primary font-serif">PHS Admin</span>
+        <Link href="/admin" className="flex items-center gap-2.5 font-semibold">
+          <img src={phsLogo} alt="PHS logo" className="h-8 w-8 rounded-full object-cover" />
+          <span className="text-base text-primary font-semibold">PHS Admin</span>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-2">

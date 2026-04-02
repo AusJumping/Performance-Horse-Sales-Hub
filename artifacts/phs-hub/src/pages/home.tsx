@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useCreateSubmission } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
 // ─── Checkbox Group Helper ───────────────────────────────────────────────────
 
@@ -1814,6 +1815,11 @@ export default function Home() {
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
       <div className="bg-[#24384e] text-white py-8 px-4 text-center">
+        <img
+          src={phsLogo}
+          alt="Performance Horse Sales logo"
+          className="mx-auto mb-4 h-28 w-28 rounded-full object-cover shadow-lg"
+        />
         <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-1">
           Australia &amp; New Zealand
         </p>
