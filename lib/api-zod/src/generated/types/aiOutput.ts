@@ -18,6 +18,8 @@ export interface AiOutput {
   /** @nullable */
   socialCaption?: string | null;
   /** @nullable */
+  shortCaptions?: string | null;
+  /** @nullable */
   hashtags?: string | null;
   /** @nullable */
   buyerSummary?: string | null;

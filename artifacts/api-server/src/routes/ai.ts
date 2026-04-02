@@ -35,6 +35,7 @@ router.patch("/submissions/:id/ai-output", async (req, res) => {
     shortListing?: string;
     proHorseMatchListing?: string;
     socialCaption?: string;
+    shortCaptions?: string;
     hashtags?: string;
     buyerSummary?: string;
     keySellingPoints?: string;
@@ -93,6 +94,7 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
       shortListing,
       proHorseMatchListing,
       socialCaption,
+      shortCaptions,
       hashtags,
       buyerSummary,
       keySellingPoints,
@@ -104,6 +106,7 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
       generateContent(shortListingPrompt(submissionSummary)),
       generateContent(proHorseMatchPrompt(submissionSummary)),
       generateContent(socialCaptionPrompt(submissionSummary)),
+      generateContent(shortCaptionsPrompt(submissionSummary)),
       generateContent(hashtagsPrompt(submissionSummary)),
       generateContent(buyerSummaryPrompt(submissionSummary)),
       generateContent(keySellingPointsPrompt(submissionSummary)),
@@ -130,6 +133,7 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
         shortListing,
         proHorseMatchListing,
         socialCaption,
+        shortCaptions,
         hashtags,
         buyerSummary,
         keySellingPoints,
@@ -273,6 +277,28 @@ function socialCaptionPrompt(summary: string): string {
 You are writing an Instagram/Facebook caption for Performance Horse Sales Australia and New Zealand.
 
 Using ONLY the information provided below, write an engaging social media caption (100-150 words). Make it warm, professional, and compelling. End with a call to action to enquire. Do not use excessive exclamation marks or hype language.
+
+SUBMISSION DATA:
+${summary}`;
+}
+
+function shortCaptionsPrompt(summary: string): string {
+  return `${AI_RULES}
+
+You are writing short social media caption variations for Performance Horse Sales Australia and New Zealand.
+
+Using ONLY the information provided below, write exactly 3 short caption variations for Facebook and Instagram. Each caption must be:
+- 30-60 words maximum
+- Different in tone or angle from the others (e.g. one factual, one emotive, one hook-style)
+- Professional and sales-focused without hype
+
+Format your response exactly like this, with each caption on its own numbered line:
+
+1. [Caption text here]
+
+2. [Caption text here]
+
+3. [Caption text here]
 
 SUBMISSION DATA:
 ${summary}`;

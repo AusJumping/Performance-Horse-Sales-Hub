@@ -21,6 +21,7 @@ export const aiOutputsTable = pgTable("ai_outputs", {
   keySellingPoints: text("key_selling_points"),
   reelOverlayText: text("reel_overlay_text"),
   reelBrief: text("reel_brief"),
+  shortCaptions: text("short_captions"),
   tags: text("ai_tags"),
   generatedAt: timestamp("generated_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

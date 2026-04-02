@@ -193,6 +193,11 @@ export default function SubmissionDetail() {
               Publish Listing
             </Button>
           )}
+          <Button asChild variant="outline" data-testid="button-downloadPdf">
+            <a href={`/api/submissions/${sub.id}/pdf`} target="_blank" rel="noreferrer">
+              <Download className="mr-2 h-4 w-4" /> Download PDF
+            </a>
+          </Button>
           <Button asChild variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="button-aiContent">
             <Link href={`/admin/submissions/${sub.id}/ai`}>
               <Sparkles className="mr-2 h-4 w-4" /> AI Content

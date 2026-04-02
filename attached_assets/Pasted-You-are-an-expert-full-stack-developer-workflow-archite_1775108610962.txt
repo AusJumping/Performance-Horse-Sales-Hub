@@ -1,0 +1,254 @@
+You are an expert full-stack developer, workflow architect, and AI automation builder.
+
+I want you to build the post-submission workflow for a horse sales business called Performance Horse Sales Australia and New Zealand.
+
+This project already has an existing seller submission form. The content of that form is fixed and must not be changed. Do not add, remove, rename, merge, split, or alter any fields, wording, field order, logic, instructions, or declarations from the existing form.
+
+Your job is to build what happens after the form is completed.
+
+PROJECT OBJECTIVE
+
+When a client completes the existing horse submission form, the system must:
+
+1. save the completed form submission in the database
+2. generate a clean downloadable PDF version of the completed form
+3. save that PDF automatically using the client’s name and the horse’s name in the file title
+4. send the submitted form data to an internal ChatGPT-style content engine
+5. generate all required horse sale ads and social media content from the submitted information only
+6. store the AI-generated outputs against that horse record in an internal admin dashboard for review and editing
+
+CRITICAL RULES
+
+1. The form content is already approved and must remain exactly as it is.
+2. The system must preserve the raw original submission exactly as entered by the client.
+3. AI outputs must be stored separately from the raw submission data.
+4. The AI must never invent facts.
+5. If information is missing from the form, the AI must leave it out rather than guess.
+6. The system must be easy for a non-technical admin team to use.
+
+WORKFLOW REQUIRED
+
+STEP 1. FORM SUBMISSION
+When the seller submits the existing horse submission form:
+- save all field values exactly as submitted
+- save all uploaded files
+- create a unique horse submission record
+- record submission date and time
+- set status to: New Submission
+
+STEP 2. PDF GENERATION
+Immediately after submission, automatically generate a PDF version of the completed form.
+
+PDF requirements:
+- the PDF must show the completed form in a clean, readable format
+- preserve the original form headings and field labels
+- include all submitted answers
+- include references to uploaded media, and if practical include image previews or thumbnails
+- be suitable for download by admin staff
+- be stored against the horse record in the database or file storage
+
+PDF file naming convention:
+- use the client name and horse name
+- example format:
+  ClientName_HorseName_Submission.pdf
+- also include a fallback if one of those fields is missing
+- sanitise file names so they are safe for storage and download
+- if needed, use a format like:
+  ClientName_HorseName_YYYYMMDD.pdf
+
+STEP 3. INTERNAL AI CONTENT GENERATION
+After the form is submitted, send the structured form data to an internal AI content engine using OpenAI or equivalent.
+
+This internal AI tool is for staff use only. It is not customer-facing.
+
+The AI must use only the information that was submitted in the form.
+
+The AI must generate the following outputs:
+
+1. Master horse sale ad
+- polished
+- warm
+- professional
+- premium
+- easy to read
+- suitable for the main website or direct buyer communication
+
+2. Short sale ad
+- shorter version for tighter listing spaces
+
+3. ProHorseMatch version
+- tailored for the ProHorseMatch app
+- concise and appealing
+- easy to scan quickly
+
+4. Social media post caption
+- suitable for Facebook and Instagram
+- professional and engaging
+- sales-focused without hype
+
+5. Additional short social caption variations
+- at least 3 alternate shorter caption options
+
+6. Key selling points
+- bullet-point summary of the horse’s main highlights
+
+7. Buyer suitability summary
+- short summary of the type of rider or buyer this horse may suit
+- must only reflect what was actually provided in the form
+
+8. Hashtags
+- relevant horse sale and equestrian hashtags
+- not spammy
+- platform-appropriate
+
+9. Reel brief
+- create a brief for a reel or slideshow using the uploaded media
+- include suggested image order
+- suggested opening hook
+- short on-screen text
+- suggested CTA
+- suggested caption
+- suggested style or mood
+
+AI CONTENT RULES
+
+The AI must:
+- never invent breeding details
+- never invent competition history
+- never invent temperament claims
+- never invent rider suitability claims
+- never invent veterinary or soundness claims
+- never exaggerate
+- never assume facts that are not in the form
+- prioritise accuracy over sales language
+
+Tone of writing:
+- polished
+- trustworthy
+- warm
+- premium
+- horse-savvy
+- clear
+- not cheesy
+- not overblown
+- not full of clichés
+
+ADMIN DASHBOARD REQUIREMENTS
+
+Create an internal dashboard where staff can open each horse submission and see:
+
+1. Original submission
+- all raw form answers exactly as submitted
+
+2. Downloadable PDF
+- downloadable from the record
+- clearly labelled
+
+3. Uploaded files
+- photos
+- videos
+- any other submitted media
+
+4. AI-generated content outputs
+- master ad
+- short ad
+- ProHorseMatch version
+- social captions
+- key selling points
+- buyer suitability summary
+- hashtags
+- reel brief
+
+5. Manual editing tools
+- staff must be able to edit the AI-generated outputs before publishing
+
+6. Status workflow
+Suggested statuses:
+- New Submission
+- PDF Created
+- AI Drafts Created
+- In Review
+- Approved
+- Published
+- Archived
+
+7. Notes section
+- internal notes for staff
+
+DATA STRUCTURE REQUIREMENTS
+
+Store the following separately:
+- raw form submission data
+- uploaded files
+- generated PDF
+- AI-generated content outputs
+- admin notes
+- status history
+
+This separation is important so the original submission is always preserved.
+
+TECHNICAL REQUIREMENTS
+
+Build this in a clean and scalable way in Replit.
+
+Preferred stack:
+- React frontend
+- TypeScript
+- Node.js backend
+- Express or equivalent
+- PostgreSQL or similar structured database
+- file or object storage for uploads and PDFs
+- secure environment variables for API keys
+
+The app should:
+- be clean and maintainable
+- support async processing
+- show clear progress/status to admins
+- have strong validation and error handling
+- protect internal admin routes
+- be easy to extend later
+
+PROMPT SYSTEM REQUIREMENTS
+
+Create editable internal prompt templates in the codebase for:
+- master ad
+- short ad
+- ProHorseMatch ad
+- social caption
+- short caption variations
+- key selling points
+- buyer suitability summary
+- hashtags
+- reel brief
+
+All prompt templates must explicitly tell the AI to rely only on the form data and never invent details.
+
+WHAT TO BUILD FIRST
+
+Build this in the following order:
+
+1. data model for submissions, files, PDFs, and AI outputs
+2. form submission storage
+3. PDF generation and file naming logic
+4. AI content generation workflow
+5. admin dashboard record view
+6. download and copy tools
+7. status workflow
+8. editing tools for generated content
+
+WHAT I WANT FROM YOU
+
+Please do the following in order:
+
+1. summarise the workflow you are going to build
+2. propose the database schema
+3. outline the API routes
+4. explain how the PDF generation will work
+5. explain how the AI content generation pipeline will work
+6. then begin building the MVP step by step
+
+IMPORTANT FINAL INSTRUCTION
+
+Do not redesign the form itself.
+Build the system around the existing form exactly as it is.
+Focus on automating everything that happens after submission.

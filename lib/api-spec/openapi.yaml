@@ -524,6 +524,8 @@ components:
           type: ["string", "null"]
         socialCaption:
           type: ["string", "null"]
+        shortCaptions:
+          type: ["string", "null"]
         hashtags:
           type: ["string", "null"]
         buyerSummary:
@@ -556,6 +558,8 @@ components:
         proHorseMatchListing:
           type: ["string", "null"]
         socialCaption:
+          type: ["string", "null"]
+        shortCaptions:
           type: ["string", "null"]
         hashtags:
           type: ["string", "null"]
