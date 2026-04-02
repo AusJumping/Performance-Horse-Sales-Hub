@@ -285,10 +285,21 @@ export default function SubmissionDetail() {
                       .map(([key, value]) => {
                       if (!value || value === "") return null;
                       const title = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                      const isSignatureImage = key === "signature" && typeof value === "string" && value.startsWith("data:image");
                       return (
-                        <div key={key} className="border-b pb-4 last:border-0 md:last:border-b-0">
-                          <div className="text-sm font-medium text-muted-foreground mb-1">{title}</div>
-                          <div className="text-base whitespace-pre-wrap">{String(value)}</div>
+                        <div key={key} className={`border-b pb-4 last:border-0 md:last:border-b-0 ${isSignatureImage ? "md:col-span-2" : ""}`}>
+                          <div className="text-sm font-medium text-muted-foreground mb-2">{title}</div>
+                          {isSignatureImage ? (
+                            <div className="border rounded-lg bg-white p-3 inline-block">
+                              <img
+                                src={String(value)}
+                                alt="Seller signature"
+                                className="max-h-24 w-auto object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="text-base whitespace-pre-wrap">{String(value)}</div>
+                          )}
                         </div>
                       )
                     })}

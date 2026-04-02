@@ -366,7 +366,33 @@ router.get("/submissions/:id/pdf", async (req, res) => {
 
     drawSectionHeader(doc, section.title);
     for (const field of fieldsWithData) {
-      drawField(doc, field.label, formatValue(formData[field.key]), { wide: field.wide });
+      const rawVal = formData[field.key];
+      const strVal = String(rawVal ?? "");
+      // Signature drawn as base64 image — embed it in the PDF
+      if (field.key === "signature" && strVal.startsWith("data:image")) {
+        if (doc.y > doc.page.height - 120) doc.addPage();
+        doc
+          .fontSize(8)
+          .font("Helvetica-Bold")
+          .fillColor(NAVY)
+          .text("Signature", PAGE_MARGIN, doc.y);
+        doc.moveDown(0.3);
+        const base64Data = strVal.split(",")[1];
+        if (base64Data) {
+          const imgBuf = Buffer.from(base64Data, "base64");
+          doc.image(imgBuf, PAGE_MARGIN, doc.y, { height: 60, fit: [200, 60] });
+          doc.y += 70;
+          doc
+            .moveTo(PAGE_MARGIN, doc.y)
+            .lineTo(doc.page.width - PAGE_MARGIN, doc.y)
+            .strokeColor(RULE)
+            .lineWidth(0.5)
+            .stroke();
+          doc.y += 8;
+        }
+      } else {
+        drawField(doc, field.label, formatValue(rawVal), { wide: field.wide });
+      }
     }
   }
 

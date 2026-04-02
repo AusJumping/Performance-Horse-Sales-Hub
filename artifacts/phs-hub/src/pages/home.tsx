@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useCreateSubmission } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import SignaturePad from "@/components/signature-pad";
 const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
 // ─── Checkbox Group Helper ───────────────────────────────────────────────────
@@ -407,7 +408,7 @@ const SAMPLE: FD = {
   generalTermsAgreed: true,
   digitalSignatureConfirmation:
     "I understand the service that I have selected and confirm that I want to list the horse with PHS. To speed up the process, I will send photos and videos to 0428239317 via WhatsApp to confirm the listing - PHS will start drafting the ad and portfolio.",
-  signature: "Jessica McAllister",
+  signature: "",
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -513,7 +514,8 @@ export default function Home() {
           e.generalTermsAgreed = "You must agree to the terms to proceed";
         if (!s("digitalSignatureConfirmation"))
           e.digitalSignatureConfirmation = "Required";
-        if (!s("signature")) e.signature = "Required";
+        if (!s("signature") || !s("signature").startsWith("data:image"))
+          e.signature = "Please draw your signature above before submitting.";
         break;
     }
     return e;
@@ -1792,13 +1794,11 @@ export default function Home() {
               <FieldLabel
                 label="Your Signature"
                 required
-                note="Add your signature here — type your full name as your digital signature."
+                note="Draw your signature using your mouse or finger."
               />
-              <TextInput
-                name="signature"
+              <SignaturePad
                 value={s("signature")}
                 onChange={setField("signature")}
-                placeholder="Type your full name here"
               />
               <FieldError message={errors.signature} />
             </div>
