@@ -15,6 +15,10 @@ export const reelTemplatesTable = pgTable("reel_templates", {
   apiKey: text("api_key").notNull(),
   templateId: text("template_id").notNull(),
   isDefault: boolean("is_default").notNull().default(false),
+  // Creatomate element field names — different templates use different names
+  overlayTextField: text("overlay_text_field").notNull().default("Title.text"),
+  brandTextField: text("brand_text_field").notNull().default("Brand.text"),
+  websiteTextField: text("website_text_field").notNull().default("Website.text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

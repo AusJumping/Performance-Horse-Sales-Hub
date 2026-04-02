@@ -52,16 +52,22 @@ router.post("/reel-templates", async (req, res) => {
 router.patch("/reel-templates/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-  const { name, description, apiKey, templateId, isDefault } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField } = req.body;
   if (isDefault) {
     await db.update(reelTemplatesTable).set({ isDefault: false });
   }
   const updates: Record<string, unknown> = {};
   if (name !== undefined) updates.name = name;
   if (description !== undefined) updates.description = description;
-  if (apiKey !== undefined) updates.apiKey = apiKey;
+  if (apiKey !== undefined && apiKey !== "") updates.apiKey = apiKey;
   if (templateId !== undefined) updates.templateId = templateId;
   if (isDefault !== undefined) updates.isDefault = !!isDefault;
+  if (overlayTextField !== undefined) updates.overlayTextField = overlayTextField;
+  if (brandTextField !== undefined) updates.brandTextField = brandTextField;
+  if (websiteTextField !== undefined) updates.websiteTextField = websiteTextField;
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: "No fields to update." });
+  }
   const [updated] = await db
     .update(reelTemplatesTable)
     .set(updates)
@@ -140,14 +146,16 @@ router.post("/submissions/:id/reel", async (req, res) => {
   const img2 = photos[1]?.url ?? photos[0]?.url ?? PLACEHOLDER;
   const img3 = photos[2]?.url ?? photos[0]?.url ?? PLACEHOLDER;
 
+  // Use the field names configured for this specific template
   const modifications: Record<string, string> = {
     "Image-1.source": img1,
     "Image-2.source": img2,
     "Image-3.source": img3,
-    "Brand.text": BRAND_NAME,
-    "Website.text": WEBSITE,
-    "Title.text": title,
+    [template.overlayTextField]: title,
   };
+  // Only add brand/website fields if configured (some templates don't have them)
+  if (template.brandTextField) modifications[template.brandTextField] = BRAND_NAME;
+  if (template.websiteTextField) modifications[template.websiteTextField] = WEBSITE;
 
   const renderRes = await fetch("https://api.creatomate.com/v1/renders", {
     method: "POST",

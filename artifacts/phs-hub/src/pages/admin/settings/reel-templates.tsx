@@ -24,7 +24,16 @@ async function fetchTemplates(): Promise<ReelTemplate[]> {
   return res.json();
 }
 
-const EMPTY_FORM = { name: "", description: "", apiKey: "", templateId: "", isDefault: false };
+const EMPTY_FORM = {
+  name: "",
+  description: "",
+  apiKey: "",
+  templateId: "",
+  isDefault: false,
+  overlayTextField: "Title.text",
+  brandTextField: "Brand.text",
+  websiteTextField: "Website.text",
+};
 
 export default function ReelTemplatesSettings() {
   const { toast } = useToast();
@@ -119,7 +128,16 @@ export default function ReelTemplatesSettings() {
 
   const startEdit = (t: ReelTemplate) => {
     setEditingId(t.id);
-    setForm({ name: t.name, description: t.description ?? "", apiKey: "", templateId: t.templateId, isDefault: t.isDefault });
+    setForm({
+      name: t.name,
+      description: t.description ?? "",
+      apiKey: "",
+      templateId: t.templateId,
+      isDefault: t.isDefault,
+      overlayTextField: (t as any).overlayTextField ?? "Title.text",
+      brandTextField: (t as any).brandTextField ?? "Brand.text",
+      websiteTextField: (t as any).websiteTextField ?? "Website.text",
+    });
     setShowForm(true);
   };
 
@@ -195,6 +213,43 @@ export default function ReelTemplatesSettings() {
                   value={form.templateId}
                   onChange={(e) => setForm({ ...form, templateId: e.target.value })}
                 />
+              </div>
+              <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Creatomate Element Field Names
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  These must match the element names in your Creatomate template exactly. Find them in the template editor.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Overlay Text field</label>
+                    <Input
+                      placeholder="Title.text"
+                      value={form.overlayTextField}
+                      onChange={(e) => setForm({ ...form, overlayTextField: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">All reel overlay lines go here</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Brand field</label>
+                    <Input
+                      placeholder="Brand.text"
+                      value={form.brandTextField}
+                      onChange={(e) => setForm({ ...form, brandTextField: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Leave blank if not in template</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Website field</label>
+                    <Input
+                      placeholder="Website.text"
+                      value={form.websiteTextField}
+                      onChange={(e) => setForm({ ...form, websiteTextField: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Leave blank if not in template</p>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <input
