@@ -1888,6 +1888,12 @@ export default function Home() {
           </a>{" "}
           — we respond within 12 hours.
         </p>
+
+        <p className="text-center mt-6">
+          <a href="/admin" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">
+            Staff Admin
+          </a>
+        </p>
       </div>
     </div>
   );
