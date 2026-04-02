@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useParams, Link } from "wouter";
 import { 
   useGetSubmission, 
@@ -31,7 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { 
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
-  Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy
+  Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
+  UploadCloud, Video, Loader2, Eye
 } from "lucide-react";
 
 export default function SubmissionDetail() {
@@ -41,6 +42,9 @@ export default function SubmissionDetail() {
   const queryClient = useQueryClient();
   
   const [newNote, setNewNote] = useState("");
+  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: sub, isLoading } = useGetSubmission(submissionId, {
     query: { enabled: !!submissionId, queryKey: getGetSubmissionQueryKey(submissionId) }
@@ -143,6 +147,48 @@ export default function SubmissionDetail() {
     }
   };
 
+  const handleUploadFiles = useCallback(async (files: File[]) => {
+    if (!files.length) return;
+    const newEntries = files.map(f => ({ name: f.name, progress: 0 }));
+    setUploadingFiles(prev => [...prev, ...newEntries]);
+
+    await Promise.all(files.map(async (file) => {
+      const mediaType = file.type.startsWith("image/") ? "photo"
+        : file.type.startsWith("video/") ? "video"
+        : "document";
+      try {
+        const urlRes = await fetch("/api/media/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ submissionId, filename: file.name, mimeType: file.type, mediaType }),
+        });
+        if (!urlRes.ok) throw new Error("Failed to get upload URL");
+        const { uploadUrl } = await urlRes.json();
+
+        const form = new FormData();
+        form.append("file", file);
+        const uploadRes = await fetch(uploadUrl, { method: "POST", body: form });
+        if (!uploadRes.ok) throw new Error("Upload failed");
+
+        setUploadingFiles(prev => prev.map(u => u.name === file.name ? { ...u, progress: 100 } : u));
+      } catch (err) {
+        toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
+        setUploadingFiles(prev => prev.filter(u => u.name !== file.name));
+      }
+    }));
+
+    queryClient.invalidateQueries({ queryKey: getListSubmissionMediaQueryKey(submissionId) });
+    setTimeout(() => setUploadingFiles([]), 1500);
+    toast({ title: "Upload complete" });
+  }, [submissionId, queryClient, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    handleUploadFiles(files);
+  }, [handleUploadFiles]);
+
   const copyToClipboard = (text: string | undefined | null, name: string) => {
     if (!text) {
       toast({ title: `No ${name} available`, variant: "destructive" });
@@ -160,6 +206,7 @@ export default function SubmissionDetail() {
 
   // Separate media by type
   const photos = media?.filter(m => m.mediaType === 'photo') || [];
+  const uploadedVideos = media?.filter(m => m.mediaType === 'video') || [];
   const documents = media?.filter(m => m.mediaType === 'document') || [];
   const videoLinks = String(sub.formData?.videoLinks || "").split('\n').filter(l => l.trim() !== "");
 
@@ -251,21 +298,70 @@ export default function SubmissionDetail() {
             </TabsContent>
             
             <TabsContent value="media" className="pt-6 space-y-6">
+              {/* Upload Zone */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2"><UploadCloud className="h-5 w-5"/> Upload Photos & Videos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    data-testid="upload-dropzone"
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${isDragging ? "border-[#24384e] bg-[#24384e]/5" : "border-muted-foreground/30 hover:border-[#24384e]/50 hover:bg-muted/30"}`}
+                  >
+                    <UploadCloud className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground">Drag & drop photos or videos here, or click to browse</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP, MP4, MOV — up to 100 MB each</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        e.target.value = "";
+                        handleUploadFiles(files);
+                      }}
+                    />
+                  </div>
+
+                  {uploadingFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {uploadingFiles.map((f, i) => (
+                        <div key={i} className="flex items-center gap-3 bg-muted rounded-lg px-3 py-2">
+                          <Loader2 className="h-4 w-4 animate-spin shrink-0 text-[#24384e]" />
+                          <span className="text-sm truncate flex-1">{f.name}</span>
+                          <span className="text-xs text-muted-foreground">{f.progress === 100 ? "Done" : "Uploading…"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Photos */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2"><ImageIcon className="h-5 w-5"/> Photos ({photos.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingMedia ? <Skeleton className="h-32 w-full" /> : photos.length === 0 ? (
-                    <div className="text-muted-foreground text-sm italic">No photos uploaded.</div>
+                    <div className="text-muted-foreground text-sm italic">No photos yet — upload above.</div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {photos.map(p => (
                         <div key={p.id} className="relative group rounded-md overflow-hidden border">
-                          <img src={p.url} alt={p.originalName} className="object-cover w-full h-32" />
+                          <img src={p.url} alt={p.originalName} className="object-cover w-full h-40" />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <Button size="icon" variant="secondary" onClick={() => window.open(p.url, "_blank")}><Eye className="h-4 w-4" /></Button>
                             <Button size="icon" variant="destructive" onClick={() => handleDeleteMedia(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <p className="text-white text-xs truncate">{p.originalName}</p>
                           </div>
                         </div>
                       ))}
@@ -274,13 +370,41 @@ export default function SubmissionDetail() {
                 </CardContent>
               </Card>
 
+              {/* Uploaded Videos */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><LinkIcon className="h-5 w-5"/> Video Links</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2"><Video className="h-5 w-5"/> Videos ({uploadedVideos.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingMedia ? <Skeleton className="h-32 w-full" /> : uploadedVideos.length === 0 ? (
+                    <div className="text-muted-foreground text-sm italic">No videos uploaded yet — upload above.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {uploadedVideos.map(v => (
+                        <div key={v.id} className="border rounded-xl overflow-hidden bg-black">
+                          <video src={v.url} controls className="w-full max-h-56 object-contain" />
+                          <div className="flex items-center justify-between px-3 py-2 bg-muted">
+                            <span className="text-sm truncate flex-1 mr-2">{v.originalName}</span>
+                            <div className="flex gap-1 shrink-0">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(v.url, "_blank")}><Download className="h-3 w-3" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteMedia(v.id)}><Trash2 className="h-3 w-3" /></Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Video Links from seller */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2"><LinkIcon className="h-5 w-5"/> Seller Video Links</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {videoLinks.length === 0 ? (
-                    <div className="text-muted-foreground text-sm italic">No video links provided.</div>
+                    <div className="text-muted-foreground text-sm italic">No video links provided by seller.</div>
                   ) : (
                     <ul className="space-y-2">
                       {videoLinks.map((link, i) => (
@@ -294,6 +418,7 @@ export default function SubmissionDetail() {
                 </CardContent>
               </Card>
 
+              {/* Documents */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2"><FileText className="h-5 w-5"/> Documents ({documents.length})</CardTitle>
