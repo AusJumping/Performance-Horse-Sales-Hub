@@ -582,7 +582,7 @@ export default function Home() {
                 We know that we can find your horse the perfect new home and we thank you for
                 your trust in the process.
               </p>
-              <p className="font-semibold text-amber-800">
+              <p className="font-semibold text-[#24384e]">
                 Please contact us on 0428239317 if you do not receive a response within 12 hours.
               </p>
               <p className="font-medium text-stone-800">Our aim is that the listing process:</p>
