@@ -577,7 +577,7 @@ export default function Home() {
       case 0:
         return (
           <div className="space-y-6">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 text-sm text-stone-700 space-y-3">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 text-sm text-stone-700 space-y-3">
               <p>
                 We know that we can find your horse the perfect new home and we thank you for
                 your trust in the process.
