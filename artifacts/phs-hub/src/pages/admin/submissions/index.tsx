@@ -119,7 +119,7 @@ export default function SubmissionsList() {
                       <div className="text-xs text-muted-foreground">{sub.sellerEmail}</div>
                     </TableCell>
                     <TableCell>{sub.discipline}</TableCell>
-                    <TableCell className="font-medium">{sub.askingPrice ? `$${sub.askingPrice}` : 'POA'}</TableCell>
+                    <TableCell className="font-medium">{sub.askingPrice || 'POA'}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(sub.createdAt), 'MMM d, yyyy')}
                     </TableCell>
