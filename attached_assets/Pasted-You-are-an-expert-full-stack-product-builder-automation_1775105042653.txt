@@ -1,0 +1,383 @@
+You are an expert full-stack product builder, automation architect, AI workflow engineer, and UX designer.
+
+I want you to build a production-ready web application called:
+
+Performance Horse Sales Automation Hub
+
+This app is for Performance Horse Sales Australia and New Zealand.
+
+CRITICAL INSTRUCTION: EXISTING FORM IS THE SOURCE OF TRUTH
+
+There is an existing live seller submission form already in use. That existing form is the canonical source for all submission content.
+
+Existing form URL:
+https://fill.boloforms.com/signature/1RBhQa1clcV2kxZuoGb3nAqRaNKtc8yOQKVyA9GqgVN4?p=view#googtrans(en)
+
+This instruction is absolute:
+
+- Do not add anything to the content of the form
+- Do not remove anything from the content of the form
+- Do not change the wording of the questions unless absolutely required for technical rendering, and even then preserve the original wording exactly in the UI wherever possible
+- Do not merge fields
+- Do not split fields
+- Do not rename fields
+- Do not change required versus optional logic
+- Do not change answer types unless technically necessary to mirror the original input experience
+- Do not alter dropdown options, tick-boxes, help text, section titles, upload prompts, declarations, or any other content
+- Do not reinterpret the business logic of the form
+- The exact content of the existing form must be preserved
+
+The job is NOT to redesign the content of the form.
+The job IS to recreate that exact existing form structure and content inside a better automated workflow.
+
+If access to the live form is limited, build the system so the existing form definition can be manually mapped in as a schema and then rendered exactly. The final app must use the existing form as the source of truth.
+
+PROJECT GOAL
+
+Build a one-stop system that starts with that exact existing submission form and then automates the admin that happens after submission.
+
+A seller should fill in the form once and the system should then:
+1. store the submission in a structured way
+2. store uploaded media
+3. use AI to generate listing content from the submitted information only
+4. create platform-specific versions of the listing
+5. create social media content
+6. generate either a reel or a reel brief from the uploaded media
+7. give the business an internal dashboard to review, edit, approve, and publish outputs
+
+BUSINESS CONTEXT
+
+Performance Horse Sales Australia and New Zealand helps clients sell horses and helps buyers find suitable horses.
+
+The current website form works, but too much manual admin happens after the form is submitted.
+
+The new system should preserve the exact form content while turning the downstream process into an efficient automation pipeline.
+
+NON-NEGOTIABLE FORM REPLICATION REQUIREMENT
+
+The public submission form in the new app must replicate the existing form exactly in content.
+
+That means:
+- same questions
+- same sequence/order
+- same labels
+- same wording
+- same field types wherever possible
+- same selectable options
+- same upload prompts
+- same notes and instructional text
+- same declarations or agreements
+- same required versus optional behaviour
+- same structure and logic
+
+You may improve the styling, responsiveness, branding, usability, validation handling, saving, file upload handling, and backend storage, but not the actual content.
+
+If there is any conflict between a suggested app improvement and the exact content of the current form, the current form wins.
+
+PRIMARY OBJECTIVE
+
+Build a working web app in Replit that uses the existing form unchanged in content, while automating everything that happens after the form is submitted.
+
+THE SYSTEM MUST DO THE FOLLOWING
+
+PART 1: PUBLIC FORM EXPERIENCE
+
+Create a public-facing seller form that mirrors the existing BoloForms form exactly in content.
+
+Requirements:
+- preserve all form content exactly
+- present the fields in the same order as the original form
+- support all original field types
+- support all original uploads
+- support mobile and desktop
+- improve styling and user experience without changing content
+- validate fields according to the original form’s required logic
+- store all data in structured records
+- store uploaded files securely
+- show upload progress and submission feedback
+- create a submission record immediately on submit
+- trigger the AI workflow after submission
+
+Important:
+If the original form contains uploads, declarations, notes, signatures, long text fields, optional sections, conditional sections, or consent statements, preserve them exactly.
+
+PART 2: FORM DEFINITION / SCHEMA LAYER
+
+Because the existing form is the source of truth, build the app with a form definition layer.
+
+I want a system where:
+- the exact existing form can be represented as a structured schema
+- the public form is rendered from that schema
+- the schema preserves field labels, field types, order, options, required status, helper text, and section grouping
+- the same schema can be reused for storage and AI processing
+
+This is important because the content must remain exactly aligned with the existing form.
+
+If scraping the form directly is not feasible, create a form schema file that can be manually populated from the existing form and then used as the single source of truth for rendering and data storage.
+
+PART 3: INTERNAL ADMIN DASHBOARD
+
+Build a secure internal admin dashboard for Performance Horse Sales Australia and New Zealand.
+
+The dashboard should allow staff to:
+- view all submissions
+- filter and sort submissions
+- open a submission
+- view the exact original submitted form content
+- view uploaded photos and videos
+- view AI-generated outputs
+- edit AI outputs manually
+- approve outputs
+- mark status
+- export/copy content for publishing
+
+Suggested status flow:
+- new
+- processing
+- awaiting review
+- needs edit
+- approved
+- published
+- archived
+
+Each record page should include:
+- original submission data exactly as provided
+- uploaded media
+- AI-generated content outputs
+- internal notes
+- status history
+- timestamps
+- edit capability for generated content only, not silent rewriting of original seller data
+
+PART 4: AI CONTENT GENERATION
+
+Use OpenAI as the content engine after submission.
+
+The AI must generate outputs only from the information supplied in the existing form and uploaded media metadata where relevant.
+
+The AI should generate:
+1. Master horse listing
+2. Short listing version
+3. ProHorseMatch version
+4. Social media caption
+5. Hashtags
+6. Buyer-match summary
+7. Key selling points
+8. Reel text overlay copy
+9. Optional enquiry-response draft if useful
+
+CRITICAL AI RULES
+
+- Never invent facts
+- Never infer details that were not explicitly provided
+- Never make up breeding if it was not included in the original form
+- Never make up competition history
+- Never make up suitability claims
+- Never make up temperament claims
+- Never make up soundness, vetting, training, behaviour, or rider suitability claims
+- If a detail is missing, leave it out
+- Preserve accuracy over sales language
+- Use only the actual submitted information
+
+Tone requirements:
+- polished
+- professional
+- warm
+- premium
+- credible
+- clear
+- sales-focused without exaggeration
+- horse-savvy
+- not cheesy
+- not hype-driven
+
+PART 5: REEL / VIDEO WORKFLOW
+
+The app should help turn the uploaded media into social-ready short-form content.
+
+Support two pathways:
+
+OPTION A: automated reel generation
+Integrate with a service such as Creatomate or similar API-based video tool so uploaded horse photos can become a portrait reel/slideshow with text overlays.
+
+OPTION B: reel brief generation
+If full automated rendering is not yet implemented, generate a structured reel brief including:
+- media order
+- opening hook
+- screen-by-screen text
+- timing suggestions
+- style direction
+- music direction
+- CTA
+- caption
+- aspect ratio recommendation
+- notes for Canva, CapCut, Creatomate, or similar
+
+The reel content must still be based only on submitted information.
+
+PART 6: EXPORTS AND REUSE
+
+For each horse record, provide actions to:
+- copy website listing
+- copy short listing
+- copy ProHorseMatch copy
+- copy social media caption
+- copy hashtags
+- export reel brief
+- mark approved
+- mark published
+
+If feasible, also include:
+- media pack download
+- simple PDF summary
+- shareable internal review page
+
+PART 7: DATA STRUCTURE
+
+Create a sensible schema for:
+- admins/users
+- submissions
+- submission field values
+- media uploads
+- AI outputs
+- tags
+- statuses
+- notes
+- history
+
+Important:
+Because the content of the existing form must remain exact, structure the database so that:
+- the original form submission can always be stored exactly as submitted
+- the original field labels can be preserved
+- the original answer values can be preserved
+- future form content changes can be versioned carefully if needed
+- AI output is stored separately from original seller-submitted data
+
+PART 8: STRUCTURED TAGGING
+
+Generate editable internal tags from the submitted data and AI interpretation, for example:
+- jumper
+- dressage
+- eventer
+- junior mount
+- amateur suitable
+- schoolmaster
+- young horse
+- project horse
+
+These are for internal search only and must not override the original seller submission.
+
+PART 9: TECH STACK
+
+Build this as a clean Replit-compatible production-style project.
+
+Preferred stack:
+- React frontend
+- TypeScript
+- Node.js backend
+- Express or a suitable full-stack framework
+- PostgreSQL or similar structured database
+- object/file storage for media
+- secure environment variable handling
+- modular architecture
+
+Technical requirements:
+- clean folder structure
+- strong validation
+- async processing
+- error handling
+- clean UI
+- scalable design
+- secure admin access
+- reliable file handling
+- maintainable code
+
+PART 10: UX EXPECTATIONS
+
+The public form should feel:
+- premium
+- simple
+- trustworthy
+- easy to complete
+- mobile friendly
+
+The admin dashboard should feel:
+- efficient
+- uncluttered
+- easy to review
+- easy to edit generated content
+- clear about original data versus AI-generated copy
+
+Remember:
+You may improve design and user experience, but not the content of the form.
+
+PART 11: MVP PRIORITIES
+
+Build the MVP in this order:
+
+1. define the exact form schema from the existing form
+2. render the public submission form from that schema
+3. handle uploads and storage
+4. save submission data to the database
+5. build the admin dashboard
+6. generate AI outputs from the submitted data
+7. add review/edit/approval workflow
+8. add export tools
+9. add reel brief generation
+10. scaffold automated reel integration
+
+PART 12: PROMPT SYSTEM FOR AI OUTPUTS
+
+Create editable prompt templates in the codebase for:
+- master listing
+- short listing
+- ProHorseMatch listing
+- social caption
+- hashtags
+- buyer summary
+- reel overlay text
+- tag extraction
+
+These prompt templates must explicitly instruct the model to rely only on submitted information and never invent details.
+
+PART 13: WHAT I WANT YOU TO OUTPUT
+
+Please work in a practical structured sequence and provide:
+
+1. product vision summary
+2. recommended architecture
+3. form-schema strategy for preserving the exact existing form
+4. database schema
+5. public form rendering approach
+6. admin dashboard design
+7. API routes
+8. AI workflow design
+9. prompt templates
+10. media upload/storage approach
+11. reel workflow plan
+12. MVP implementation steps
+13. actual code for the MVP
+14. setup and deployment instructions for Replit
+
+PART 14: IMPORTANT BUILD PRINCIPLES
+
+- Do not redesign the seller form content
+- Do not optimise by changing the form questions
+- Do not improve the business logic by altering the submission content
+- Treat the existing form as fixed
+- Build around it
+- Preserve the original submission faithfully
+- Keep AI outputs separate from raw submitted data
+- Focus automation on everything after submission
+
+PART 15: FIRST STEP
+
+Start by:
+1. summarising the product vision
+2. explaining how you will preserve the exact content of the existing form
+3. proposing the architecture
+4. defining the database schema
+5. outlining the user flows
+6. then begin building the MVP step by step
+
+If anything is technically unclear, make the best practical assumption while still preserving the rule that the existing form content must not be changed.

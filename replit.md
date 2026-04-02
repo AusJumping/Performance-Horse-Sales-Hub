@@ -1,8 +1,8 @@
-# Workspace
+# Performance Horse Sales Automation Hub
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Full-stack web application for Performance Horse Sales Australia and New Zealand. Automates the post-submission workflow after sellers submit their horse details.
 
 ## Stack
 
@@ -10,87 +10,122 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **Frontend**: React + Vite (artifacts/phs-hub)
+- **Backend**: Express 5 (artifacts/api-server)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod (zod/v4), drizzle-zod
+- **AI**: OpenAI via Replit AI Integrations (gpt-5)
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **File uploads**: Multer (stored at /tmp/phs-uploads)
+- **Routing**: Wouter (frontend)
 
 ## Structure
 
 ```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+artifacts/
+  phs-hub/          # React + Vite frontend (served at /)
+  api-server/       # Express API server (served at /api)
+lib/
+  api-spec/         # OpenAPI spec + Orval codegen config
+  api-client-react/ # Generated React Query hooks
+  api-zod/          # Generated Zod schemas
+  db/               # Drizzle ORM schema + DB connection
+  integrations-openai-ai-server/ # OpenAI server-side client
+  integrations-openai-ai-react/  # OpenAI React hooks
 ```
 
-## TypeScript & Composite Projects
+## Features
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+### Public Submission Form (/)
+- 9-step multi-step form replicating the existing BoloForms seller form exactly
+- All original fields, options, wording, and required/optional logic preserved
+- Sections: Contact Info, Horse Details, Price & Sale, Discipline & Level, Competition History, Training, Temperament, Health, Rider Suitability, Media Uploads, Additional Info, Declaration
+- File upload for photos, videos, documents
+- Mobile-responsive with progress indicator
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+### Admin Dashboard (/admin)
+- Overview stats: total, awaiting review, published, recent activity
+- Submissions list with status filtering and search
+- Detailed submission view with original data, media gallery, notes
+- Status workflow: new → processing → awaiting_review → needs_edit → approved → published → archived
 
-## Root Scripts
+### AI Content Generation
+- Triggered from admin submission detail page
+- Uses OpenAI gpt-5 via Replit AI Integrations (no user API key needed)
+- Generates: Master Listing, Short Listing, ProHorseMatch Listing, Social Caption, Hashtags, Buyer Summary, Key Selling Points, Reel Overlay Text, Reel Brief
+- All content based only on submitted data — never invents facts
+- Editable in the AI Content Editor page
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+## Database Schema
 
-## Packages
+Tables:
+- `submissions` — core submission record with status, top-level fields, full formData JSON
+- `ai_outputs` — all AI-generated content linked to a submission
+- `media_files` — uploaded file metadata
+- `notes` — internal staff notes per submission
+- `status_history` — audit trail of status changes
 
-### `artifacts/api-server` (`@workspace/api-server`)
+## API Routes (all under /api)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+- GET/POST /submissions — list and create
+- GET/PATCH /submissions/:id — get detail and update
+- POST /submissions/:id/approve — approve
+- POST /submissions/:id/publish — publish
+- GET/POST /submissions/:id/notes — notes
+- GET /submissions/:id/media — list media
+- GET /submissions/:id/ai-output — get AI output
+- PATCH /submissions/:id/ai-output — update AI output
+- POST /submissions/:id/generate-ai — trigger AI generation
+- GET /dashboard/stats — dashboard summary
+- GET /dashboard/recent — recent submissions
+- POST /media/upload-url — pre-register file upload
+- POST /media/upload/:mediaId — actual file upload
+- GET /media/files/:filename — serve uploaded files
+- DELETE /media/:mediaId — delete file
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+## AI Prompt System
 
-### `lib/db` (`@workspace/db`)
+Prompt templates in `artifacts/api-server/src/routes/ai.ts`:
+- masterListingPrompt — comprehensive listing (600 words max)
+- shortListingPrompt — concise 150-200 word listing
+- proHorseMatchPrompt — structured bullet-point listing
+- socialCaptionPrompt — Instagram/Facebook caption
+- hashtagsPrompt — 20-30 relevant hashtags
+- buyerSummaryPrompt — internal buyer-match summary
+- keySellingPointsPrompt — 5-8 key selling points
+- reelOverlayPrompt — 6-8 text overlay lines for reels
+- reelBriefPrompt — full reel production brief
+- tagExtractionPrompt — internal classification tags
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
+All prompts include strict AI rules: never invent facts, only use submitted data.
 
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
+## Environment Variables
 
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+- `DATABASE_URL` — PostgreSQL connection string (auto-set by Replit)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` — OpenAI proxy URL (auto-set)
+- `AI_INTEGRATIONS_OPENAI_API_KEY` — OpenAI proxy key (auto-set)
+- `PORT` — assigned per artifact
+- `BASE_PATH` — routing prefix for frontend
 
-### `lib/api-spec` (`@workspace/api-spec`)
+## Running Locally
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
+```bash
+# Install dependencies
+pnpm install
 
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
+# Push DB schema
+pnpm --filter @workspace/db run push
 
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
+# Start API server
+pnpm --filter @workspace/api-server run dev
 
-### `lib/api-zod` (`@workspace/api-zod`)
+# Start frontend
+pnpm --filter @workspace/phs-hub run dev
+```
 
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
+## Codegen
 
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+After changing openapi.yaml:
+```bash
+pnpm --filter @workspace/api-spec run codegen
+```

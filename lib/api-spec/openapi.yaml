@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Performance Horse Sales Hub API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: submissions
+    description: Horse seller submission operations
+  - name: media
+    description: Media upload operations
+  - name: ai
+    description: AI content generation operations
+  - name: dashboard
+    description: Dashboard summary operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +30,326 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /submissions:
+    get:
+      operationId: listSubmissions
+      tags: [submissions]
+      summary: List all submissions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionListResponse"
+    post:
+      operationId: createSubmission
+      tags: [submissions]
+      summary: Create a new submission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubmissionBody"
+      responses:
+        "201":
+          description: Created submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /submissions/{id}:
+    get:
+      operationId: getSubmission
+      tags: [submissions]
+      summary: Get a submission by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submission details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateSubmission
+      tags: [submissions]
+      summary: Update a submission (status, notes, tags)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubmissionBody"
+      responses:
+        "200":
+          description: Updated submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /submissions/{id}/generate-ai:
+    post:
+      operationId: generateAiContent
+      tags: [ai]
+      summary: Generate AI content for a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: AI generation triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiOutput"
+
+  /submissions/{id}/ai-output:
+    get:
+      operationId: getAiOutput
+      tags: [ai]
+      summary: Get AI-generated content for a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: AI output
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiOutput"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAiOutput
+      tags: [ai]
+      summary: Update (edit) AI-generated content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAiOutputBody"
+      responses:
+        "200":
+          description: Updated AI output
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiOutput"
+
+  /submissions/{id}/media:
+    get:
+      operationId: listSubmissionMedia
+      tags: [media]
+      summary: List media files for a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of media
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaFile"
+
+  /submissions/{id}/notes:
+    get:
+      operationId: listSubmissionNotes
+      tags: [submissions]
+      summary: List internal notes for a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notes list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Note"
+    post:
+      operationId: addSubmissionNote
+      tags: [submissions]
+      summary: Add an internal note to a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNoteBody"
+      responses:
+        "201":
+          description: Created note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+
+  /submissions/{id}/approve:
+    post:
+      operationId: approveSubmission
+      tags: [submissions]
+      summary: Approve a submission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /submissions/{id}/publish:
+    post:
+      operationId: publishSubmission
+      tags: [submissions]
+      summary: Mark a submission as published
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/recent:
+    get:
+      operationId: getRecentSubmissions
+      tags: [dashboard]
+      summary: Get recently submitted horses
+      responses:
+        "200":
+          description: Recent submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Submission"
+
+  /media/upload-url:
+    post:
+      operationId: getMediaUploadUrl
+      tags: [media]
+      summary: Get a pre-signed upload URL for media
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /media/{mediaId}:
+    delete:
+      operationId: deleteMedia
+      tags: [media]
+      summary: Delete a media file
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +360,344 @@ components:
       required:
         - status
 
+    SubmissionStatus:
+      type: string
+      enum: [new, processing, awaiting_review, needs_edit, approved, published, archived]
+
+    Submission:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: "#/components/schemas/SubmissionStatus"
+        horseName:
+          type: ["string", "null"]
+        breed:
+          type: ["string", "null"]
+        age:
+          type: ["string", "null"]
+        colour:
+          type: ["string", "null"]
+        height:
+          type: ["string", "null"]
+        sex:
+          type: ["string", "null"]
+        askingPrice:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        discipline:
+          type: ["string", "null"]
+        sellerName:
+          type: ["string", "null"]
+        sellerEmail:
+          type: ["string", "null"]
+        sellerPhone:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        aiGenerated:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - status
+        - aiGenerated
+        - tags
+        - createdAt
+        - updatedAt
+
+    SubmissionDetail:
+      allOf:
+        - $ref: "#/components/schemas/Submission"
+        - type: object
+          properties:
+            formData:
+              type: object
+              additionalProperties: true
+            media:
+              type: array
+              items:
+                $ref: "#/components/schemas/MediaFile"
+            aiOutput:
+              oneOf:
+                - $ref: "#/components/schemas/AiOutput"
+                - type: "null"
+            notes:
+              type: array
+              items:
+                $ref: "#/components/schemas/Note"
+            statusHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/StatusHistoryEntry"
+          required:
+            - formData
+            - media
+            - notes
+            - statusHistory
+
+    SubmissionListResponse:
+      type: object
+      properties:
+        submissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Submission"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - submissions
+        - total
+        - page
+        - limit
+
+    CreateSubmissionBody:
+      type: object
+      properties:
+        formData:
+          type: object
+          additionalProperties: true
+        sellerName:
+          type: ["string", "null"]
+        sellerEmail:
+          type: ["string", "null"]
+        sellerPhone:
+          type: ["string", "null"]
+        horseName:
+          type: ["string", "null"]
+        breed:
+          type: ["string", "null"]
+        age:
+          type: ["string", "null"]
+        colour:
+          type: ["string", "null"]
+        height:
+          type: ["string", "null"]
+        sex:
+          type: ["string", "null"]
+        askingPrice:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        discipline:
+          type: ["string", "null"]
+      required:
+        - formData
+
+    UpdateSubmissionBody:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/SubmissionStatus"
+        tags:
+          type: array
+          items:
+            type: string
+        internalNotes:
+          type: ["string", "null"]
+
+    AiOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        submissionId:
+          type: integer
+        masterListing:
+          type: ["string", "null"]
+        shortListing:
+          type: ["string", "null"]
+        proHorseMatchListing:
+          type: ["string", "null"]
+        socialCaption:
+          type: ["string", "null"]
+        hashtags:
+          type: ["string", "null"]
+        buyerSummary:
+          type: ["string", "null"]
+        keySellingPoints:
+          type: ["string", "null"]
+        reelOverlayText:
+          type: ["string", "null"]
+        reelBrief:
+          type: ["string", "null"]
+        tags:
+          type: ["string", "null"]
+        generatedAt:
+          type: ["string", "null"]
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+      required:
+        - id
+        - submissionId
+
+    UpdateAiOutputBody:
+      type: object
+      properties:
+        masterListing:
+          type: ["string", "null"]
+        shortListing:
+          type: ["string", "null"]
+        proHorseMatchListing:
+          type: ["string", "null"]
+        socialCaption:
+          type: ["string", "null"]
+        hashtags:
+          type: ["string", "null"]
+        buyerSummary:
+          type: ["string", "null"]
+        keySellingPoints:
+          type: ["string", "null"]
+        reelOverlayText:
+          type: ["string", "null"]
+        reelBrief:
+          type: ["string", "null"]
+
+    MediaFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        submissionId:
+          type: integer
+        filename:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        url:
+          type: string
+        mediaType:
+          type: string
+          enum: [photo, video, document, other]
+        uploadedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - submissionId
+        - filename
+        - originalName
+        - mimeType
+        - size
+        - url
+        - mediaType
+        - uploadedAt
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+        submissionId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - submissionId
+        - content
+        - createdAt
+
+    CreateNoteBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    StatusHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        submissionId:
+          type: integer
+        fromStatus:
+          type: ["string", "null"]
+        toStatus:
+          type: string
+        changedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - submissionId
+        - toStatus
+        - changedAt
+
+    DashboardStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        byStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        recentCount:
+          type: integer
+        awaitingReview:
+          type: integer
+        published:
+          type: integer
+      required:
+        - total
+        - byStatus
+        - recentCount
+        - awaitingReview
+        - published
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        submissionId:
+          type: integer
+        filename:
+          type: string
+        mimeType:
+          type: string
+        mediaType:
+          type: string
+          enum: [photo, video, document, other]
+      required:
+        - submissionId
+        - filename
+        - mimeType
+        - mediaType
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        mediaId:
+          type: integer
+        publicUrl:
+          type: string
+      required:
+        - uploadUrl
+        - mediaId
+        - publicUrl
