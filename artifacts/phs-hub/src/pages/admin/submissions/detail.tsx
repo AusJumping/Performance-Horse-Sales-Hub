@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { 
   useGetSubmission, 
@@ -32,7 +32,7 @@ import { format } from "date-fns";
 import { 
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
-  UploadCloud, Video, Loader2, Eye
+  UploadCloud, Video, Loader2, Eye, Film
 } from "lucide-react";
 
 export default function SubmissionDetail() {
@@ -45,6 +45,69 @@ export default function SubmissionDetail() {
   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Creatomate reel state
+  const [reelRenderId, setReelRenderId] = useState<string | null>(null);
+  const [reelStatus, setReelStatus] = useState<"idle" | "pending" | "polling" | "succeeded" | "failed">("idle");
+  const [reelUrl, setReelUrl] = useState<string | null>(null);
+  const [reelError, setReelError] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopPolling(), []);
+
+  const pollReelStatus = useCallback((renderId: string) => {
+    stopPolling();
+    setReelStatus("polling");
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/submissions/${submissionId}/reel/${renderId}`);
+        if (!res.ok) throw new Error("Poll failed");
+        const data = await res.json();
+        if (data.status === "succeeded") {
+          setReelStatus("succeeded");
+          setReelUrl(data.url);
+          stopPolling();
+          toast({ title: "Reel ready!", description: "Your video has been rendered successfully." });
+        } else if (data.status === "failed") {
+          setReelStatus("failed");
+          setReelError("Render failed. Please try again.");
+          stopPolling();
+        }
+      } catch {
+        // keep polling
+      }
+    }, 5000);
+  }, [submissionId, toast]);
+
+  const handleGenerateReel = async () => {
+    setReelStatus("pending");
+    setReelError(null);
+    setReelUrl(null);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/reel`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to start render");
+      setReelRenderId(data.renderId);
+      if (data.status === "succeeded") {
+        setReelStatus("succeeded");
+        setReelUrl(data.url);
+      } else {
+        pollReelStatus(data.renderId);
+      }
+      toast({ title: "Reel render started!", description: "This usually takes 30–60 seconds." });
+    } catch (err: any) {
+      setReelStatus("failed");
+      setReelError(err.message);
+      toast({ title: "Reel failed", description: err.message, variant: "destructive" });
+    }
+  };
 
   const { data: sub, isLoading } = useGetSubmission(submissionId, {
     query: { enabled: !!submissionId, queryKey: getGetSubmissionQueryKey(submissionId) }
@@ -528,6 +591,63 @@ export default function SubmissionDetail() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Film className="h-4 w-4 text-rose-500" /> Generate Reel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Automatically produce a branded video reel using the uploaded horse photos and AI-generated overlay text via Creatomate.
+              </p>
+
+              {reelStatus === "idle" || reelStatus === "failed" ? (
+                <>
+                  <Button
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white"
+                    onClick={handleGenerateReel}
+                    data-testid="button-generateReel"
+                  >
+                    <Film className="h-4 w-4 mr-2" />
+                    {reelStatus === "failed" ? "Retry Reel" : "Generate Reel"}
+                  </Button>
+                  {reelError && (
+                    <p className="text-xs text-red-500 text-center">{reelError}</p>
+                  )}
+                </>
+              ) : reelStatus === "pending" || reelStatus === "polling" ? (
+                <div className="flex flex-col items-center gap-2 py-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-rose-500" />
+                  <p className="text-xs text-muted-foreground text-center">
+                    {reelStatus === "pending" ? "Submitting to Creatomate…" : "Rendering video… This takes ~30–60 seconds."}
+                  </p>
+                </div>
+              ) : reelStatus === "succeeded" && reelUrl ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl overflow-hidden border bg-black">
+                    <video src={reelUrl} controls className="w-full max-h-40 object-contain" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm" className="flex-1">
+                      <a href={reelUrl} target="_blank" rel="noreferrer">
+                        <Download className="h-3 w-3 mr-1" /> Download
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => { setReelStatus("idle"); setReelUrl(null); setReelRenderId(null); }}
+                    >
+                      Regenerate
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 
