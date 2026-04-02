@@ -1814,7 +1814,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
-      <div className="bg-[#24384e] text-white py-8 px-4 text-center">
+      <div className="bg-[#24384e] text-white py-8 px-4 text-center relative">
+        <a
+          href="/admin"
+          className="absolute top-3 right-3 text-[10px] text-white/20 hover:text-white/50 transition-colors select-none"
+          tabIndex={-1}
+        >
+          Staff Admin
+        </a>
         <img
           src={phsLogo}
           alt="Performance Horse Sales logo"
