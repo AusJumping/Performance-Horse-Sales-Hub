@@ -1820,9 +1820,6 @@ export default function Home() {
           alt="Performance Horse Sales logo"
           className="mx-auto mb-4 h-28 w-28 rounded-full object-cover shadow-lg"
         />
-        <p className="text-amber-400 text-xs font-semibold uppercase tracking-widest mb-1">
-          Australia &amp; New Zealand
-        </p>
         <h1 className="text-2xl sm:text-3xl font-bold">Performance Horse Sales</h1>
         <p className="text-blue-200 text-sm mt-1">Marketing Form — Official Seller Submission</p>
       </div>
