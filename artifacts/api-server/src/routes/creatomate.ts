@@ -118,17 +118,22 @@ router.post("/submissions/:id/reel", async (req, res) => {
     });
   }
 
-  const title =
-    aiOutput?.reelOverlayText?.split("\n").filter(Boolean)[0] ||
-    [
-      submission.horseName,
-      submission.breed,
-      submission.age ? `${submission.age} yo` : null,
-      submission.height ? `${submission.height}hh` : null,
-      submission.askingPrice || null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+  // Send all overlay lines (stripping "1." numbering), or fallback to horse info
+  const title = aiOutput?.reelOverlayText
+    ? aiOutput.reelOverlayText
+        .split("\n")
+        .map((line) => line.replace(/^\d+\.\s*/, "").trim())
+        .filter(Boolean)
+        .join("\n")
+    : [
+        submission.horseName,
+        submission.breed,
+        submission.age ? `${submission.age} yo` : null,
+        submission.height ? `${submission.height}hh` : null,
+        submission.askingPrice || null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
   const PLACEHOLDER = "https://creatomate.com/files/assets/82c2f851-ebc6-426b-ba42-158df4293368";
   const img1 = photos[0]?.url ?? PLACEHOLDER;
