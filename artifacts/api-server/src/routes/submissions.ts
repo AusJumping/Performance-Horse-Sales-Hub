@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { eq, desc, like, and, sql } from "drizzle-orm";
 import { z } from "zod/v4";
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const router: IRouter = Router();
 
@@ -255,6 +256,35 @@ router.post("/:id/notes", async (req, res) => {
     .returning();
 
   res.status(201).json(note);
+});
+
+// Delete submission (cascade: GCS media files + all related DB records)
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [existing] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!existing) return res.status(404).json({ error: "Not found" });
+
+  // Delete media files from GCS first (best-effort — don't fail if GCS errors)
+  const mediaFiles = await db.select().from(mediaFilesTable).where(eq(mediaFilesTable.submissionId, id));
+  if (mediaFiles.length > 0) {
+    const storage = new ObjectStorageService();
+    await Promise.allSettled(
+      mediaFiles
+        .filter((f) => f.storagePath?.startsWith("/objects/"))
+        .map((f) => storage.deleteObject(f.storagePath!))
+    );
+  }
+
+  // Delete all related DB records then the submission itself
+  await db.delete(mediaFilesTable).where(eq(mediaFilesTable.submissionId, id));
+  await db.delete(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+  await db.delete(notesTable).where(eq(notesTable.submissionId, id));
+  await db.delete(statusHistoryTable).where(eq(statusHistoryTable.submissionId, id));
+  await db.delete(submissionsTable).where(eq(submissionsTable.id, id));
+
+  res.json({ ok: true });
 });
 
 export default router;

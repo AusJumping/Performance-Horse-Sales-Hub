@@ -5,21 +5,44 @@ import AdminLayout from "@/components/layout/admin-layout";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Eye } from "lucide-react";
+import { Search, SlidersHorizontal, Eye, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 export default function SubmissionsList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useListSubmissions({
     status: statusFilter === "all" ? undefined : statusFilter,
     search: search || undefined,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/submissions/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete submission");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["submissions"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      toast({ title: "Submission deleted" });
+      setDeleteTarget(null);
+    },
+    onError: () => toast({ title: "Error", description: "Could not delete submission.", variant: "destructive" }),
   });
 
   const getStatusBadge = (status: string) => {
@@ -125,12 +148,23 @@ export default function SubmissionsList() {
                     </TableCell>
                     <TableCell>{getStatusBadge(sub.status)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
-                        <Link href={`/admin/submissions/${sub.id}`}>
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">View Details</span>
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                          <Link href={`/admin/submissions/${sub.id}`}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View Details</span>
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget({ id: sub.id, name: sub.horseName || "Unnamed" })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -139,6 +173,28 @@ export default function SubmissionsList() {
           </Table>
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete submission?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{deleteTarget?.name}</strong> and all associated
+              media files, AI content, and notes. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

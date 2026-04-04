@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { 
   useGetSubmission, 
   useUpdateSubmission, 
@@ -18,7 +18,7 @@ import {
   getListSubmissionMediaQueryKey,
   getGetAiOutputQueryKey
 } from "@workspace/api-client-react";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -41,6 +45,23 @@ export default function SubmissionDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  const [, navigate] = useLocation();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/submissions/${submissionId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast({ title: "Submission deleted" });
+      navigate("/admin/submissions");
+    },
+    onError: () => toast({ title: "Error", description: "Could not delete submission.", variant: "destructive" }),
+  });
+
   const [newNote, setNewNote] = useState("");
   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -351,6 +372,14 @@ export default function SubmissionDetail() {
             <Link href={`/admin/submissions/${sub.id}/ai`}>
               <Sparkles className="mr-2 h-4 w-4" /> AI Content
             </Link>
+          </Button>
+          <Button
+            variant="outline"
+            className="text-destructive border-destructive hover:bg-destructive/10"
+            onClick={() => setShowDeleteDialog(true)}
+            data-testid="button-deleteSubmission"
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
           </Button>
         </div>
       </div>
@@ -762,6 +791,28 @@ export default function SubmissionDetail() {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this submission?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{sub.horseName || "Unnamed Horse"}</strong> and all associated
+              media files, AI content, and notes. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete Submission"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

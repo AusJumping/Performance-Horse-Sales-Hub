@@ -175,6 +175,22 @@ export class ObjectStorageService {
     return `/objects/${entityId}`;
   }
 
+  async deleteObject(objectPath: string): Promise<void> {
+    if (!objectPath.startsWith("/objects/")) {
+      throw new Error(`Invalid object path: ${objectPath}`);
+    }
+    const entityId = objectPath.slice("/objects/".length);
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) entityDir = `${entityDir}/`;
+    const fullPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const url = await signObjectURL({ bucketName, objectName, method: "DELETE", ttlSec: 60 });
+    const resp = await fetch(url, { method: "DELETE" });
+    if (!resp.ok && resp.status !== 404) {
+      throw new Error(`Failed to delete object: ${resp.status}`);
+    }
+  }
+
   async getObjectEntityDownloadURL(objectPath: string, ttlSec: number = 900): Promise<string> {
     // Build the GCS path directly without an existence check — avoids an extra
     // authenticated round-trip that can fail or time out in production.
