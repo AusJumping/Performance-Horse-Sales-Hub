@@ -36,7 +36,7 @@ async function getTemplate(id: number) {
 
 // POST /api/reel-templates
 router.post("/reel-templates", async (req, res) => {
-  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, logoField, logoUrl, apiVersion } = req.body;
   if (!name || !apiKey || !templateId) {
     return res.status(400).json({ error: "name, apiKey and templateId are required." });
   }
@@ -63,6 +63,8 @@ router.post("/reel-templates", async (req, res) => {
       ...(image2Field !== undefined && { image2Field }),
       ...(image3Field !== undefined && { image3Field }),
       ...(image4Field !== undefined && { image4Field }),
+      ...(logoField !== undefined && { logoField }),
+      ...(logoUrl !== undefined && { logoUrl }),
       ...(apiVersion !== undefined && { apiVersion }),
     })
     .returning();
@@ -73,7 +75,7 @@ router.post("/reel-templates", async (req, res) => {
 router.patch("/reel-templates/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, logoField, logoUrl, apiVersion } = req.body;
   if (isDefault) {
     await db.update(reelTemplatesTable).set({ isDefault: false });
   }
@@ -95,6 +97,8 @@ router.patch("/reel-templates/:id", async (req, res) => {
   if (image2Field !== undefined) updates.image2Field = image2Field;
   if (image3Field !== undefined) updates.image3Field = image3Field;
   if (image4Field !== undefined) updates.image4Field = image4Field;
+  if (logoField !== undefined) updates.logoField = logoField;
+  if (logoUrl !== undefined) updates.logoUrl = logoUrl;
   if (apiVersion !== undefined) updates.apiVersion = apiVersion;
   if (Object.keys(updates).length === 0) {
     return res.status(400).json({ error: "No fields to update." });
@@ -237,6 +241,8 @@ router.post("/submissions/:id/reel", async (req, res) => {
   // Only add brand/website fields if configured (some templates don't have them)
   if (template.brandTextField) modifications[template.brandTextField] = BRAND_NAME;
   if (template.websiteTextField) modifications[template.websiteTextField] = WEBSITE;
+  // Logo image — only add if both the field name and URL are configured
+  if (template.logoField && template.logoUrl) modifications[template.logoField] = template.logoUrl;
 
   console.log(`[reel] sending modifications to Creatomate:`, JSON.stringify(modifications, null, 2));
 

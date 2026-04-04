@@ -27,6 +27,8 @@ interface ReelTemplate {
   image2Field: string;
   image3Field: string;
   image4Field: string;
+  logoField: string;
+  logoUrl: string;
   apiVersion: string;
   createdAt: string;
 }
@@ -55,6 +57,8 @@ const EMPTY_FORM = {
   image2Field: "Image-2.source",
   image3Field: "Image-3.source",
   image4Field: "",
+  logoField: "",
+  logoUrl: "",
   apiVersion: "v1",
 };
 
@@ -169,6 +173,8 @@ export default function ReelTemplatesSettings() {
       image2Field: t.image2Field ?? "Image-2.source",
       image3Field: t.image3Field ?? "Image-3.source",
       image4Field: t.image4Field ?? "",
+      logoField: t.logoField ?? "",
+      logoUrl: t.logoUrl ?? "",
       apiVersion: t.apiVersion ?? "v1",
     });
     setShowForm(true);
@@ -301,6 +307,35 @@ export default function ReelTemplatesSettings() {
                       value={form.image4Field}
                       onChange={(e) => setForm({ ...form, image4Field: e.target.value })}
                     />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Logo
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  If your template has a logo element, enter its element name and the public URL of your logo image. The logo must be reachable from the internet.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Logo Element Name</label>
+                    <Input
+                      placeholder="e.g. Logo.source"
+                      value={form.logoField}
+                      onChange={(e) => setForm({ ...form, logoField: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">From your Creatomate template editor</p>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Logo URL</label>
+                    <Input
+                      placeholder="https://your-domain.com/phs-logo.jpg"
+                      value={form.logoUrl}
+                      onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground">Must be a publicly accessible URL</p>
                   </div>
                 </div>
               </div>

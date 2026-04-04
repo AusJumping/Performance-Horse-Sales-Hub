@@ -31,6 +31,9 @@ export const reelTemplatesTable = pgTable("reel_templates", {
   image2Field: text("image2_field").notNull().default("Image-2.source"),
   image3Field: text("image3_field").notNull().default("Image-3.source"),
   image4Field: text("image4_field").notNull().default(""),
+  // Logo image: element name in template + publicly accessible URL
+  logoField: text("logo_field").notNull().default(""),
+  logoUrl: text("logo_url").notNull().default(""),
   // Creatomate API version: "v1" or "v2"
   apiVersion: text("api_version").notNull().default("v1"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
