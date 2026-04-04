@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useCreateSubmission } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -203,6 +203,7 @@ const STEPS = [
   "Handling, Feeding & Medical",
   "Health Records & Vet",
   "Sale Details & Declaration",
+  "Upload Photos & Videos",
 ];
 
 // ─── Form State Type ──────────────────────────────────────────────────────────
@@ -421,6 +422,11 @@ export default function Home() {
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Partial<Record<keyof FD, string>>>({});
   const [fd, setFd] = useState<FD>(SAMPLE);
+  const [submissionId, setSubmissionId] = useState<number | null>(null);
+  const [uploadedMedia, setUploadedMedia] = useState<{ id: number; url: string; name: string; mimeType: string }[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; done: boolean }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setField =
     <K extends keyof FD>(key: K) =>
@@ -548,7 +554,7 @@ export default function Home() {
       return;
     }
     try {
-      await createSubmission.mutateAsync({
+      const result = await createSubmission.mutateAsync({
         data: {
           formData: fd as unknown as Record<string, unknown>,
           sellerName: `${fd.firstName} ${fd.secondName}`.trim(),
@@ -565,11 +571,73 @@ export default function Home() {
           discipline: fd.disciplines.join(", "),
         },
       });
-      setLocation("/thank-you");
+      setSubmissionId((result as { id: number }).id);
+      setStep(10);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       toast({ title: "Submission failed. Please try again.", variant: "destructive" });
     }
   };
+
+  const handleUploadFiles = useCallback(async (files: File[]) => {
+    if (!submissionId || !files.length) return;
+    const entries = files.map(f => ({ name: f.name, done: false }));
+    setUploadingFiles(prev => [...prev, ...entries]);
+
+    await Promise.all(files.map(async (file) => {
+      const mediaType = file.type.startsWith("image/") ? "photo"
+        : file.type.startsWith("video/") ? "video"
+        : "document";
+      try {
+        const urlRes = await fetch("/api/media/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ submissionId, filename: file.name, mimeType: file.type, mediaType }),
+        });
+        if (!urlRes.ok) throw new Error("Failed to get upload URL");
+        const { uploadUrl, mediaId, publicUrl } = await urlRes.json();
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
+        if (!uploadRes.ok) throw new Error("Upload failed");
+
+        await fetch(`/api/media/upload/${mediaId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ size: file.size }),
+        });
+
+        setUploadedMedia(prev => [...prev, { id: mediaId, url: publicUrl, name: file.name, mimeType: file.type }]);
+        setUploadingFiles(prev => prev.map(u => u.name === file.name ? { ...u, done: true } : u));
+      } catch {
+        toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
+        setUploadingFiles(prev => prev.filter(u => u.name !== file.name));
+      }
+    }));
+  }, [submissionId, toast]);
+
+  const handleFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) handleUploadFiles(files);
+    e.target.value = "";
+  }, [handleUploadFiles]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => setIsDragging(false), []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) handleUploadFiles(files);
+  }, [handleUploadFiles]);
 
   // ─── Step Content ──────────────────────────────────────────────────────────
 
@@ -1695,6 +1763,117 @@ export default function Home() {
           </div>
         );
 
+      // ── STEP 10: Upload Photos & Videos ────────────────────────────────
+      case 10: {
+        const activeUploads = uploadingFiles.filter(u => !u.done);
+        const photos = uploadedMedia.filter(m => m.mimeType.startsWith("image/"));
+        const videos = uploadedMedia.filter(m => m.mimeType.startsWith("video/"));
+        const others = uploadedMedia.filter(m => !m.mimeType.startsWith("image/") && !m.mimeType.startsWith("video/"));
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-[#24384e] mb-1">Upload Photos &amp; Videos</h2>
+              <p className="text-sm text-stone-600">
+                Add photos and videos of your horse to speed up the listing process. High-quality photos and a short video will help us create a standout listing. You can upload multiple files at once.
+              </p>
+            </div>
+
+            {/* Drop zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors select-none ${
+                isDragging
+                  ? "border-[#24384e] bg-[#24384e]/5"
+                  : "border-stone-300 hover:border-[#24384e] hover:bg-stone-50"
+              }`}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="text-4xl">📷</div>
+                <div>
+                  <p className="font-semibold text-stone-700">Drag &amp; drop files here, or click to browse</p>
+                  <p className="text-xs text-stone-500 mt-1">Photos (JPG, PNG, HEIC) and Videos (MP4, MOV) — up to 100 MB each</p>
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleFilePick}
+              />
+            </div>
+
+            {/* In-progress uploads */}
+            {activeUploads.length > 0 && (
+              <div className="space-y-2">
+                {activeUploads.map((u) => (
+                  <div key={u.name} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5">
+                    <div className="w-4 h-4 rounded-full border-2 border-[#24384e] border-t-transparent animate-spin shrink-0" />
+                    <span className="text-sm text-stone-600 truncate">{u.name}</span>
+                    <span className="ml-auto text-xs text-stone-400 shrink-0">Uploading…</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Uploaded photos grid */}
+            {photos.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Photos ({photos.length})</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {photos.map((m) => (
+                    <div key={m.id} className="relative aspect-square rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                      <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[10px] px-1.5 py-0.5 truncate">{m.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Uploaded videos list */}
+            {videos.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Videos ({videos.length})</p>
+                <div className="space-y-2">
+                  {videos.map((m) => (
+                    <div key={m.id} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5">
+                      <span className="text-lg">🎬</span>
+                      <span className="text-sm text-stone-700 truncate">{m.name}</span>
+                      <span className="ml-auto text-xs text-green-600 font-medium shrink-0">✓ Uploaded</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Other files */}
+            {others.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Other files ({others.length})</p>
+                <div className="space-y-2">
+                  {others.map((m) => (
+                    <div key={m.id} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5">
+                      <span className="text-lg">📄</span>
+                      <span className="text-sm text-stone-700 truncate">{m.name}</span>
+                      <span className="ml-auto text-xs text-green-600 font-medium shrink-0">✓ Uploaded</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {uploadedMedia.length === 0 && activeUploads.length === 0 && (
+              <p className="text-center text-sm text-stone-400 italic">No files uploaded yet — you can also add them later via WhatsApp on 0428239317.</p>
+            )}
+          </div>
+        );
+      }
+
       // ── STEP 9: Sale Details & Declaration ─────────────────────────────────
       case 9:
         return (
@@ -1858,14 +2037,14 @@ export default function Home() {
             <button
               type="button"
               onClick={back}
-              disabled={step === 0}
+              disabled={step === 0 || step === 10}
               data-testid="button-back"
               className="px-5 py-2 rounded-md border border-stone-300 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Back
             </button>
 
-            {step < STEPS.length - 1 ? (
+            {step < 9 ? (
               <button
                 type="button"
                 onClick={next}
@@ -1874,7 +2053,7 @@ export default function Home() {
               >
                 Next
               </button>
-            ) : (
+            ) : step === 9 ? (
               <button
                 type="button"
                 onClick={submit}
@@ -1883,6 +2062,16 @@ export default function Home() {
                 className="px-6 py-2 rounded-md bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {createSubmission.isPending ? "Submitting..." : "Submit Listing"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLocation("/thank-you")}
+                disabled={uploadingFiles.some(u => !u.done)}
+                data-testid="button-finish"
+                className="px-6 py-2 rounded-md bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {uploadingFiles.some(u => !u.done) ? "Uploading…" : "Finish Submission"}
               </button>
             )}
           </div>
