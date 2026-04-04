@@ -203,6 +203,8 @@ router.post("/submissions/:id/reel", async (req, res) => {
   if (template.brandTextField) modifications[template.brandTextField] = BRAND_NAME;
   if (template.websiteTextField) modifications[template.websiteTextField] = WEBSITE;
 
+  console.log(`[reel] sending modifications to Creatomate:`, JSON.stringify(modifications, null, 2));
+
   const apiVersion = template.apiVersion ?? "v1";
   const renderRes = await fetch(`https://api.creatomate.com/${apiVersion}/renders`, {
     method: "POST",
@@ -230,16 +232,18 @@ router.post("/submissions/:id/reel", async (req, res) => {
 });
 
 // GET /api/submissions/:id/reel/:renderId — poll render status
-// Body or query: templateId (needed to pick the right API key)
+// Body or query: templateId (needed to pick the right API key + version)
 router.get("/submissions/:id/reel/:renderId", async (req, res) => {
   const templateDbId = parseInt((req.query.templateId as string) ?? "0");
   const { renderId } = req.params;
 
   let apiKey: string | undefined;
+  let apiVersion = "v1";
 
   if (!isNaN(templateDbId) && templateDbId > 0) {
     const template = await getTemplate(templateDbId);
     apiKey = template?.apiKey;
+    if (template?.apiVersion) apiVersion = template.apiVersion;
   }
 
   // Fallback to env var for backward compat
@@ -249,7 +253,7 @@ router.get("/submissions/:id/reel/:renderId", async (req, res) => {
     return res.status(503).json({ error: "No API key available for this template." });
   }
 
-  const statusRes = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
+  const statusRes = await fetch(`https://api.creatomate.com/${apiVersion}/renders/${renderId}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
 
@@ -266,6 +270,58 @@ router.get("/submissions/:id/reel/:renderId", async (req, res) => {
     url: render.url ?? null,
     previewUrl: render.snapshot_url ?? null,
   });
+});
+
+// GET /api/submissions/:id/reel/:renderId/download — proxy video for true file download
+router.get("/submissions/:id/reel/:renderId/download", async (req, res) => {
+  const { id, renderId } = req.params;
+  const templateDbId = parseInt((req.query.templateId as string) ?? "0");
+
+  let apiKey: string | undefined;
+  let apiVersion = "v1";
+  if (!isNaN(templateDbId) && templateDbId > 0) {
+    const template = await getTemplate(templateDbId);
+    apiKey = template?.apiKey;
+    if (template?.apiVersion) apiVersion = template.apiVersion;
+  }
+  if (!apiKey) apiKey = process.env.CREATOMATE_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: "No API key" });
+
+  // Fetch the render to get the video URL
+  const statusRes = await fetch(`https://api.creatomate.com/${apiVersion}/renders/${renderId}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!statusRes.ok) return res.status(502).json({ error: "Failed to fetch render status" });
+  const render = await statusRes.json();
+
+  if (render.status !== "succeeded" || !render.url) {
+    return res.status(400).json({ error: "Render not ready or has no URL" });
+  }
+
+  // Stream the video from Creatomate with a download header
+  const videoRes = await fetch(render.url);
+  if (!videoRes.ok) return res.status(502).json({ error: "Failed to fetch video from Creatomate" });
+
+  const contentType = videoRes.headers.get("content-type") ?? "video/mp4";
+  const fileName = `reel-submission-${id}.mp4`;
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+  if (videoRes.headers.get("content-length")) {
+    res.setHeader("Content-Length", videoRes.headers.get("content-length")!);
+  }
+
+  const reader = videoRes.body?.getReader();
+  if (!reader) return res.status(502).end();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(Buffer.from(value));
+    }
+    res.end();
+  } catch {
+    res.end();
+  }
 });
 
 export default router;

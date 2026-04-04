@@ -699,7 +699,10 @@ export default function SubmissionDetail() {
                   </div>
                   <div className="flex gap-2">
                     <Button asChild variant="outline" size="sm" className="flex-1">
-                      <a href={reelUrl} target="_blank" rel="noreferrer">
+                      <a
+                        href={`${import.meta.env.BASE_URL}api/submissions/${id}/reel/${reelRenderId}/download?templateId=${selectedTemplateId}`}
+                        download={`reel-submission-${id}.mp4`}
+                      >
                         <Download className="h-3 w-3 mr-1" /> Download
                       </a>
                     </Button>
