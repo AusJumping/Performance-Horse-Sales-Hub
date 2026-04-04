@@ -15,6 +15,14 @@ interface ReelTemplate {
   apiKey: string;
   templateId: string;
   isDefault: boolean;
+  overlayTextField: string;
+  brandTextField: string;
+  websiteTextField: string;
+  image1Field: string;
+  image2Field: string;
+  image3Field: string;
+  image4Field: string;
+  apiVersion: string;
   createdAt: string;
 }
 
@@ -33,6 +41,11 @@ const EMPTY_FORM = {
   overlayTextField: "Title.text",
   brandTextField: "Brand.text",
   websiteTextField: "Website.text",
+  image1Field: "Image-1.source",
+  image2Field: "Image-2.source",
+  image3Field: "Image-3.source",
+  image4Field: "",
+  apiVersion: "v1",
 };
 
 export default function ReelTemplatesSettings() {
@@ -134,9 +147,14 @@ export default function ReelTemplatesSettings() {
       apiKey: "",
       templateId: t.templateId,
       isDefault: t.isDefault,
-      overlayTextField: (t as any).overlayTextField ?? "Title.text",
-      brandTextField: (t as any).brandTextField ?? "Brand.text",
-      websiteTextField: (t as any).websiteTextField ?? "Website.text",
+      overlayTextField: t.overlayTextField ?? "Title.text",
+      brandTextField: t.brandTextField ?? "Brand.text",
+      websiteTextField: t.websiteTextField ?? "Website.text",
+      image1Field: t.image1Field ?? "Image-1.source",
+      image2Field: t.image2Field ?? "Image-2.source",
+      image3Field: t.image3Field ?? "Image-3.source",
+      image4Field: t.image4Field ?? "",
+      apiVersion: t.apiVersion ?? "v1",
     });
     setShowForm(true);
   };
@@ -206,30 +224,88 @@ export default function ReelTemplatesSettings() {
                   onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Creatomate Template ID *</label>
-                <Input
-                  placeholder="e.g. 7a86f03f-2c95-4c5c-abf0-5c769043fba6"
-                  value={form.templateId}
-                  onChange={(e) => setForm({ ...form, templateId: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Creatomate Template ID *</label>
+                  <Input
+                    placeholder="e.g. d98214c7-f4e1-4051-93b4-3aed6c5cdaec"
+                    value={form.templateId}
+                    onChange={(e) => setForm({ ...form, templateId: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">API Version</label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={form.apiVersion}
+                    onChange={(e) => setForm({ ...form, apiVersion: e.target.value })}
+                  >
+                    <option value="v1">v1</option>
+                    <option value="v2">v2</option>
+                  </select>
+                  <p className="text-[10px] text-muted-foreground">Check your Creatomate integration code</p>
+                </div>
               </div>
+
               <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Creatomate Element Field Names
+                  Image Source Field Names
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  These must match the element names in your Creatomate template exactly. Find them in the template editor.
+                  Element names for photo slots — copy from your Creatomate template editor. Leave blank to skip a slot.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Image 1</label>
+                    <Input
+                      placeholder="e.g. Main-Image.source"
+                      value={form.image1Field}
+                      onChange={(e) => setForm({ ...form, image1Field: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Image 2</label>
+                    <Input
+                      placeholder="e.g. Slide-1-Image.source"
+                      value={form.image2Field}
+                      onChange={(e) => setForm({ ...form, image2Field: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Image 3</label>
+                    <Input
+                      placeholder="e.g. Slide-2-Image.source"
+                      value={form.image3Field}
+                      onChange={(e) => setForm({ ...form, image3Field: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Image 4 (optional)</label>
+                    <Input
+                      placeholder="e.g. Slide-3-Image.source"
+                      value={form.image4Field}
+                      onChange={(e) => setForm({ ...form, image4Field: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Text Field Names
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Leave brand/website blank if they don't exist in your template.
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Overlay Text field</label>
+                    <label className="text-xs font-medium text-muted-foreground">Overlay Text</label>
                     <Input
                       placeholder="Title.text"
                       value={form.overlayTextField}
                       onChange={(e) => setForm({ ...form, overlayTextField: e.target.value })}
                     />
-                    <p className="text-[10px] text-muted-foreground">All reel overlay lines go here</p>
+                    <p className="text-[10px] text-muted-foreground">Horse name &amp; details</p>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Brand field</label>
@@ -251,6 +327,7 @@ export default function ReelTemplatesSettings() {
                   </div>
                 </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <input
                   id="isDefault"
@@ -295,6 +372,7 @@ export default function ReelTemplatesSettings() {
                           <Star className="h-2.5 w-2.5 fill-rose-500 text-rose-500" /> Default
                         </Badge>
                       )}
+                      <Badge variant="secondary" className="text-[10px]">{t.apiVersion ?? "v1"}</Badge>
                     </div>
                     {t.description && (
                       <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
@@ -304,7 +382,9 @@ export default function ReelTemplatesSettings() {
                         Template: <span className="text-foreground">{t.templateId}</span>
                       </span>
                       <span className="text-[11px] font-mono text-muted-foreground">
-                        Key: <span className="text-foreground">{t.apiKey}</span>
+                        Images: <span className="text-foreground">
+                          {[t.image1Field, t.image2Field, t.image3Field, t.image4Field].filter(Boolean).join(", ")}
+                        </span>
                       </span>
                     </div>
                   </div>

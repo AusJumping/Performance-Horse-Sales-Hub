@@ -36,7 +36,7 @@ async function getTemplate(id: number) {
 
 // POST /api/reel-templates
 router.post("/reel-templates", async (req, res) => {
-  const { name, description, apiKey, templateId, isDefault } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
   if (!name || !apiKey || !templateId) {
     return res.status(400).json({ error: "name, apiKey and templateId are required." });
   }
@@ -45,7 +45,21 @@ router.post("/reel-templates", async (req, res) => {
   }
   const [created] = await db
     .insert(reelTemplatesTable)
-    .values({ name, description: description ?? null, apiKey, templateId, isDefault: !!isDefault })
+    .values({
+      name,
+      description: description ?? null,
+      apiKey,
+      templateId,
+      isDefault: !!isDefault,
+      ...(overlayTextField !== undefined && { overlayTextField }),
+      ...(brandTextField !== undefined && { brandTextField }),
+      ...(websiteTextField !== undefined && { websiteTextField }),
+      ...(image1Field !== undefined && { image1Field }),
+      ...(image2Field !== undefined && { image2Field }),
+      ...(image3Field !== undefined && { image3Field }),
+      ...(image4Field !== undefined && { image4Field }),
+      ...(apiVersion !== undefined && { apiVersion }),
+    })
     .returning();
   res.status(201).json({ ...created, apiKey: `••••••${created.apiKey.slice(-6)}` });
 });
@@ -54,7 +68,7 @@ router.post("/reel-templates", async (req, res) => {
 router.patch("/reel-templates/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
   if (isDefault) {
     await db.update(reelTemplatesTable).set({ isDefault: false });
   }
@@ -67,6 +81,11 @@ router.patch("/reel-templates/:id", async (req, res) => {
   if (overlayTextField !== undefined) updates.overlayTextField = overlayTextField;
   if (brandTextField !== undefined) updates.brandTextField = brandTextField;
   if (websiteTextField !== undefined) updates.websiteTextField = websiteTextField;
+  if (image1Field !== undefined) updates.image1Field = image1Field;
+  if (image2Field !== undefined) updates.image2Field = image2Field;
+  if (image3Field !== undefined) updates.image3Field = image3Field;
+  if (image4Field !== undefined) updates.image4Field = image4Field;
+  if (apiVersion !== undefined) updates.apiVersion = apiVersion;
   if (Object.keys(updates).length === 0) {
     return res.status(400).json({ error: "No fields to update." });
   }
@@ -164,24 +183,28 @@ router.post("/submissions/:id/reel", async (req, res) => {
     return PLACEHOLDER;
   };
 
-  const [img1, img2, img3] = await Promise.all([
+  const [img1, img2, img3, img4] = await Promise.all([
     getPhotoUrl(photos[0], undefined),
     getPhotoUrl(photos[1], photos[0]),
     getPhotoUrl(photos[2], photos[0]),
+    getPhotoUrl(photos[3] ?? photos[2] ?? photos[0], photos[0]),
   ]);
 
   // Use the field names configured for this specific template
   const modifications: Record<string, string> = {
-    "Image-1.source": img1,
-    "Image-2.source": img2,
-    "Image-3.source": img3,
     [template.overlayTextField]: title,
   };
+  // Image source fields — only add if the field name is configured
+  if (template.image1Field) modifications[template.image1Field] = img1;
+  if (template.image2Field) modifications[template.image2Field] = img2;
+  if (template.image3Field) modifications[template.image3Field] = img3;
+  if (template.image4Field) modifications[template.image4Field] = img4;
   // Only add brand/website fields if configured (some templates don't have them)
   if (template.brandTextField) modifications[template.brandTextField] = BRAND_NAME;
   if (template.websiteTextField) modifications[template.websiteTextField] = WEBSITE;
 
-  const renderRes = await fetch("https://api.creatomate.com/v1/renders", {
+  const apiVersion = template.apiVersion ?? "v1";
+  const renderRes = await fetch(`https://api.creatomate.com/${apiVersion}/renders`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
