@@ -176,9 +176,16 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityDownloadURL(objectPath: string, ttlSec: number = 900): Promise<string> {
-    const file = await this.getObjectEntityFile(objectPath);
-    const bucketName = file.bucket.name;
-    const objectName = file.name;
+    // Build the GCS path directly without an existence check — avoids an extra
+    // authenticated round-trip that can fail or time out in production.
+    if (!objectPath.startsWith("/objects/")) {
+      throw new Error(`Invalid object path: ${objectPath}`);
+    }
+    const entityId = objectPath.slice("/objects/".length);
+    let entityDir = this.getPrivateObjectDir();
+    if (!entityDir.endsWith("/")) entityDir = `${entityDir}/`;
+    const fullPath = `${entityDir}${entityId}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
     return signObjectURL({ bucketName, objectName, method: "GET", ttlSec });
   }
 

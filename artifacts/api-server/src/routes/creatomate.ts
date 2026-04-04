@@ -149,12 +149,19 @@ router.post("/submissions/:id/reel", async (req, res) => {
   const getPhotoUrl = async (photo: (typeof photos)[0] | undefined, fallback: (typeof photos)[0] | undefined) => {
     const p = photo ?? fallback;
     if (!p) return PLACEHOLDER;
-    try {
-      if (p.storagePath && p.storagePath.startsWith("/objects/")) {
-        return await storageService.getObjectEntityDownloadURL(p.storagePath, 900);
+    if (p.storagePath && p.storagePath.startsWith("/objects/")) {
+      try {
+        const url = await storageService.getObjectEntityDownloadURL(p.storagePath, 900);
+        console.log(`[reel] presigned URL generated for ${p.storagePath}: ${url.slice(0, 80)}...`);
+        return url;
+      } catch (err) {
+        console.error(`[reel] failed to generate presigned URL for ${p.storagePath}:`, err);
       }
-    } catch {}
-    return p.url ?? PLACEHOLDER;
+    }
+    // storagePath missing or presign failed — fall back to placeholder so
+    // Creatomate gets a valid image rather than an inaccessible relative URL
+    console.warn(`[reel] using placeholder for photo id=${p.id}, url=${p.url}`);
+    return PLACEHOLDER;
   };
 
   const [img1, img2, img3] = await Promise.all([
