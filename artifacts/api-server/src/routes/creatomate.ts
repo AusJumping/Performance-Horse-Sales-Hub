@@ -36,7 +36,7 @@ async function getTemplate(id: number) {
 
 // POST /api/reel-templates
 router.post("/reel-templates", async (req, res) => {
-  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
   if (!name || !apiKey || !templateId) {
     return res.status(400).json({ error: "name, apiKey and templateId are required." });
   }
@@ -52,6 +52,11 @@ router.post("/reel-templates", async (req, res) => {
       templateId,
       isDefault: !!isDefault,
       ...(overlayTextField !== undefined && { overlayTextField }),
+      ...(text2Field !== undefined && { text2Field }),
+      ...(text3Field !== undefined && { text3Field }),
+      ...(text4Field !== undefined && { text4Field }),
+      ...(text5Field !== undefined && { text5Field }),
+      ...(text6Field !== undefined && { text6Field }),
       ...(brandTextField !== undefined && { brandTextField }),
       ...(websiteTextField !== undefined && { websiteTextField }),
       ...(image1Field !== undefined && { image1Field }),
@@ -68,7 +73,7 @@ router.post("/reel-templates", async (req, res) => {
 router.patch("/reel-templates/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-  const { name, description, apiKey, templateId, isDefault, overlayTextField, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
+  const { name, description, apiKey, templateId, isDefault, overlayTextField, text2Field, text3Field, text4Field, text5Field, text6Field, brandTextField, websiteTextField, image1Field, image2Field, image3Field, image4Field, apiVersion } = req.body;
   if (isDefault) {
     await db.update(reelTemplatesTable).set({ isDefault: false });
   }
@@ -79,6 +84,11 @@ router.patch("/reel-templates/:id", async (req, res) => {
   if (templateId !== undefined) updates.templateId = templateId;
   if (isDefault !== undefined) updates.isDefault = !!isDefault;
   if (overlayTextField !== undefined) updates.overlayTextField = overlayTextField;
+  if (text2Field !== undefined) updates.text2Field = text2Field;
+  if (text3Field !== undefined) updates.text3Field = text3Field;
+  if (text4Field !== undefined) updates.text4Field = text4Field;
+  if (text5Field !== undefined) updates.text5Field = text5Field;
+  if (text6Field !== undefined) updates.text6Field = text6Field;
   if (brandTextField !== undefined) updates.brandTextField = brandTextField;
   if (websiteTextField !== undefined) updates.websiteTextField = websiteTextField;
   if (image1Field !== undefined) updates.image1Field = image1Field;
@@ -190,10 +200,35 @@ router.post("/submissions/:id/reel", async (req, res) => {
     getPhotoUrl(photos[3] ?? photos[2] ?? photos[0], photos[0]),
   ]);
 
-  // Use the field names configured for this specific template
-  const modifications: Record<string, string> = {
-    [template.overlayTextField]: title,
-  };
+  // Split overlay text lines evenly across all configured text slots
+  const overlayLines = title
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const textSlots = [
+    template.overlayTextField,
+    template.text2Field,
+    template.text3Field,
+    template.text4Field,
+    template.text5Field,
+    template.text6Field,
+  ].filter(Boolean) as string[];
+
+  const modifications: Record<string, string> = {};
+
+  if (textSlots.length === 1) {
+    // Only one field — put everything in it
+    modifications[textSlots[0]] = overlayLines.join("\n");
+  } else {
+    // Distribute lines as evenly as possible across slots
+    const linesPerSlot = Math.ceil(overlayLines.length / textSlots.length);
+    textSlots.forEach((field, i) => {
+      const chunk = overlayLines.slice(i * linesPerSlot, (i + 1) * linesPerSlot);
+      if (chunk.length > 0) modifications[field] = chunk.join("\n");
+    });
+  }
+
   // Image source fields — only add if the field name is configured
   if (template.image1Field) modifications[template.image1Field] = img1;
   if (template.image2Field) modifications[template.image2Field] = img2;

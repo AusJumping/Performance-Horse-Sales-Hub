@@ -15,8 +15,15 @@ export const reelTemplatesTable = pgTable("reel_templates", {
   apiKey: text("api_key").notNull(),
   templateId: text("template_id").notNull(),
   isDefault: boolean("is_default").notNull().default(false),
-  // Creatomate element field names — different templates use different names
+  // Creatomate text element field names — different templates use different names
+  // overlayTextField is text slot 1; text2-6 are additional slide text slots.
+  // Overlay lines are split evenly across all configured (non-empty) text slots.
   overlayTextField: text("overlay_text_field").notNull().default("Title.text"),
+  text2Field: text("text2_field").notNull().default(""),
+  text3Field: text("text3_field").notNull().default(""),
+  text4Field: text("text4_field").notNull().default(""),
+  text5Field: text("text5_field").notNull().default(""),
+  text6Field: text("text6_field").notNull().default(""),
   brandTextField: text("brand_text_field").notNull().default("Brand.text"),
   websiteTextField: text("website_text_field").notNull().default("Website.text"),
   // Image source field names (leave empty to skip that slot)

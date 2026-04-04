@@ -16,6 +16,11 @@ interface ReelTemplate {
   templateId: string;
   isDefault: boolean;
   overlayTextField: string;
+  text2Field: string;
+  text3Field: string;
+  text4Field: string;
+  text5Field: string;
+  text6Field: string;
   brandTextField: string;
   websiteTextField: string;
   image1Field: string;
@@ -39,6 +44,11 @@ const EMPTY_FORM = {
   templateId: "",
   isDefault: false,
   overlayTextField: "Title.text",
+  text2Field: "",
+  text3Field: "",
+  text4Field: "",
+  text5Field: "",
+  text6Field: "",
   brandTextField: "Brand.text",
   websiteTextField: "Website.text",
   image1Field: "Image-1.source",
@@ -148,6 +158,11 @@ export default function ReelTemplatesSettings() {
       templateId: t.templateId,
       isDefault: t.isDefault,
       overlayTextField: t.overlayTextField ?? "Title.text",
+      text2Field: t.text2Field ?? "",
+      text3Field: t.text3Field ?? "",
+      text4Field: t.text4Field ?? "",
+      text5Field: t.text5Field ?? "",
+      text6Field: t.text6Field ?? "",
       brandTextField: t.brandTextField ?? "Brand.text",
       websiteTextField: t.websiteTextField ?? "Website.text",
       image1Field: t.image1Field ?? "Image-1.source",
@@ -295,18 +310,21 @@ export default function ReelTemplatesSettings() {
                   Text Field Names
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Leave brand/website blank if they don't exist in your template.
+                  Listing text lines are split evenly across all non-empty text slots (1–6). Add more slots to put different text on each slide. Leave brand/website blank if not in your template.
                 </p>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Overlay Text</label>
-                    <Input
-                      placeholder="Title.text"
-                      value={form.overlayTextField}
-                      onChange={(e) => setForm({ ...form, overlayTextField: e.target.value })}
-                    />
-                    <p className="text-[10px] text-muted-foreground">Horse name &amp; details</p>
-                  </div>
+                  {(["overlayTextField", "text2Field", "text3Field", "text4Field", "text5Field", "text6Field"] as const).map((key, i) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">Text Slot {i + 1}{i === 0 ? " *" : " (optional)"}</label>
+                      <Input
+                        placeholder={i === 0 ? "Title.text" : `e.g. Slide-${i}-Text.text`}
+                        value={form[key]}
+                        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-1 border-t">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Brand field</label>
                     <Input
