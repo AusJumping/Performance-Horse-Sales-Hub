@@ -7,8 +7,10 @@ import {
   reelTemplatesTable,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const router: IRouter = Router();
+const storageService = new ObjectStorageService();
 
 const BRAND_NAME = "Performance Horse Sales";
 const WEBSITE = "performancehorsesales.com.au";
@@ -142,9 +144,24 @@ router.post("/submissions/:id/reel", async (req, res) => {
         .join(" · ");
 
   const PLACEHOLDER = "https://creatomate.com/files/assets/82c2f851-ebc6-426b-ba42-158df4293368";
-  const img1 = photos[0]?.url ?? PLACEHOLDER;
-  const img2 = photos[1]?.url ?? photos[0]?.url ?? PLACEHOLDER;
-  const img3 = photos[2]?.url ?? photos[0]?.url ?? PLACEHOLDER;
+
+  // Generate presigned GCS GET URLs so Creatomate can fetch them from any environment
+  const getPhotoUrl = async (photo: (typeof photos)[0] | undefined, fallback: (typeof photos)[0] | undefined) => {
+    const p = photo ?? fallback;
+    if (!p) return PLACEHOLDER;
+    try {
+      if (p.storagePath && p.storagePath.startsWith("/objects/")) {
+        return await storageService.getObjectEntityDownloadURL(p.storagePath, 900);
+      }
+    } catch {}
+    return p.url ?? PLACEHOLDER;
+  };
+
+  const [img1, img2, img3] = await Promise.all([
+    getPhotoUrl(photos[0], undefined),
+    getPhotoUrl(photos[1], photos[0]),
+    getPhotoUrl(photos[2], photos[0]),
+  ]);
 
   // Use the field names configured for this specific template
   const modifications: Record<string, string> = {

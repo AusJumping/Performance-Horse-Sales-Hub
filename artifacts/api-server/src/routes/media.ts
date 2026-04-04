@@ -2,35 +2,12 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { mediaFilesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 
 const router: IRouter = Router();
+const storageService = new ObjectStorageService();
 
-// Ensure uploads dir exists
-const uploadsDir = process.env.UPLOADS_DIR ?? "/tmp/phs-uploads";
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${unique}${ext}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
-});
-
-// Get upload URL (store locally and return info)
+// POST /api/media/upload-url — generate a GCS presigned PUT URL
 router.post("/upload-url", async (req, res) => {
   const { submissionId, filename, mimeType, mediaType } = req.body as {
     submissionId: number;
@@ -43,54 +20,50 @@ router.post("/upload-url", async (req, res) => {
     return res.status(400).json({ error: "submissionId and filename required" });
   }
 
-  const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const ext = path.extname(filename);
-  const storedFilename = `${unique}${ext}`;
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : "";
+  try {
+    const uploadUrl = await storageService.getObjectEntityUploadURL();
 
-  // Pre-register the media file
-  const [media] = await db
-    .insert(mediaFilesTable)
-    .values({
-      submissionId,
-      filename: storedFilename,
-      originalName: filename,
-      mimeType: mimeType ?? "application/octet-stream",
-      size: 0,
-      url: `${baseUrl}/api/media/files/${storedFilename}`,
-      storagePath: path.join(uploadsDir, storedFilename),
-      mediaType: mediaType ?? "photo",
-    })
-    .returning();
+    // Extract UUID from the signed URL path (always ends with /uploads/{uuid})
+    const urlObj = new URL(uploadUrl);
+    const pathParts = urlObj.pathname.split("/");
+    const uuid = pathParts[pathParts.length - 1];
+    const objectPath = `/objects/uploads/${uuid}`;
 
-  res.json({
-    uploadUrl: `${baseUrl}/api/media/upload/${media.id}`,
-    mediaId: media.id,
-    publicUrl: media.url,
-  });
+    const [media] = await db
+      .insert(mediaFilesTable)
+      .values({
+        submissionId,
+        filename: uuid,
+        originalName: filename,
+        mimeType: mimeType ?? "application/octet-stream",
+        size: 0,
+        url: `/api/media/serve/objects/uploads/${uuid}`,
+        storagePath: objectPath,
+        mediaType: mediaType ?? "photo",
+      })
+      .returning();
+
+    res.json({
+      uploadUrl,
+      mediaId: media.id,
+      publicUrl: media.url,
+    });
+  } catch (err) {
+    console.error("Failed to generate upload URL:", err);
+    res.status(500).json({ error: "Failed to generate upload URL" });
+  }
 });
 
-// Direct file upload endpoint
-router.post("/upload/:mediaId", upload.single("file"), async (req, res) => {
+// POST /api/media/upload/:mediaId — confirm upload, update size in DB
+router.post("/upload/:mediaId", async (req, res) => {
   const mediaId = parseInt(req.params.mediaId);
   if (isNaN(mediaId)) return res.status(400).json({ error: "Invalid media ID" });
 
-  if (!req.file) return res.status(400).json({ error: "No file provided" });
-
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : "";
+  const { size } = req.body as { size?: number };
 
   await db
     .update(mediaFilesTable)
-    .set({
-      filename: req.file.filename,
-      size: req.file.size,
-      url: `${baseUrl}/api/media/files/${req.file.filename}`,
-      storagePath: req.file.path,
-    })
+    .set({ size: size ?? 0 })
     .where(eq(mediaFilesTable.id, mediaId));
 
   const [updated] = await db
@@ -101,17 +74,67 @@ router.post("/upload/:mediaId", upload.single("file"), async (req, res) => {
   res.json(updated);
 });
 
-// Serve uploaded files
-router.get("/files/:filename", (req, res) => {
-  const filename = req.params.filename;
-  const filePath = path.join(uploadsDir, filename);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "File not found" });
+// GET /api/media/serve/objects/:uuid — stream file from GCS (uuid is the upload UUID)
+router.get("/serve/objects/uploads/:uuid", async (req, res) => {
+  const objectPath = `/objects/uploads/${req.params.uuid}`;
+  try {
+    const file = await storageService.getObjectEntityFile(objectPath);
+    const gcsResponse = await storageService.downloadObject(file, 86400);
+    gcsResponse.headers.forEach((value: string, key: string) => res.setHeader(key, value));
+    const body = gcsResponse.body;
+    if (!body) return res.status(500).end();
+    const reader = body.getReader();
+    const pump = async () => {
+      const { done, value } = await reader.read();
+      if (done) { res.end(); return; }
+      res.write(Buffer.from(value));
+      pump();
+    };
+    pump();
+  } catch (err) {
+    if (err instanceof ObjectNotFoundError) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    console.error("Error serving media:", err);
+    res.status(500).json({ error: "Failed to serve file" });
   }
-  res.sendFile(filePath);
 });
 
-// Delete media
+// GET /api/media/files/:filename — legacy route: serve by storagePath from DB
+router.get("/files/:filename", async (req, res) => {
+  const [media] = await db
+    .select()
+    .from(mediaFilesTable)
+    .where(eq(mediaFilesTable.filename, req.params.filename));
+
+  if (!media || !media.storagePath) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  try {
+    const file = await storageService.getObjectEntityFile(media.storagePath);
+    const gcsResponse = await storageService.downloadObject(file, 86400);
+    gcsResponse.headers.forEach((value: string, key: string) => res.setHeader(key, value));
+    const body = gcsResponse.body;
+    if (!body) return res.status(500).end();
+    const reader = body.getReader();
+    const pump = async () => {
+      const { done, value } = await reader.read();
+      if (done) { res.end(); return; }
+      res.write(Buffer.from(value));
+      pump();
+    };
+    pump();
+  } catch (err) {
+    if (err instanceof ObjectNotFoundError) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    console.error("Error serving media:", err);
+    res.status(500).json({ error: "Failed to serve file" });
+  }
+});
+
+// DELETE /api/media/:mediaId
 router.delete("/:mediaId", async (req, res) => {
   const mediaId = parseInt(req.params.mediaId);
   if (isNaN(mediaId)) return res.status(400).json({ error: "Invalid media ID" });
@@ -122,10 +145,6 @@ router.delete("/:mediaId", async (req, res) => {
     .where(eq(mediaFilesTable.id, mediaId));
 
   if (!media) return res.status(404).json({ error: "Not found" });
-
-  if (media.storagePath && fs.existsSync(media.storagePath)) {
-    fs.unlinkSync(media.storagePath);
-  }
 
   await db.delete(mediaFilesTable).where(eq(mediaFilesTable.id, mediaId));
 

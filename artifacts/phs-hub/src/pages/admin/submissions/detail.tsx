@@ -255,12 +255,22 @@ export default function SubmissionDetail() {
           body: JSON.stringify({ submissionId, filename: file.name, mimeType: file.type, mediaType }),
         });
         if (!urlRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl } = await urlRes.json();
+        const { uploadUrl, mediaId } = await urlRes.json();
 
-        const form = new FormData();
-        form.append("file", file);
-        const uploadRes = await fetch(uploadUrl, { method: "POST", body: form });
+        // PUT file bytes directly to GCS presigned URL
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "Content-Type": file.type },
+        });
         if (!uploadRes.ok) throw new Error("Upload failed");
+
+        // Confirm upload — update size in DB
+        await fetch(`/api/media/upload/${mediaId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ size: file.size }),
+        });
 
         setUploadingFiles(prev => prev.map(u => u.name === file.name ? { ...u, progress: 100 } : u));
       } catch (err) {
