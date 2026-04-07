@@ -149,7 +149,7 @@ export default function SubmissionsList() {
                     <TableCell>{getStatusBadge(sub.status)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" asChild className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" asChild className="h-10 w-10 p-0">
                           <Link href={`/admin/submissions/${sub.id}`}>
                             <Eye className="h-4 w-4" />
                             <span className="sr-only">View Details</span>
@@ -158,7 +158,7 @@ export default function SubmissionsList() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          className="h-10 w-10 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => setDeleteTarget({ id: sub.id, name: sub.horseName || "Unnamed" })}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -1996,7 +1996,7 @@ export default function Home() {
       <div className="bg-[#24384e] text-white py-8 px-4 text-center relative">
         <a
           href="/admin"
-          className="absolute top-3 right-3 text-[10px] text-white/20 hover:text-white/50 transition-colors select-none"
+          className="absolute top-0 right-0 p-4 text-[10px] text-white/20 hover:text-white/50 transition-colors select-none"
           tabIndex={-1}
         >
           Staff Admin
@@ -2039,7 +2039,7 @@ export default function Home() {
               onClick={back}
               disabled={step === 0 || step === 10}
               data-testid="button-back"
-              className="px-5 py-2 rounded-md border border-stone-300 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-5 py-3 rounded-md border border-stone-300 bg-white text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Back
             </button>
@@ -2049,7 +2049,7 @@ export default function Home() {
                 type="button"
                 onClick={next}
                 data-testid="button-next"
-                className="px-6 py-2 rounded-md bg-[#24384e] text-white text-sm font-semibold hover:bg-[#1a2d3f] transition-colors shadow-sm"
+                className="px-6 py-3 rounded-md bg-[#24384e] text-white text-sm font-semibold hover:bg-[#1a2d3f] transition-colors shadow-sm"
               >
                 Next
               </button>
@@ -2059,7 +2059,7 @@ export default function Home() {
                 onClick={submit}
                 disabled={createSubmission.isPending}
                 data-testid="button-submit"
-                className="px-6 py-2 rounded-md bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-50 transition-colors shadow-sm"
+                className="px-6 py-3 rounded-md bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {createSubmission.isPending ? "Submitting..." : "Submit Listing"}
               </button>
@@ -2069,7 +2069,7 @@ export default function Home() {
                 onClick={() => setLocation("/thank-you")}
                 disabled={uploadingFiles.some(u => !u.done)}
                 data-testid="button-finish"
-                className="px-6 py-2 rounded-md bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"
+                className="px-6 py-3 rounded-md bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {uploadingFiles.some(u => !u.done) ? "Uploading…" : "Finish Submission"}
               </button>

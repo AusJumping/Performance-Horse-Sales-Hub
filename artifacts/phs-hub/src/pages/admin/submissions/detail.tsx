@@ -496,14 +496,14 @@ export default function SubmissionDetail() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {photos.map(p => (
-                        <div key={p.id} className="relative group rounded-md overflow-hidden border">
-                          <img src={p.url} alt={p.originalName} className="object-cover w-full h-40" />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Button size="icon" variant="secondary" onClick={() => window.open(p.url, "_blank")}><Eye className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="destructive" onClick={() => handleDeleteMedia(p.id)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <p className="text-white text-xs truncate">{p.originalName}</p>
+                        <div key={p.id} className="rounded-md overflow-hidden border flex flex-col">
+                          <img src={p.url} alt={p.originalName} className="object-cover w-full h-36" />
+                          <div className="flex items-center justify-between px-2 py-1 bg-muted border-t">
+                            <p className="text-xs truncate flex-1 mr-1 text-muted-foreground">{p.originalName}</p>
+                            <div className="flex gap-0.5 shrink-0">
+                              <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => window.open(p.url, "_blank")}><Eye className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => handleDeleteMedia(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -528,8 +528,8 @@ export default function SubmissionDetail() {
                           <div className="flex items-center justify-between px-3 py-2 bg-muted">
                             <span className="text-sm truncate flex-1 mr-2">{v.originalName}</span>
                             <div className="flex gap-1 shrink-0">
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(v.url, "_blank")}><Download className="h-3 w-3" /></Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteMedia(v.id)}><Trash2 className="h-3 w-3" /></Button>
+                              <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => window.open(v.url, "_blank")}><Download className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => handleDeleteMedia(v.id)}><Trash2 className="h-4 w-4" /></Button>
                             </div>
                           </div>
                         </div>
