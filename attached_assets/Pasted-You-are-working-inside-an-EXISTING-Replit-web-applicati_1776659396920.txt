@@ -1,0 +1,469 @@
+You are working inside an EXISTING Replit web application prototype for a client called Performance Horse Sales Australia and New Zealand.
+
+Your job is to analyse the entire existing codebase and then improve it in SAFE, STAGED PHASES without breaking current functionality.
+
+This is not a greenfield build. There is already a prototype app with:
+- a horse listing submission form
+- a dashboard
+- AI generation for listing-related content
+- some CreatorMate-related reel experimentation
+- a general workflow already started
+
+IMPORTANT DELIVERY RULES
+
+1. First analyse the current codebase as a whole before making changes.
+2. Do NOT do one massive rewrite.
+3. Do NOT remove working features unless absolutely necessary.
+4. Implement the project in small, testable phases.
+5. After each phase, provide:
+   - what changed
+   - what files changed
+   - any database/schema changes
+   - how to test manually
+   - any risks or follow-up items
+6. Preserve existing environment variable handling.
+7. Preserve current authentication, routing, and existing integrations unless a change is explicitly required.
+8. Prefer extending the current app over rebuilding it.
+9. Use clean, maintainable, modular code.
+10. Keep all auto-publishing OFF. This system should prepare, organise, draft, and track, but not publish content automatically at this stage.
+
+BUSINESS CONTEXT
+
+Performance Horse Sales Australia and New Zealand helps horse owners market and sell horses, and helps buyers enquire about those horses.
+
+The business is run by one person, Sally. The app needs to save admin time, improve speed and consistency, centralise information, support better seller and buyer response times, and create content faster.
+
+The system must support two major public workflows:
+
+A. HORSE LISTING SUBMISSION FORM
+A seller submits a horse for possible marketing.
+
+B. EOI FORM
+A buyer submits an Expression of Interest for a specific horse listing.
+
+These are TWO separate public forms and both must exist in the system.
+
+CURRENT REAL-WORLD WORKFLOW TO SUPPORT
+
+The horse submission workflow works like this:
+1. Seller completes a detailed horse marketing form.
+2. The first form is intentionally obligation-free. Sally wants people to be able to enquire and fill it out before they are locked in.
+3. On the form, the seller can indicate either:
+   - I am happy to go ahead with the listing
+   - I would like to speak with PHS first
+4. Sally reviews the submission.
+5. Sally may call the seller if needed, but she does NOT want the seller editing their original submission after the fact.
+6. Sally wants to edit the horse information herself inside the dashboard.
+7. Once she decides to proceed, she tidies the form into a cleaned factual document called the Owner Response Certificate.
+8. She then uses the cleaned certificate to create the horse description.
+9. She sends BOTH the Owner Response Certificate and the horse description to the seller for wording approval.
+10. Ideally the seller should be able to initial, sign, or otherwise confirm approval.
+11. After approval to proceed, there should be a second-stage listing/cost agreement step so the seller is clearly agreeing to fees and terms.
+12. Only after approval should the system create the Google Drive folder structure for that horse.
+
+The EOI workflow works like this:
+1. A buyer fills out an EOI form for a specific horse.
+2. The buyer gets an automatic acknowledgement.
+3. The EOI is stored against that horse in the dashboard and in Google Drive.
+4. The EOI should also be sent to the seller automatically.
+5. Sally does NOT want to heavily filter EOIs before the seller sees them. She wants the seller to see the actual enquiries because they can reveal whether the horse is being marketed correctly.
+6. The seller then needs to be able to indicate one of three actions:
+   - I will contact this buyer
+   - This is not a suitable match
+   - Please ask for a rider video
+7. If the horse is sold pending or in vetting, new EOIs can still come in, but the acknowledgement should mention that status and optionally say the buyer will be contacted if circumstances change.
+8. Sally wants a summary document of all EOIs for each horse, but the system should not make the final buyer decision on her behalf.
+
+CRITICAL PRODUCT PRINCIPLES
+
+- No automatic publishing to website or social media.
+- The app should prepare and organise content, not auto-post it.
+- Sally reviews and edits everything.
+- The seller must NOT be allowed to modify the original submission directly after submit.
+- The original seller submission must remain locked.
+- Sally must have a separate editable working record.
+- The app must support Google Drive / Google Docs because Sally uses them heavily.
+- Google Drive folders should be created ONLY when a horse is approved to market.
+- Communication support should favour draft generation and structured templates rather than over-automation.
+- Reels are lower priority than the core workflow.
+- CreatorMate may remain in place as an experimental or optional later-stage integration.
+- This system should reduce manual copy/paste, link chasing, and scattered admin.
+
+WHAT IS ALREADY PARTLY BUILT OR EXPECTED
+
+Assume the existing prototype may already include:
+- horse submission form
+- internal dashboard
+- AI generation button or flow
+- outputs such as listing copy, captions, and reel brief
+- CreatorMate API connection or related code
+- some form of database storage
+
+You must inspect the codebase and confirm exactly what exists before making changes.
+
+TARGET STACK
+
+Use and extend the current stack in the codebase. If the stack is flexible, prefer:
+- React frontend
+- TypeScript
+- Node.js backend
+- Express or similar
+- PostgreSQL or the app’s current DB approach
+- modular services for AI, Google Drive, email, and media
+- clean API route separation
+- responsive dashboard and public form UX
+
+DO NOT change the stack unless absolutely necessary.
+
+PHASED IMPLEMENTATION STRATEGY
+
+You must analyse the whole system first, but implement in phases and PAUSE after each phase summary so the owner can test.
+
+PHASE 0: AUDIT AND STABILISE
+Before changing product behaviour:
+1. Inspect current project structure.
+2. Identify:
+   - frontend routes
+   - backend routes
+   - database models / schema
+   - current horse form
+   - current dashboard pages
+   - current AI generation functions
+   - CreatorMate integration
+   - any Google integration
+   - any email integration
+3. Create a developer summary file:
+   /docs/current-system-audit.md
+4. Add TODO comments where future staged work will plug in.
+5. Do not redesign UI yet.
+6. Refactor only where needed for safe extensibility.
+
+At the end of Phase 0, output:
+- what exists now
+- what is incomplete
+- major technical debt
+- recommended order of work
+
+PHASE 1: IMPROVE THE HORSE SUBMISSION WORKFLOW
+Implement these changes first:
+
+1. Add a seller intent field to the horse submission form:
+   - "I am happy to go ahead with the listing"
+   - "I would like to speak with PHS first"
+
+2. Extend or improve status handling so horse records can use statuses such as:
+   - new_submission
+   - awaiting_review
+   - awaiting_seller_response
+   - needs_more_information
+   - ready_to_list
+   - seller_review_sent
+   - approved_to_market
+   - live
+   - viewing_pending
+   - sold_pending
+   - in_vetting
+   - sold
+   - archived
+
+3. Lock the original seller submission as read-only.
+
+4. Create or extend a separate editable internal working record for Sally.
+   Example structure:
+   - originalSubmissionData (read-only)
+   - workingListingData (editable)
+
+5. Update the horse detail page so it clearly shows:
+   - Original submission
+   - Working record
+   - Current status
+   - Seller intent
+   - basic notes / activity if available
+
+6. Make sure AI generation uses the working record, not the locked original data.
+
+7. Add manual status changing and filtering in the dashboard.
+
+PHASE 2: OWNER RESPONSE CERTIFICATE
+Implement the Owner Response Certificate as a core feature.
+
+Requirements:
+1. Create a document/output type called Owner Response Certificate.
+2. Generate it from the working listing data.
+3. It must be factual, structured, cleaned up, and NOT salesy.
+4. It should be editable by Sally in the dashboard.
+5. It should be stored separately from the horse description.
+6. It should have states such as:
+   - not generated
+   - generated
+   - edited
+   - ready to send
+
+If AI is used here, it must:
+- clean and structure the facts
+- never invent facts
+- never exaggerate
+- never remove important behavioural or management details
+
+PHASE 3: HORSE DESCRIPTION GENERATION
+Implement a clean horse description workflow.
+
+Requirements:
+1. Generate the horse description from the latest saved Owner Response Certificate, not from raw form data.
+2. Treat this as the main reusable description for website and horse sales apps.
+3. Keep it separate from social media copy and reel content.
+4. Add dashboard tools to:
+   - generate
+   - edit
+   - save
+   - regenerate
+
+Tone:
+- premium but not cheesy
+- factual
+- clear
+- warm
+- horse-savvy
+- not overblown
+
+Important business rule:
+There is not a meaningful distinction right now between “sales app copy” and “website copy”. In practice this is one core horse description reused across platforms.
+
+PHASE 4: SELLER APPROVAL WORKFLOW
+Build a manual seller approval step.
+
+Requirements:
+1. Add a “Prepare seller approval pack” action in the dashboard.
+2. That pack should include:
+   - Owner Response Certificate
+   - horse description
+   - seller details
+   - horse details
+   - current status
+3. Add a “Send to seller” action, but keep it manual.
+4. Prefer generating a ready email draft / structured email output over fully automatic sending.
+5. Add seller approval states:
+   - not_sent
+   - sent
+   - approved
+   - changes_requested
+6. Add a notes field for seller feedback.
+7. Allow a simple signature or initials capability for approval if feasible.
+8. Preserve the existing rule that the initial form remains obligation-free.
+
+PHASE 5: COST / LISTING AGREEMENT STEP
+After Sally has approved the horse to proceed and the seller is ready to move forward, add a second-stage agreement step.
+
+Requirements:
+1. Build a cost/listing agreement workflow after Sally chooses to proceed.
+2. The seller should not sign this at the first enquiry stage.
+3. This agreement can include:
+   - horse details
+   - reference to the approved description / cleaned information
+   - fees and terms
+   - signature / initials
+4. Store this signed agreement in the horse record and later in Google Drive.
+5. Make clickable terms links part of this flow.
+6. Replace the need for Google Forms + Bolo Forms in this part of the workflow.
+
+PHASE 6: GOOGLE DRIVE / GOOGLE DOCS INTEGRATION
+Integrate Google Drive safely and only on approval.
+
+Requirements:
+1. Google Drive folders should only be created when a horse is moved to approved_to_market.
+2. Use environment variables only for credentials.
+3. Prevent duplicate folder creation.
+
+Folder structure:
+Top folder:
+[Horse Name]
+
+Inside it:
+- [Horse Name] - Portfolio
+- Seller Docs
+- Buyer EOIs
+
+Inside Portfolio:
+- 01 Photos
+- 02 Videos
+- 03 Results
+
+Inside Seller Docs:
+- original horse submission
+- Owner Response Certificate
+- horse description
+- seller approval / signed agreement
+- other relevant documents
+
+Inside Buyer EOIs:
+- raw EOI forms
+- rider videos if supplied
+- EOI summary
+- any structured buyer records
+
+Requirements:
+4. Save folder IDs and URLs in the database.
+5. Show links on the horse detail page.
+6. Build this so future uploads and generated docs can be stored automatically.
+7. If credentials are missing, fail gracefully with admin-visible messages.
+
+Also support future Google Docs generation for:
+- Owner Response Certificate
+- horse description export
+- EOI summary export
+- agreement documents
+
+PHASE 7: EOI PUBLIC FORM
+YES, THIS IS REQUIRED. BUILD A NEW PUBLIC ONLINE FORM FOR EOIs.
+
+This is a separate form from the horse listing form.
+
+Requirements:
+1. Create a public EOI form route for each live horse.
+2. Store EOIs against the relevant horse in the database.
+3. Include suitable fields such as:
+   - full name
+   - email
+   - phone
+   - location
+   - rider experience
+   - intended use
+   - budget
+   - message
+   - do you want a phone call
+   - optional rider video link or upload placeholder
+4. Add clear terms links that are actually clickable.
+5. Support signature or acknowledgement if needed later.
+6. On submit:
+   - save the EOI
+   - give it a submission date/time
+   - set EOI status to new
+   - create an acknowledgement email draft/body
+   - notify Sally
+   - store it under the horse record
+7. Eventually support storing it in the Buyer EOIs folder in Google Drive.
+
+PHASE 8: EOI DASHBOARD WORKFLOW
+Build internal EOI handling inside the horse record.
+
+Requirements:
+1. Add an EOI tab or section to each horse detail page.
+2. Show all EOIs with:
+   - submitted date
+   - buyer name
+   - summary fields
+   - status
+   - quick actions
+3. Add seller-action outcome fields:
+   - seller_will_contact
+   - not_suitable
+   - request_rider_video
+4. Sally does not want the system to decide which buyer is best.
+5. EOIs should generally be sent through to the seller.
+6. The seller should be able to be notified quickly and clearly.
+7. Add handling for horse states like sold_pending or in_vetting so incoming EOIs get the right acknowledgement messaging.
+8. Maintain ordering by date/time and, if useful, viewer numbering.
+
+PHASE 9: EOI SUMMARY
+Build a practical EOI summary document.
+
+Requirements:
+1. Add “Generate EOI Summary” on the horse record.
+2. It should summarise all EOIs for that horse.
+3. Keep it compact and structured.
+4. Include for each EOI:
+   - submitted date
+   - buyer name
+   - rider type / experience
+   - budget
+   - intended use
+   - key notes
+   - current outcome/status
+5. Make it editable.
+6. Store it separately from raw EOIs.
+7. Design it so it can later be exported to Google Docs or PDF.
+
+The system should not invent recommendations or make the decision for Sally.
+
+PHASE 10: COMMUNICATION HELPERS
+Reduce copy/paste and link-chasing.
+
+Build reusable email draft templates for:
+- horse submission acknowledgement
+- “I will call you” response
+- “we are proceeding with your listing”
+- seller approval pack
+- EOI acknowledgement
+- not suitable response
+- request rider video response
+- sold pending response
+- horse available again response
+
+Requirements:
+1. Let Sally preview subject and body in the dashboard.
+2. Let her copy them easily or mark them as sent.
+3. If Gmail integration already exists, scaffold draft creation, but do not force live sending.
+4. Use tone rules:
+   - warm
+   - clear
+   - not cheesy
+   - professional
+   - horse-savvy
+   - concise
+   - fact-based
+
+PHASE 11: MEDIA AND REELS
+Keep this lower priority than the core workflow.
+
+Requirements:
+1. Preserve any existing CreatorMate integration.
+2. Do not spend major effort refining automatic reels until the core system is stable.
+3. Add the ability for Sally to choose which photos/videos are intended for reel use.
+4. Make uploads and downloads easy.
+5. If possible, store uploaded media into the Google Drive horse folders.
+6. Treat reel generation as optional/manual for now.
+7. Do not auto-post reels to social media.
+
+KNOWN PREFERENCES / CONSTRAINTS
+- Sally may contact people by phone/text in real life and wants the app to support, not replace, that.
+- She uses Gmail and Google Drive heavily.
+- She likes templates and drafted responses.
+- She wants buyers and sellers to be more self-sufficient.
+- Buyers should be able to access portfolio links easily from the website.
+- Portfolio links should be shareable with coaches and others.
+- Terms links must be clickable.
+- Signature handling should be built in so external form tools can eventually be dropped.
+- Reels can be exported for manual posting.
+- Social media should be drafted only, not auto-posted.
+
+AI CONTENT RULES
+For all AI generation:
+- never invent facts
+- never invent breeding
+- never invent competition history
+- never exaggerate
+- never create fake suitability claims
+- omit missing data rather than guess
+- do not use cheesy horse sales clichés
+- keep outputs factual, polished, warm, and premium
+
+NEEDED DELIVERABLES AS YOU WORK
+At the end of each phase provide:
+1. summary of what changed
+2. files changed
+3. any schema migrations
+4. how to test
+5. anything I need to configure
+6. what phase should come next
+
+IMPORTANT IMPLEMENTATION APPROACH
+Start with Phase 0 and Phase 1 only.
+Do not rush ahead into all later phases in one giant pass.
+However, you must understand the whole roadmap so your design decisions support later phases cleanly.
+
+Please begin by:
+1. auditing the codebase
+2. creating /docs/current-system-audit.md
+3. proposing the safest implementation plan
+4. then implementing Phase 1 only
+5. then pausing and telling me exactly how to test it
