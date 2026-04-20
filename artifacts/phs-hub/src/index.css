@@ -92,7 +92,7 @@
   --sidebar-primary-foreground: 211 37% 15%;
   --sidebar-accent: 211 37% 22%;
   --sidebar-accent-foreground: 40 20% 95%;
-  --sidebar-ring: 45 80% 50%;
+  --sidebar-ring: 20 55% 45%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 211 37% 15%;
@@ -109,9 +109,9 @@
   --muted: 40 20% 92%;
   --muted-foreground: 155 10% 40%;
 
-  /* Gold Accent */
-  --accent: 45 80% 50%;
-  --accent-foreground: 155 30% 15%;
+  /* Warm Copper Accent */
+  --accent: 20 55% 45%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 80% 40%;
   --destructive-foreground: 0 0% 100%;
@@ -189,15 +189,15 @@
   --muted: 155 30% 18%;
   --muted-foreground: 40 10% 70%;
 
-  --accent: 45 80% 50%;
-  --accent-foreground: 155 30% 15%;
+  --accent: 20 55% 52%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 60% 40%;
   --destructive-foreground: 0 0% 100%;
 
   --chart-1: 40 30% 85%;
   --chart-2: 35 30% 60%;
-  --chart-3: 45 80% 50%;
+  --chart-3: 20 55% 52%;
   --chart-4: 155 20% 40%;
   --chart-5: 35 40% 75%;
 }

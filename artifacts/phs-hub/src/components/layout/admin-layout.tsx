@@ -36,7 +36,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex h-14 items-center px-4 lg:h-16">
         <Link href="/admin" className="flex items-center gap-2.5 font-semibold">
           <img src={phsLogo} alt="PHS logo" className="h-8 w-8 rounded-full object-cover" />
-          <span className="text-base text-primary font-semibold">PHS Admin</span>
+          <span className="text-base text-sidebar-foreground font-semibold">PHS Admin</span>
         </Link>
       </div>
 
@@ -51,8 +51,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-primary"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -61,27 +61,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             );
           })}
 
-          <div className="my-2 border-t" />
+          <div className="my-2 border-t border-sidebar-border" />
 
           <Link
             href="/admin/settings/reel-templates"
             className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${
               location.startsWith("/admin/settings/reel-templates")
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-primary"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             }`}
           >
             <Film className="h-4 w-4" />
             Reel Templates
           </Link>
 
-          <div className="my-2 border-t" />
+          <div className="my-2 border-t border-sidebar-border" />
 
           <a
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-primary transition-all"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all"
           >
             <ClipboardList className="h-4 w-4" />
             <span>View Seller Form</span>
@@ -92,8 +92,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="mt-auto p-4">
         <Button
-          variant="outline"
-          className="w-full justify-start gap-2 text-muted-foreground"
+          variant="ghost"
+          className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
