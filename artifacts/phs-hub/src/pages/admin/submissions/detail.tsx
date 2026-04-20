@@ -637,11 +637,24 @@ export default function SubmissionDetail() {
               <Download className="mr-2 h-4 w-4" /> PDF
             </a>
           </Button>
-          <Button asChild variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="button-aiContent">
-            <Link href={`/admin/submissions/${sub.id}/ai`}>
-              <Sparkles className="mr-2 h-4 w-4" /> AI Content
-            </Link>
-          </Button>
+          {sub.aiGenerated ? (
+            <Button asChild variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="button-aiContent">
+              <Link href={`/admin/submissions/${sub.id}/ai`}>
+                <Sparkles className="mr-2 h-4 w-4" /> View AI Content
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              onClick={handleGenerateAi}
+              disabled={generateAi.isPending}
+              data-testid="button-aiContent"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {generateAi.isPending ? "Generating…" : "Generate AI Content"}
+            </Button>
+          )}
           <Button
             variant="outline"
             className="text-destructive border-destructive hover:bg-destructive/10"
@@ -1771,14 +1784,23 @@ export default function SubmissionDetail() {
                 </Badge>
               </div>
               {!sub.aiGenerated && (
-                <Button onClick={handleGenerateAi} disabled={generateAi.isPending} className="w-full" data-testid="button-generateAi">
-                  {generateAi.isPending ? "Generating..." : "Generate AI Content"}
-                </Button>
+                <div className="space-y-2">
+                  <Button onClick={handleGenerateAi} disabled={generateAi.isPending} className="w-full bg-accent text-accent-foreground hover:bg-accent/90" data-testid="button-generateAi">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    {generateAi.isPending ? "Generating…" : "Generate AI Content"}
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground">Content will appear in the editor once generated.</p>
+                </div>
               )}
               {sub.aiGenerated && (
                 <div className="space-y-2">
-                  <Button asChild className="w-full" variant="outline">
-                    <Link href={`/admin/submissions/${sub.id}/ai`}>Review & Edit Outputs</Link>
+                  <Button asChild className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                    <Link href={`/admin/submissions/${sub.id}/ai`}>
+                      <Sparkles className="mr-2 h-4 w-4" /> View & Edit AI Content
+                    </Link>
+                  </Button>
+                  <Button onClick={handleGenerateAi} disabled={generateAi.isPending} variant="outline" className="w-full" size="sm">
+                    {generateAi.isPending ? "Regenerating…" : "Regenerate"}
                   </Button>
                   <Separator className="my-4" />
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Quick Exports</p>
