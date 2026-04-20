@@ -96,7 +96,7 @@ export default function Dashboard() {
                   <div key={sub.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex flex-col gap-0.5">
                       <span className="font-medium text-lg">{sub.horseName || 'Unnamed Horse'}</span>
-                      <span className="text-sm font-semibold text-foreground">{sub.askingPrice || 'Price N/A'}</span>
+                      <span className="text-sm text-foreground">{sub.askingPrice || 'Price N/A'}</span>
                       <span className="text-xs text-muted-foreground">{sub.sellerName}</span>
                     </div>
                     <div className="flex items-center gap-4">
