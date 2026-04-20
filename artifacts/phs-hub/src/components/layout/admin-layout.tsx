@@ -7,7 +7,8 @@ import {
   Menu,
   ExternalLink,
   ClipboardList,
-  Film
+  Film,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -24,6 +25,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Submissions", href: "/admin/submissions", icon: List },
+    { name: "EOIs", href: "/admin/eois", icon: Mail },
   ];
 
   const handleLogout = () => {

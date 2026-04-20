@@ -9,6 +9,8 @@ import Home from "./pages/home";
 import ThankYou from "./pages/thank-you";
 import EoiPage from "./pages/eoi";
 import EoiThankYou from "./pages/eoi-thank-you";
+import EoisList from "./pages/admin/eois/index";
+import EoiDetail from "./pages/admin/eois/detail";
 import AdminLogin from "./pages/admin/login";
 import Dashboard from "./pages/admin/dashboard";
 import SubmissionsList from "./pages/admin/submissions/index";
@@ -54,6 +56,18 @@ function Router() {
         <AdminGuard>
           <ReelTemplatesSettings />
         </AdminGuard>
+      </Route>
+      <Route path="/admin/eois">
+        <AdminGuard>
+          <EoisList />
+        </AdminGuard>
+      </Route>
+      <Route path="/admin/eois/:id">
+        {() => (
+          <AdminGuard>
+            <EoiDetail />
+          </AdminGuard>
+        )}
       </Route>
       <Route component={NotFound} />
     </Switch>
