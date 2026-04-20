@@ -302,6 +302,7 @@ export default function SubmissionDetail() {
     horseName: string; breed: string; age: string; colour: string;
     height: string; sex: string; askingPrice: string; location: string;
     discipline: string; adminNotes: string;
+    sellerName: string; sellerEmail: string; sellerPhone: string;
   } | null>(null);
 
   const [wrSaving, setWrSaving] = useState(false);
@@ -321,6 +322,9 @@ export default function SubmissionDetail() {
         location: String(sub.location ?? wr.location ?? ""),
         discipline: String(sub.discipline ?? wr.discipline ?? ""),
         adminNotes: String(wr.adminNotes ?? ""),
+        sellerName: String(sub.sellerName ?? wr.sellerName ?? ""),
+        sellerEmail: String(sub.sellerEmail ?? wr.sellerEmail ?? ""),
+        sellerPhone: String(sub.sellerPhone ?? wr.sellerPhone ?? ""),
       });
     }
   }, [sub]);
@@ -754,6 +758,26 @@ export default function SubmissionDetail() {
                       <div className="space-y-1.5 sm:col-span-2">
                         <Label htmlFor="wr-discipline" className="text-sm font-medium">Discipline(s)</Label>
                         <Input id="wr-discipline" {...wrField("discipline")} className="bg-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Seller Contact Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="wr-sellerName" className="text-sm font-medium">Seller Name</Label>
+                        <Input id="wr-sellerName" {...wrField("sellerName")} className="bg-white" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="wr-sellerPhone" className="text-sm font-medium">Phone</Label>
+                        <Input id="wr-sellerPhone" {...wrField("sellerPhone")} className="bg-white" />
+                      </div>
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label htmlFor="wr-sellerEmail" className="text-sm font-medium">Email</Label>
+                        <Input id="wr-sellerEmail" type="email" {...wrField("sellerEmail")} className="bg-white" />
                       </div>
                     </div>
                   </div>

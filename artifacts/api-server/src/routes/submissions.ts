@@ -183,7 +183,7 @@ router.patch("/:id/working-record", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
-  const { workingRecord, horseName, breed, age, colour, height, sex, askingPrice, location, discipline } = req.body as {
+  const { workingRecord, horseName, breed, age, colour, height, sex, askingPrice, location, discipline, sellerName, sellerEmail, sellerPhone } = req.body as {
     workingRecord?: Record<string, unknown>;
     horseName?: string;
     breed?: string;
@@ -194,6 +194,9 @@ router.patch("/:id/working-record", async (req, res) => {
     askingPrice?: string;
     location?: string;
     discipline?: string;
+    sellerName?: string;
+    sellerEmail?: string;
+    sellerPhone?: string;
   };
 
   const [existing] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
@@ -212,6 +215,9 @@ router.patch("/:id/working-record", async (req, res) => {
   if (askingPrice !== undefined) updates.askingPrice = askingPrice;
   if (location !== undefined) updates.location = location;
   if (discipline !== undefined) updates.discipline = discipline;
+  if (sellerName !== undefined) updates.sellerName = sellerName;
+  if (sellerEmail !== undefined) updates.sellerEmail = sellerEmail;
+  if (sellerPhone !== undefined) updates.sellerPhone = sellerPhone;
 
   const [updated] = await db
     .update(submissionsTable)
