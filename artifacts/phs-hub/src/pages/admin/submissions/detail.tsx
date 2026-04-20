@@ -39,9 +39,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
-  UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown
+  UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
+  MailOpen, PackageCheck, AlertCircle
 } from "lucide-react";
 import { openOrcPrintWindow } from "@/lib/orc-pdf";
+import { openApprovalPackWindow, generateSellerEmailDraft } from "@/lib/approval-pack";
 
 const ALL_STATUSES = [
   { value: "new", label: "New" },
@@ -620,6 +622,9 @@ export default function SubmissionDetail() {
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="approval-pack" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-approval-pack">
+                <PackageCheck className="h-4 w-4 mr-1.5 text-violet-600" /> Approval Pack
+              </TabsTrigger>
               <TabsTrigger value="form" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-form">
                 <Lock className="h-3.5 w-3.5 mr-1.5 opacity-60" /> Original Submission
               </TabsTrigger>
@@ -984,6 +989,134 @@ export default function SubmissionDetail() {
               </Card>
             </TabsContent>
 
+            {/* ── Seller Approval Pack ── */}
+            <TabsContent value="approval-pack" className="pt-6 space-y-4">
+
+              {/* Readiness checklist */}
+              <Card>
+                <CardHeader className="pb-3 border-b bg-muted/30">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <PackageCheck className="h-4 w-4 text-violet-600" /> Seller Approval Pack
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    A compiled document sent to the seller for review before listing. Includes the listing description and factual certificate for their approval.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                  {/* Readiness indicators */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pack Contents</p>
+                    <div className="flex items-center gap-2 text-sm">
+                      {orcStatus === "ready_to_send" ? (
+                        <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                      ) : orcStatus === "not_generated" ? (
+                        <AlertCircle className="h-4 w-4 text-stone-400 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                      )}
+                      <span className={orcStatus === "ready_to_send" ? "text-emerald-800 font-medium" : orcStatus === "not_generated" ? "text-stone-400" : "text-amber-700"}>
+                        Owner Response Certificate
+                        {orcStatus === "not_generated" && <span className="ml-1 text-xs font-normal text-muted-foreground">— not yet generated</span>}
+                        {orcStatus !== "not_generated" && orcStatus !== "ready_to_send" && <span className="ml-1 text-xs font-normal text-amber-600">— not marked ready</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      {hdStatus === "ready_to_use" ? (
+                        <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                      ) : hdStatus === "not_generated" ? (
+                        <AlertCircle className="h-4 w-4 text-stone-400 shrink-0" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                      )}
+                      <span className={hdStatus === "ready_to_use" ? "text-emerald-800 font-medium" : hdStatus === "not_generated" ? "text-stone-400" : "text-amber-700"}>
+                        Horse Description
+                        {hdStatus === "not_generated" && <span className="ml-1 text-xs font-normal text-muted-foreground">— not yet generated</span>}
+                        {hdStatus !== "not_generated" && hdStatus !== "ready_to_use" && <span className="ml-1 text-xs font-normal text-amber-600">— not marked ready</span>}
+                      </span>
+                    </div>
+                  </div>
+
+                  {(orcStatus === "not_generated" || hdStatus === "not_generated") && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                      Generate and save both the ORC and Horse Description before sending the approval pack.
+                    </p>
+                  )}
+
+                  <div className="flex flex-col gap-2 pt-1">
+                    <Button
+                      className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+                      disabled={!orcDraft || !hdDraft}
+                      onClick={() => openApprovalPackWindow({
+                        horseName: sub.horseName ?? "Horse",
+                        breed: sub.breed,
+                        sellerName: sub.sellerName,
+                        askingPrice: sub.askingPrice,
+                        submissionId: sub.id,
+                        orcText: orcDraft,
+                        horseDescription: hdDraft,
+                      })}
+                      data-testid="button-downloadApprovalPack"
+                    >
+                      <FileDown className="h-4 w-4 mr-2" /> Download Approval Pack PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={!orcDraft || !hdDraft}
+                      onClick={() => {
+                        const email = generateSellerEmailDraft({
+                          horseName: sub.horseName ?? "Horse",
+                          breed: sub.breed,
+                          sellerName: sub.sellerName,
+                          askingPrice: sub.askingPrice,
+                          submissionId: sub.id,
+                          orcText: orcDraft,
+                          horseDescription: hdDraft,
+                        });
+                        navigator.clipboard.writeText(email);
+                        toast({ title: "Email draft copied to clipboard" });
+                      }}
+                      data-testid="button-copyEmailDraft"
+                    >
+                      <Copy className="h-4 w-4 mr-2" /> Copy Email Draft
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Email draft preview */}
+              {orcDraft && hdDraft && (
+                <Card>
+                  <CardHeader className="pb-3 border-b">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MailOpen className="h-4 w-4 text-violet-500" /> Email Draft Preview
+                    </CardTitle>
+                    <CardDescription>
+                      Copy this email body and send to the seller. Edit as needed before sending.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <Textarea
+                      readOnly
+                      rows={28}
+                      className="font-mono text-xs leading-relaxed bg-stone-50 resize-y"
+                      value={generateSellerEmailDraft({
+                        horseName: sub.horseName ?? "Horse",
+                        breed: sub.breed,
+                        sellerName: sub.sellerName,
+                        askingPrice: sub.askingPrice,
+                        submissionId: sub.id,
+                        orcText: orcDraft,
+                        horseDescription: hdDraft,
+                      })}
+                      data-testid="textarea-emailDraft"
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+            </TabsContent>
+
             <TabsContent value="form" className="pt-6">
               <Card>
                 <CardHeader className="bg-amber-50/60 pb-4 border-b border-amber-200">
@@ -1321,6 +1454,68 @@ export default function SubmissionDetail() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Approval Pack Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <PackageCheck className="h-4 w-4 text-violet-600" /> Approval Pack
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">ORC</span>
+                <span className={`font-semibold ${orcStatus === "ready_to_send" ? "text-emerald-700" : orcStatus === "not_generated" ? "text-stone-400" : "text-amber-600"}`}>
+                  {orcStatus === "ready_to_send" ? "Ready" : orcStatus === "not_generated" ? "Not generated" : "Not finalised"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Horse Description</span>
+                <span className={`font-semibold ${hdStatus === "ready_to_use" ? "text-emerald-700" : hdStatus === "not_generated" ? "text-stone-400" : "text-amber-600"}`}>
+                  {hdStatus === "ready_to_use" ? "Ready" : hdStatus === "not_generated" ? "Not generated" : "Not finalised"}
+                </span>
+              </div>
+              <div className="pt-1 flex flex-col gap-2">
+                <Button
+                  size="sm"
+                  className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+                  disabled={!orcDraft || !hdDraft}
+                  onClick={() => openApprovalPackWindow({
+                    horseName: sub.horseName ?? "Horse",
+                    breed: sub.breed,
+                    sellerName: sub.sellerName,
+                    askingPrice: sub.askingPrice,
+                    submissionId: sub.id,
+                    orcText: orcDraft,
+                    horseDescription: hdDraft,
+                  })}
+                >
+                  <FileDown className="h-3 w-3 mr-2" /> Download Pack PDF
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={!orcDraft || !hdDraft}
+                  onClick={() => {
+                    const email = generateSellerEmailDraft({
+                      horseName: sub.horseName ?? "Horse",
+                      breed: sub.breed,
+                      sellerName: sub.sellerName,
+                      askingPrice: sub.askingPrice,
+                      submissionId: sub.id,
+                      orcText: orcDraft,
+                      horseDescription: hdDraft,
+                    });
+                    navigator.clipboard.writeText(email);
+                    toast({ title: "Email draft copied to clipboard" });
+                  }}
+                >
+                  <Copy className="h-3 w-3 mr-2" /> Copy Email Draft
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
