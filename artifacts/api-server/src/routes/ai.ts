@@ -170,6 +170,94 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
   }
 });
 
+// ── Owner Response Certificate ────────────────────────────────────────────────
+
+// Get ORC
+router.get("/submissions/:id/orc", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [output] = await db.select().from(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+  if (!output) return res.status(404).json({ error: "No AI output record found" });
+
+  res.json({
+    ownerResponseCert: output.ownerResponseCert,
+    orcStatus: output.orcStatus,
+    orcUpdatedAt: output.orcUpdatedAt,
+  });
+});
+
+// Generate ORC
+router.post("/submissions/:id/generate-orc", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!submission) return res.status(404).json({ error: "Submission not found" });
+
+  // Use workingRecord if available, fall back to formData
+  const workingRecord = submission.workingRecord as Record<string, unknown>;
+  const formData = (workingRecord && Object.keys(workingRecord).length > 0)
+    ? workingRecord
+    : submission.formData as Record<string, unknown>;
+
+  const summary = buildSubmissionSummary(submission, formData, []);
+
+  try {
+    const orc = await generateContent(orcPrompt(submission, formData, summary));
+
+    // Upsert into ai_outputs
+    const [existing] = await db.select().from(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+    if (existing) {
+      await db.update(aiOutputsTable).set({
+        ownerResponseCert: orc,
+        orcStatus: "generated",
+        orcUpdatedAt: new Date(),
+      }).where(eq(aiOutputsTable.submissionId, id));
+    } else {
+      await db.insert(aiOutputsTable).values({
+        submissionId: id,
+        ownerResponseCert: orc,
+        orcStatus: "generated",
+        orcUpdatedAt: new Date(),
+      });
+    }
+
+    res.json({ ownerResponseCert: orc, orcStatus: "generated" });
+  } catch (err) {
+    req.log.error({ err }, "ORC generation failed");
+    res.status(500).json({ error: "ORC generation failed" });
+  }
+});
+
+// Save edited ORC / update status
+router.patch("/submissions/:id/orc", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const { ownerResponseCert, orcStatus } = req.body as {
+    ownerResponseCert?: string;
+    orcStatus?: string;
+  };
+
+  const [existing] = await db.select().from(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+
+  const updates: Record<string, unknown> = { orcUpdatedAt: new Date() };
+  if (ownerResponseCert !== undefined) updates.ownerResponseCert = ownerResponseCert;
+  if (orcStatus !== undefined) updates.orcStatus = orcStatus;
+
+  if (existing) {
+    const [updated] = await db.update(aiOutputsTable).set(updates).where(eq(aiOutputsTable.submissionId, id)).returning();
+    res.json(updated);
+  } else {
+    const [created] = await db.insert(aiOutputsTable).values({
+      submissionId: id,
+      ...updates,
+    } as any).returning();
+    res.json(created);
+  }
+});
+
 async function generateContent(prompt: string): Promise<string> {
   const response = await openai.chat.completions.create({
     model: "gpt-5",
@@ -372,6 +460,71 @@ Using ONLY the information provided below, create a detailed reel brief. Include
 Base all content strictly on the submission data provided.
 
 SUBMISSION DATA:
+${summary}`;
+}
+
+function orcPrompt(
+  submission: { horseName: string | null; breed: string | null; age: string | null; colour: string | null; height: string | null; sex: string | null; askingPrice: string | null; location: string | null; discipline: string | null; sellerName: string | null },
+  formData: Record<string, unknown>,
+  summary: string
+): string {
+  // Pull structured fields for the ORC
+  const f = (key: string) => {
+    const v = formData[key];
+    return v && v !== "" ? String(v) : null;
+  };
+
+  return `You are creating an Owner Response Certificate (ORC) for Performance Horse Sales Australia and New Zealand.
+
+The ORC is a FACTUAL, STRUCTURED internal document based on information provided by the seller. It is NOT a sales document and must NOT use marketing language, adjectives, or persuasive tone. It is a clean, organised factual record used by PHS staff to verify details and later produce marketing materials.
+
+STRICT RULES:
+- Only include information that was explicitly provided by the seller
+- Do not invent, infer, or embellish any details
+- Do not use salesy language, superlatives, or adjectives
+- If a section has no data, write "Not provided" — do not skip the section
+- Use plain, factual language throughout
+- Format as a structured document with clear section headings
+
+REQUIRED SECTIONS (include all, even if data is sparse):
+
+1. HORSE DETAILS
+   - Name, breed, age, colour/markings, height, sex, registration/papers
+
+2. DISCIPLINES AND LEVEL
+   - Disciplines competed in or trained for
+   - Competition level
+
+3. COMPETITION AND PERFORMANCE HISTORY
+   - Specific results and records (only if provided)
+
+4. TRAINING AND EDUCATION
+   - Current training schedule, trainers, education background
+
+5. TEMPERAMENT AND HANDLING
+   - How the horse behaves on the ground and under saddle
+   - Float/transport, farrier, vet behaviour
+
+6. HEALTH AND VETERINARY
+   - Known health history, medications, injuries
+   - Dental, farrier, worming details
+   - Previous vet checks
+
+7. SUITABILITY
+   - Rider level and type the seller has described
+   - Any restrictions or requirements the seller has noted
+
+8. SALE DETAILS
+   - Asking price
+   - Reason for sale
+   - Ideal home described by seller
+
+9. ADDITIONAL INFORMATION
+   - Any other details provided by the seller
+
+Format each section with the heading in CAPITALS followed by bullet points or short sentences.
+
+SELLER DATA:
 ${summary}`;
 }
 

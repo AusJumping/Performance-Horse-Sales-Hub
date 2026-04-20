@@ -25,6 +25,18 @@ export const aiOutputsTable = pgTable("ai_outputs", {
   tags: text("ai_tags"),
   generatedAt: timestamp("generated_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+
+  // Owner Response Certificate (Phase 2)
+  // Factual structured document generated from workingRecord — NOT salesy
+  // States: not_generated | generated | edited | ready_to_send
+  ownerResponseCert: text("owner_response_cert"),
+  orcStatus: text("orc_status").notNull().default("not_generated"),
+  orcUpdatedAt: timestamp("orc_updated_at", { withTimezone: true }),
+
+  // Horse Description (Phase 3) — generated FROM the ORC
+  horseDescription: text("horse_description"),
+  horseDescriptionStatus: text("horse_description_status").notNull().default("not_generated"),
+  horseDescriptionUpdatedAt: timestamp("horse_description_updated_at", { withTimezone: true }),
 });
 
 export const insertAiOutputSchema = createInsertSchema(aiOutputsTable).omit({

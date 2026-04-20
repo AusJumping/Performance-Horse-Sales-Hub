@@ -217,8 +217,9 @@ export default function SubmissionDetail() {
     query: { enabled: !!submissionId, queryKey: getListSubmissionMediaQueryKey(submissionId) }
   });
 
-  const { data: aiOutput } = useGetAiOutput(submissionId, {
-    query: { enabled: !!submissionId && !!sub?.aiGenerated, queryKey: getGetAiOutputQueryKey(submissionId) }
+  const { data: aiOutput, refetch: refetchAiOutput } = useGetAiOutput(submissionId, {
+    // Always enabled so ORC can be fetched even before full AI generation
+    query: { enabled: !!submissionId, queryKey: getGetAiOutputQueryKey(submissionId) }
   });
 
   const updateStatus = useUpdateSubmission();
@@ -348,6 +349,65 @@ export default function SubmissionDetail() {
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setWrDraft((prev) => prev ? { ...prev, [field]: e.target.value } : prev),
   });
+
+  // ── Owner Response Certificate ────────────────────────────────────────────
+  const [orcDraft, setOrcDraft] = useState<string>("");
+  const [orcGenerating, setOrcGenerating] = useState(false);
+  const [orcSaving, setOrcSaving] = useState(false);
+
+  // Sync ORC draft from aiOutput when it loads
+  useEffect(() => {
+    const orc = (aiOutput as any)?.ownerResponseCert;
+    if (orc && !orcDraft) {
+      setOrcDraft(String(orc));
+    }
+  }, [aiOutput]);
+
+  const handleGenerateOrc = async () => {
+    setOrcGenerating(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/generate-orc`, { method: "POST" });
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setOrcDraft(data.ownerResponseCert ?? "");
+      refetchAiOutput();
+      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
+      toast({ title: "Owner Response Certificate generated" });
+    } catch {
+      toast({ title: "Generation failed", variant: "destructive" });
+    } finally {
+      setOrcGenerating(false);
+    }
+  };
+
+  const handleSaveOrc = async (newStatus?: string) => {
+    setOrcSaving(true);
+    try {
+      const currentOrcStatus = (aiOutput as any)?.orcStatus ?? "not_generated";
+      const status = newStatus ?? (currentOrcStatus === "generated" ? "edited" : currentOrcStatus);
+      const res = await fetch(`/api/submissions/${submissionId}/orc`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerResponseCert: orcDraft, orcStatus: newStatus ?? "edited" }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      refetchAiOutput();
+      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
+      toast({ title: newStatus === "ready_to_send" ? "Marked as ready to send" : "ORC saved" });
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setOrcSaving(false);
+    }
+  };
+
+  const orcStatus = (aiOutput as any)?.orcStatus ?? "not_generated";
+  const orcStatusLabel: Record<string, { label: string; className: string }> = {
+    not_generated: { label: "Not Generated", className: "bg-stone-100 text-stone-600 border-stone-300" },
+    generated:     { label: "Generated",     className: "bg-sky-50 text-sky-700 border-sky-400" },
+    edited:        { label: "Edited",         className: "bg-amber-50 text-amber-700 border-amber-400" },
+    ready_to_send: { label: "Ready to Send",  className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
+  };
 
   const handleDeleteMedia = (mediaId: number) => {
     if (confirm("Are you sure you want to delete this file?")) {
@@ -487,6 +547,14 @@ export default function SubmissionDetail() {
               <TabsTrigger value="working-record" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-working-record">
                 <ClipboardEdit className="h-4 w-4 mr-1.5" /> Working Record
               </TabsTrigger>
+              <TabsTrigger value="orc" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-orc">
+                <FileText className="h-4 w-4 mr-1.5" /> ORC
+                {orcStatus !== "not_generated" && (
+                  <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
+                    {orcStatusLabel[orcStatus]?.label}
+                  </span>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="form" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-form">
                 <Lock className="h-3.5 w-3.5 mr-1.5 opacity-60" /> Original Submission
               </TabsTrigger>
@@ -568,6 +636,142 @@ export default function SubmissionDetail() {
                       className="bg-white"
                     />
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Owner Response Certificate ── */}
+            <TabsContent value="orc" className="pt-6">
+              <Card>
+                <CardHeader className="pb-4 border-b">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-[#24384e]" /> Owner Response Certificate
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        A factual, structured summary generated from the working record. Not a sales document — used to verify details and produce marketing copy.
+                        {(aiOutput as any)?.orcUpdatedAt && (
+                          <span className="block mt-1 text-xs">
+                            Last updated: {format(new Date((aiOutput as any).orcUpdatedAt), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      {orcStatus === "not_generated" ? (
+                        <Button
+                          onClick={handleGenerateOrc}
+                          disabled={orcGenerating}
+                          className="bg-[#24384e] hover:bg-[#1a2d3f]"
+                          data-testid="button-generateOrc"
+                        >
+                          {orcGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          {orcGenerating ? "Generating…" : "Generate ORC"}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={handleGenerateOrc}
+                            disabled={orcGenerating}
+                            data-testid="button-regenerateOrc"
+                          >
+                            {orcGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                            Regenerate
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSaveOrc("edited")}
+                            disabled={orcSaving}
+                            data-testid="button-saveOrc"
+                          >
+                            {orcSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                            Save
+                          </Button>
+                          {orcStatus !== "ready_to_send" && (
+                            <Button
+                              onClick={() => handleSaveOrc("ready_to_send")}
+                              disabled={orcSaving}
+                              className="bg-emerald-700 hover:bg-emerald-800"
+                              data-testid="button-orcReadyToSend"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" /> Mark Ready to Send
+                            </Button>
+                          )}
+                          {orcStatus === "ready_to_send" && (
+                            <Button
+                              variant="outline"
+                              onClick={() => handleSaveOrc("edited")}
+                              disabled={orcSaving}
+                            >
+                              Reopen for Editing
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ORC status indicator */}
+                  {orcStatus !== "not_generated" && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Status:</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
+                        {orcStatusLabel[orcStatus]?.label}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs ml-auto"
+                        onClick={() => { navigator.clipboard.writeText(orcDraft); toast({ title: "ORC copied to clipboard" }); }}
+                      >
+                        <Copy className="h-3 w-3 mr-1" /> Copy
+                      </Button>
+                    </div>
+                  )}
+                </CardHeader>
+
+                <CardContent className="pt-6">
+                  {orcStatus === "not_generated" ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center">
+                        <FileText className="h-8 w-8 text-stone-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-stone-700">No ORC generated yet</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                          Generate the Owner Response Certificate from the working record. It will be structured and factual — ready for Sally to review and tidy before sending to the seller.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleGenerateOrc}
+                        disabled={orcGenerating}
+                        className="bg-[#24384e] hover:bg-[#1a2d3f] mt-2"
+                      >
+                        {orcGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                        {orcGenerating ? "Generating Owner Response Certificate…" : "Generate Owner Response Certificate"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Edit the certificate below. Changes are not saved automatically — use the Save button above.
+                        {orcStatus === "ready_to_send" && (
+                          <span className="ml-2 font-semibold text-emerald-700">This ORC is marked as ready to send to the seller.</span>
+                        )}
+                      </p>
+                      <Textarea
+                        value={orcDraft}
+                        onChange={(e) => setOrcDraft(e.target.value)}
+                        rows={30}
+                        className="font-mono text-sm leading-relaxed bg-white resize-y"
+                        placeholder="Owner Response Certificate will appear here after generation…"
+                        data-testid="textarea-orc"
+                        readOnly={orcStatus === "ready_to_send"}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -823,6 +1027,48 @@ export default function SubmissionDetail() {
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" /> Saving…
                 </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ORC Status Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#24384e]" /> Owner Response Certificate
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Status</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
+                  {orcStatusLabel[orcStatus]?.label ?? orcStatus}
+                </span>
+              </div>
+              {orcStatus === "not_generated" ? (
+                <Button
+                  className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+                  size="sm"
+                  onClick={handleGenerateOrc}
+                  disabled={orcGenerating}
+                >
+                  {orcGenerating ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
+                  {orcGenerating ? "Generating…" : "Generate ORC"}
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => { navigator.clipboard.writeText(orcDraft); toast({ title: "ORC copied" }); }}
+                  >
+                    <Copy className="h-3 w-3 mr-2" /> Copy ORC
+                  </Button>
+                  {orcStatus === "ready_to_send" && (
+                    <p className="text-xs text-emerald-700 font-medium text-center">Ready to include in seller approval pack</p>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
