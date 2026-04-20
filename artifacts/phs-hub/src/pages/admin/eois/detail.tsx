@@ -411,17 +411,28 @@ export default function EoiDetail() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3 border-b bg-muted/30">
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-accent" /> Email Drafts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">Template</label>
+          <div className="text-xs text-muted-foreground text-center">
+            Last updated {format(new Date(eoi.updatedAt), "d MMM yyyy 'at' h:mm a")}
+          </div>
+        </div>
+      </div>
+
+      {/* Email Drafts — full width below */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3 border-b bg-muted/30">
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-accent" /> Email Drafts
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+
+            {/* Left: controls */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Template</label>
                 <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                  <SelectTrigger className="text-sm h-9">
+                  <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -437,66 +448,59 @@ export default function EoiDetail() {
                 </Select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  {draft.to ? `To: ${draft.to}` : "To: (enter seller email)"}
-                </label>
-                <div className="flex gap-1.5">
-                  <input
-                    readOnly
-                    value={draft.subject}
-                    className="flex-1 rounded-md border border-input bg-muted/50 px-3 py-1.5 text-sm text-stone-700 truncate"
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="shrink-0 px-2"
-                    onClick={() => copyText(draft.subject, "Subject")}
-                  >
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">To</label>
+                <p className="text-sm text-stone-700 break-all">
+                  {draft.to || <span className="text-muted-foreground italic">Enter seller email manually</span>}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Subject</label>
+                <div className="flex gap-1.5 items-center">
+                  <p className="flex-1 text-sm text-stone-700 leading-snug">{draft.subject}</p>
+                  <Button size="sm" variant="ghost" className="shrink-0 px-2 h-7" onClick={() => copyText(draft.subject, "Subject")}>
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">Body</label>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs gap-1"
-                    onClick={() => copyText(draft.body, "Email body")}
-                  >
-                    <Copy className="h-3 w-3" /> Copy
-                  </Button>
-                </div>
-                <textarea
-                  readOnly
-                  value={draft.body}
-                  rows={8}
-                  className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-xs text-stone-700 resize-none leading-relaxed"
-                />
-              </div>
-
-              <Button
-                asChild
-                className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-0"
-                size="sm"
-              >
-                <a
-                  href={`mailto:${draft.to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
+              <div className="pt-2 space-y-2">
+                <Button
+                  onClick={() => copyText(draft.body, "Email body")}
+                  variant="outline"
+                  className="w-full gap-2"
                 >
-                  <ExternalLink className="h-3.5 w-3.5 mr-2" /> Open in Email Client
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
+                  <Copy className="h-4 w-4" /> Copy Email Body
+                </Button>
+                <Button
+                  asChild
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-0 gap-2"
+                >
+                  <a href={`mailto:${draft.to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}>
+                    <ExternalLink className="h-4 w-4" /> Open in Email Client
+                  </a>
+                </Button>
+              </div>
+            </div>
 
-          <div className="text-xs text-muted-foreground text-center">
-            Last updated {format(new Date(eoi.updatedAt), "d MMM yyyy 'at' h:mm a")}
+            {/* Right: body preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Email Body</label>
+                <span className="text-xs text-muted-foreground">Read-only preview — edit in your email client</span>
+              </div>
+              <textarea
+                readOnly
+                value={draft.body}
+                rows={16}
+                className="w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm text-stone-700 resize-none leading-relaxed font-mono"
+              />
+            </div>
+
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </AdminLayout>
   );
 }
