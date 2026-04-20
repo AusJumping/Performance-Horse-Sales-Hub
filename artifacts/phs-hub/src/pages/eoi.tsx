@@ -412,8 +412,8 @@ export default function EoiPage() {
 
         {/* Intro — shown on step 1 only */}
         {step === 1 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-sm text-stone-700 space-y-2">
-            <p className="font-semibold text-amber-800">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-stone-700 space-y-2">
+            <p className="font-semibold text-blue-900">
               Please note: this form is NOT BINDING until the Waiver and Viewing Agreement is signed and a viewing is booked.
             </p>
             <p>Contact us on <strong>0428 239 317</strong> if you don't receive a response within 12 hours.</p>
