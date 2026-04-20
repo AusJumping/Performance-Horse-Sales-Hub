@@ -21,7 +21,7 @@ export function StatusBadge({ status }: { status: string }) {
   const cls = MAP[status] ?? "bg-muted text-muted-foreground border-muted";
   const label = status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls}`}>
       {label}
     </span>
   );
