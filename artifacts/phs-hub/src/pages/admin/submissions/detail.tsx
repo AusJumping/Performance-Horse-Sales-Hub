@@ -470,12 +470,12 @@ export default function SubmissionDetail() {
   };
 
   // ── Listing Agreement ────────────────────────────────────────────────────
-  const [laCommissionRate, setLaCommissionRate] = useState(sub.commissionRate ?? "10%");
-  const [laListingPeriod, setLaListingPeriod] = useState<number>(sub.listingPeriodDays ?? 90);
-  const [laTermsNotes, setLaTermsNotes] = useState(sub.listingTermsNotes ?? "");
+  const [laCommissionRate, setLaCommissionRate] = useState(sub?.commissionRate ?? "10%");
+  const [laListingPeriod, setLaListingPeriod] = useState<number>(sub?.listingPeriodDays ?? 90);
+  const [laTermsNotes, setLaTermsNotes] = useState(sub?.listingTermsNotes ?? "");
   const [laSaving, setLaSaving] = useState(false);
 
-  const laStatus = sub.listingAgreementStatus ?? "not_started";
+  const laStatus = sub?.listingAgreementStatus ?? "not_started";
   const laStatusLabel: Record<string, { label: string; className: string }> = {
     not_started:         { label: "Not Started",       className: "bg-stone-100 text-stone-600 border-stone-300" },
     agreement_generated: { label: "Agreement Ready",   className: "bg-sky-50 text-sky-700 border-sky-400" },
