@@ -297,6 +297,9 @@ export default function SubmissionDetail() {
     );
   };
 
+  // ── Active tab ───────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState("working-record");
+
   // ── Working Record ──────────────────────────────────────────────────────────
   const [wrDraft, setWrDraft] = useState<{
     horseName: string; breed: string; age: string; colour: string;
@@ -621,9 +624,20 @@ export default function SubmissionDetail() {
   const documents = media?.filter(m => m.mediaType === 'document') || [];
   const videoLinks = String(sub.formData?.videoLinks || "").split('\n').filter(l => l.trim() !== "");
 
+  const TAB_OPTIONS = [
+    { value: "working-record",    label: "Working Record" },
+    { value: "orc",               label: orcStatus !== "not_generated" ? `ORC — ${orcStatusLabel[orcStatus]?.label ?? orcStatus}` : "ORC" },
+    { value: "horse-description", label: hdStatus !== "not_generated" ? `Horse Description — ${hdStatusLabel[hdStatus]?.label ?? hdStatus}` : "Horse Description" },
+    { value: "approval-pack",     label: "Approval Pack" },
+    { value: "listing-agreement", label: "Listing Agreement" },
+    { value: "form",              label: "Original Submission" },
+    { value: "media",             label: "Media & Docs" },
+    { value: "history",           label: "Status History" },
+  ];
+
   return (
     <AdminLayout>
-      <div className="flex items-start gap-4 mb-6">
+      <div className="flex items-start gap-4 mb-4">
         <Button variant="outline" size="icon" asChild className="mt-1 shrink-0">
           <Link href="/admin/submissions"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
@@ -665,45 +679,24 @@ export default function SubmissionDetail() {
         </div>
       </div>
 
+      {/* Section navigation dropdown */}
+      <div className="flex items-center gap-3 mb-6">
+        <span className="text-sm text-muted-foreground shrink-0">Section</span>
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-[280px]" data-testid="select-tab-nav">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TAB_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="working-record">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto bg-transparent p-0">
-              <TabsTrigger value="working-record" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-working-record">
-                <ClipboardEdit className="h-4 w-4 mr-1.5" /> Working Record
-              </TabsTrigger>
-              <TabsTrigger value="orc" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-orc">
-                <FileText className="h-4 w-4 mr-1.5" /> ORC
-                {orcStatus !== "not_generated" && (
-                  <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
-                    {orcStatusLabel[orcStatus]?.label}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="horse-description" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-horse-description">
-                <Sparkles className="h-4 w-4 mr-1.5 text-amber-500" /> Horse Description
-                {hdStatus !== "not_generated" && (
-                  <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold border ${hdStatusLabel[hdStatus]?.className ?? ""}`}>
-                    {hdStatusLabel[hdStatus]?.label}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="approval-pack" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-approval-pack">
-                <PackageCheck className="h-4 w-4 mr-1.5 text-violet-600" /> Approval Pack
-              </TabsTrigger>
-              <TabsTrigger value="listing-agreement" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-listing-agreement">
-                <FileSignature className="h-4 w-4 mr-1.5 text-amber-600" /> Listing Agreement
-              </TabsTrigger>
-              <TabsTrigger value="form" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-form">
-                <Lock className="h-3.5 w-3.5 mr-1.5 opacity-60" /> Original Submission
-              </TabsTrigger>
-              <TabsTrigger value="media" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-media">
-                Media & Docs
-              </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-history">
-                Status History
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
 
             {/* ── Working Record ── */}
             <TabsContent value="working-record" className="pt-6">
@@ -1560,7 +1553,7 @@ export default function SubmissionDetail() {
           </Tabs>
         </div>
 
-        <div className="space-y-6 mt-10">
+        <div className="space-y-6">
           {/* Status Management Card */}
           <Card>
             <CardHeader className="py-2 px-4 border-b bg-muted/30">
