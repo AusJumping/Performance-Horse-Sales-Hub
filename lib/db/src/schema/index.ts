@@ -4,3 +4,4 @@ export * from "./media_files";
 export * from "./notes";
 export * from "./status_history";
 export * from "./reel_templates";
+export * from "./eois";
