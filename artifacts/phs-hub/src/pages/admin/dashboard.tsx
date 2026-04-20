@@ -38,7 +38,7 @@ export default function Dashboard() {
         ) : (
           <>
             <Link href="/admin/submissions">
-              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 border-l-4 border-l-transparent">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                   <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
                   <FileText className="h-4 w-4 text-muted-foreground" />
@@ -62,7 +62,7 @@ export default function Dashboard() {
               </Card>
             </Link>
             <Link href="/admin/submissions?status=published">
-              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 border-l-4 border-l-transparent">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                   <CardTitle className="text-sm font-medium">Published</CardTitle>
                   <CheckCircle className="h-4 w-4 text-[#24384e]" />
@@ -74,7 +74,7 @@ export default function Dashboard() {
               </Card>
             </Link>
             <Link href="/admin/submissions">
-              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 border-l-4 border-l-transparent">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                   <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
