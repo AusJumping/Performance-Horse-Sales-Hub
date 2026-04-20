@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Clock, CheckCircle, FileText, BarChart3 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 
 export default function Dashboard() {
   const { data: stats, isLoading: isLoadingStats } = useGetDashboardStats();
@@ -101,9 +101,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant={sub.status === 'published' ? 'default' : sub.status === 'new' ? 'secondary' : 'outline'}>
-                        {sub.status.replace('_', ' ')}
-                      </Badge>
+                      <StatusBadge status={sub.status} />
                       <span className="text-sm text-muted-foreground font-medium">{sub.askingPrice || 'N/A'}</span>
                       <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0" asChild>
                         <Link href={`/admin/submissions/${sub.id}`}>View</Link>
