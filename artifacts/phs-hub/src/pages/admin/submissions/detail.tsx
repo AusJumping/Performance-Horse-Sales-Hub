@@ -681,7 +681,6 @@ export default function SubmissionDetail() {
 
       {/* Section navigation dropdown */}
       <div className="flex items-center gap-3 mb-6">
-        <span className="text-sm text-muted-foreground shrink-0">Section</span>
         <Select value={activeTab} onValueChange={setActiveTab}>
           <SelectTrigger className="w-[280px]" data-testid="select-tab-nav">
             <SelectValue />
