@@ -1560,7 +1560,7 @@ export default function SubmissionDetail() {
           </Tabs>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 mt-10">
           {/* Status Management Card */}
           <Card>
             <CardHeader className="py-2 px-4 border-b bg-muted/30">
