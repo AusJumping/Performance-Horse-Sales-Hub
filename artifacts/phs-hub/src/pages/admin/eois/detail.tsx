@@ -41,69 +41,62 @@ const EOI_STATUSES = [
 ];
 
 const EMAIL_TEMPLATES = [
-  { id: "acknowledgement",    label: "Acknowledgement",           group: "buyer" },
-  { id: "under_review",       label: "Under Review — With Seller", group: "buyer" },
-  { id: "suitable_phone",     label: "Suitable — Phone Call",     group: "buyer" },
-  { id: "suitable_viewing",   label: "Suitable — Arrange Viewing", group: "buyer" },
-  { id: "not_suitable",       label: "Not Suitable",              group: "buyer" },
-  { id: "viewing_confirmed",  label: "Viewing Confirmed",         group: "buyer" },
-  { id: "share_with_seller",  label: "Share EOI with Seller",     group: "seller" },
+  { id: "eoi_received",       label: "EOI Received",              group: "To Buyer" },
+  { id: "general_enquiry",    label: "General Enquiry",           group: "To Buyer" },
+  { id: "suitable_phone",     label: "Suitable — Phone Call",     group: "To Buyer" },
+  { id: "suitable_viewing",   label: "Suitable — Arrange Viewing", group: "To Buyer" },
+  { id: "not_suitable",       label: "Not Suitable",              group: "To Buyer" },
+  { id: "viewing_confirmed",  label: "Viewing Confirmed",         group: "To Buyer" },
+  { id: "seller_folder",      label: "Seller Folder Link",        group: "To Seller" },
 ] as const;
 
 function generateDraft(templateId: string, eoi: Eoi): { to: string; subject: string; body: string } {
-  const name   = eoi.buyerFirstName;
-  const horse  = eoi.horseName;
-  const fd     = eoi.formData ?? {};
-  const reqTypes  = (fd.requestTypes   as string[] | undefined) ?? [];
-  const disciplines = (fd.disciplines  as string[] | undefined) ?? [];
-  const riderLevel  = (fd.riderCompetenceLevel as string | undefined) ?? "—";
-  const riderGoals  = (fd.riderGoals            as string | undefined) ?? "—";
-  const budget      = (fd.budgetStatus          as string | undefined) ?? "—";
-  const fullName    = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
-  const sig = "Kind regards,\nPerformance Horse Sales\n0428 239 317\nperformancehorsesales.com.au";
+  const name  = eoi.buyerFirstName;
+  const horse = eoi.horseName;
+  const sig   = "Best,\nSally Empringham\nPerformance Horse Sales";
 
   switch (templateId) {
-    case "acknowledgement":
+    case "eoi_received":
       return {
         to: eoi.buyerEmail,
-        subject: `PHS – We've received your EOI for ${horse}`,
-        body: `Hi ${name},\n\nThank you for submitting your Expression of Interest for ${horse}.\n\nWe've received your form and will be reviewing it shortly. Our aim is to respond within 12 hours.\n\nIf you have any questions in the meantime, please contact us on 0428 239 317.\n\n${sig}`,
+        subject: `PHS – EOI received for ${horse}`,
+        body: `Hi ${name},\n\nThanks for submitting the EOI for ${horse}.\n\nI've sent it to the owner and will be in touch when I hear back.\n\nIf you haven't heard from me within 24 hours, please message me and I will follow up.\n\nPlease send rider video via WhatsApp to 0428 239 317 — it helps the seller assess suitability.\n\nListings (with owner portfolios): https://www.performancehorsesales.com.au/horses-for-sale\n\nViewing & purchasing T&Cs: https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\n${sig}`,
       };
-    case "under_review":
+    case "general_enquiry":
       return {
         to: eoi.buyerEmail,
-        subject: `PHS – Your EOI for ${horse} is being reviewed`,
-        body: `Hi ${name},\n\nThank you for your patience. We've shared your EOI with the seller of ${horse} and are awaiting their assessment.\n\nThe seller will review whether this horse could be a suitable match for your experience, goals and situation. We'll be in touch as soon as we have an update — usually within 24–48 hours.\n\n${sig}`,
+        subject: `PHS – Re your enquiry about ${horse}`,
+        body: `Hi ${name},\n\nThanks for your message.\n\nTo view the horse's portfolio (videos and info) and to book a call or viewing:\n- Visit our listings: http://www.performancehorsesales.com.au/horses-for-sale\n- Each horse ad links to a portfolio of video and information from the owner.\n\nYou can contact us, at any time, with questions by email or SMS.\n\nTo request extra photos/video or to book a phone call/viewing:\n- Complete the obligation-free EOI form on the listing page.\n\nBest wishes,\nSally Empringham\nPerformance Horse Sales`,
       };
     case "suitable_phone":
       return {
         to: eoi.buyerEmail,
-        subject: `PHS – We'd like to arrange a call about ${horse}`,
-        body: `Hi ${name},\n\nThank you for your interest in ${horse}. After reviewing your EOI, we'd like to arrange a brief phone call to discuss whether this horse could be the right match for you.\n\nPlease reply with some suitable times, or call us directly on 0428 239 317.\n\n${sig}`,
+        subject: `PHS – ${horse} — we'd like to arrange a call`,
+        body: `Hi ${name},\n\nThanks for your interest in ${horse}.\n\nAfter reviewing your EOI, we'd like to arrange a brief phone call to discuss whether this horse could be the right match for you.\n\nPlease reply with some suitable times, or call us directly on 0428 239 317.\n\n${sig}`,
       };
     case "suitable_viewing":
       return {
         to: eoi.buyerEmail,
-        subject: `PHS – Great news! We'd like to arrange a viewing of ${horse}`,
-        body: `Hi ${name},\n\nGreat news! After reviewing your EOI, the seller believes ${horse} could be a suitable match for you.\n\nWe'd love to arrange a viewing. Please reply with some suitable dates and times, or call us on 0428 239 317.\n\nPlease ensure you have read our Terms and Conditions before attending:\nhttps://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nWe look forward to hearing from you.\n\n${sig}`,
+        subject: `PHS – ${horse} — we'd like to arrange a viewing`,
+        body: `Hi ${name},\n\nGreat news! After reviewing your EOI, the seller believes ${horse} could be a suitable match for you.\n\nWe'd love to arrange a viewing. Please reply with some suitable dates and times, or call us on 0428 239 317.\n\nPlease ensure you have read our Viewing & Purchasing T&Cs before attending:\nhttps://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nWe look forward to hearing from you.\n\n${sig}`,
       };
     case "not_suitable":
       return {
         to: eoi.buyerEmail,
-        subject: `PHS – Regarding your EOI for ${horse}`,
-        body: `Hi ${name},\n\nThank you for your interest in ${horse} and for taking the time to complete your EOI.\n\nAfter careful consideration, we don't feel that this particular horse is the right match for your current experience and goals. We make this assessment with your safety and the horse's welfare in mind.\n\nHowever, we may be able to find you a more suitable horse from our other listings. If you'd like us to keep your profile on file and contact you when something more appropriate becomes available, please let us know.\n\nWe appreciate your understanding and look forward to helping you find the right horse.\n\n${sig}`,
+        subject: `PHS – Re your EOI for ${horse}`,
+        body: `Hi ${name},\n\nThank you for your interest in ${horse} and for taking the time to complete your EOI.\n\nAfter careful consideration, we don't feel this particular horse is the right match for your current experience and goals. We make this assessment with your safety and the horse's welfare in mind.\n\nWe may be able to find you a more suitable horse from our other listings. If you'd like us to keep your profile on file and contact you when something more appropriate becomes available, please let us know.\n\nWe appreciate your understanding and hope to help you find the right horse.\n\n${sig}`,
       };
     case "viewing_confirmed":
       return {
         to: eoi.buyerEmail,
         subject: `PHS – Your viewing of ${horse} is confirmed`,
-        body: `Hi ${name},\n\nYour viewing of ${horse} has been confirmed.\n\nAs a reminder:\n- Please wear appropriate riding gear and a safety-approved helmet\n- Do not consume alcohol before or during the viewing\n- Follow the directions of the horse's connections at all times\n- Please read and agree to our Terms and Conditions:\n  https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nIf you need to reschedule, please contact us on 0428 239 317 as soon as possible.\n\nWe look forward to seeing you!\n\n${sig}`,
+        body: `Hi ${name},\n\nYour viewing of ${horse} has been confirmed.\n\nAs a reminder:\n- Please wear appropriate riding gear and a safety-approved helmet\n- Do not consume alcohol before or during the viewing\n- Follow the directions of the horse's connections at all times\n\nPlease read and agree to our Viewing & Purchasing T&Cs before attending:\nhttps://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nIf you need to reschedule, please contact us on 0428 239 317 as soon as possible.\n\nWe look forward to seeing you!\n\n${sig}`,
       };
-    case "share_with_seller":
+    case "seller_folder":
       return {
         to: "",
-        subject: `PHS – New EOI received for ${horse}`,
-        body: `Hi,\n\nWe've received a new Expression of Interest for ${horse}. Please see the buyer summary below.\n\n─── BUYER SUMMARY ──────────────────────────\nName:        ${fullName}\nLocation:    ${eoi.buyerLocation}\nRequesting:  ${reqTypes.join(", ") || "—"}\nRider Level: ${riderLevel}\nGoals:       ${riderGoals}\nDisciplines: ${disciplines.join(", ") || "—"}\nBudget:      ${budget}\n────────────────────────────────────────────\n\nPlease review and let us know whether you'd like to proceed to the next step.\n\n${sig}`,
+        subject: `PHS – ${horse}'s Seller Folder`,
+        body: `Hi,\n\nHere is ${horse}'s Seller Folder.\n\nThis contains a database where I will add the EOI forms from potential viewers.\n\nIt also has a subfolder which is the horse's 'portfolio'.\n\nThe portfolio contains two documents — the ad/description — and a 'tidied up' version of the listing form.\n\nCould you please have a look at those documents and let me know if there are any changes to be made?\n\nOnce that is done, I will get the ads online and do the first social media post.\n\n${sig}`,
       };
     default:
       return { to: "", subject: "", body: "" };
@@ -151,6 +144,7 @@ export default function EoiDetail() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("eoi_received");
 
   const { data: eoi, isLoading } = useQuery<Eoi>({
     queryKey: ["eois", id],
@@ -183,6 +177,17 @@ export default function EoiDetail() {
     },
     onError: () => toast({ title: "Error", description: "Could not save changes.", variant: "destructive" }),
   });
+
+  const draft = useMemo(
+    () => (eoi ? generateDraft(selectedTemplate, eoi) : { to: "", subject: "", body: "" }),
+    [selectedTemplate, eoi],
+  );
+
+  const copyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() =>
+      toast({ title: `${label} copied`, description: "Paste it into your email client." })
+    );
+  };
 
   if (isLoading) {
     return (
@@ -401,6 +406,87 @@ export default function EoiDetail() {
               <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
                 <a href={`/api/eois/${eoi.id}/pdf`} target="_blank" rel="noreferrer">
                   <Download className="h-4 w-4" /> Download EOI Summary PDF
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-accent" /> Email Drafts
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">Template</label>
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger className="text-sm h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["To Buyer", "To Seller"] as const).map((group) => (
+                      <>
+                        <div key={group} className="px-2 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group}</div>
+                        {EMAIL_TEMPLATES.filter((t) => t.group === group).map((t) => (
+                          <SelectItem key={t.id} value={t.id} className="pl-4">{t.label}</SelectItem>
+                        ))}
+                      </>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">
+                  {draft.to ? `To: ${draft.to}` : "To: (enter seller email)"}
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    readOnly
+                    value={draft.subject}
+                    className="flex-1 rounded-md border border-input bg-muted/50 px-3 py-1.5 text-sm text-stone-700 truncate"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0 px-2"
+                    onClick={() => copyText(draft.subject, "Subject")}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-stone-600 uppercase tracking-wider">Body</label>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs gap-1"
+                    onClick={() => copyText(draft.body, "Email body")}
+                  >
+                    <Copy className="h-3 w-3" /> Copy
+                  </Button>
+                </div>
+                <textarea
+                  readOnly
+                  value={draft.body}
+                  rows={8}
+                  className="w-full rounded-md border border-input bg-muted/50 px-3 py-2 text-xs text-stone-700 resize-none leading-relaxed"
+                />
+              </div>
+
+              <Button
+                asChild
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-0"
+                size="sm"
+              >
+                <a
+                  href={`mailto:${draft.to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-2" /> Open in Email Client
                 </a>
               </Button>
             </CardContent>
