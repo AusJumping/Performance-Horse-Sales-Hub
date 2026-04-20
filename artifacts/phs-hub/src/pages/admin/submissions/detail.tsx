@@ -39,8 +39,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
-  UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall
+  UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown
 } from "lucide-react";
+import { openOrcPrintWindow } from "@/lib/orc-pdf";
 
 const ALL_STATUSES = [
   { value: "new", label: "New" },
@@ -689,6 +690,21 @@ export default function SubmissionDetail() {
                             {orcSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                             Save
                           </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => openOrcPrintWindow({
+                              horseName: sub.horseName ?? "Horse",
+                              breed: sub.breed,
+                              sellerName: sub.sellerName,
+                              askingPrice: sub.askingPrice,
+                              submissionId: sub.id,
+                              generatedAt: (aiOutput as any)?.orcUpdatedAt ?? null,
+                              orcText: orcDraft,
+                            })}
+                            data-testid="button-orcPdf"
+                          >
+                            <FileDown className="h-4 w-4 mr-2" /> Download PDF
+                          </Button>
                           {orcStatus !== "ready_to_send" && (
                             <Button
                               onClick={() => handleSaveOrc("ready_to_send")}
@@ -700,13 +716,15 @@ export default function SubmissionDetail() {
                             </Button>
                           )}
                           {orcStatus === "ready_to_send" && (
-                            <Button
-                              variant="outline"
-                              onClick={() => handleSaveOrc("edited")}
-                              disabled={orcSaving}
-                            >
-                              Reopen for Editing
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={() => handleSaveOrc("edited")}
+                                disabled={orcSaving}
+                              >
+                                Reopen for Editing
+                              </Button>
+                            </>
                           )}
                         </>
                       )}
