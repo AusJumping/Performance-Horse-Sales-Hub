@@ -105,7 +105,7 @@ export default function Dashboard() {
                         {sub.status.replace('_', ' ')}
                       </Badge>
                       <span className="text-sm text-muted-foreground font-medium">{sub.askingPrice || 'N/A'}</span>
-                      <Button variant="ghost" size="sm" asChild>
+                      <Button variant="outline" size="sm" asChild>
                         <Link href={`/admin/submissions/${sub.id}`}>View</Link>
                       </Button>
                     </div>
