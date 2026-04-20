@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useListSubmissions } from "@workspace/api-client-react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import AdminLayout from "@/components/layout/admin-layout";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -20,7 +20,9 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 export default function SubmissionsList() {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const search$ = useSearch();
+  const initialStatus = new URLSearchParams(search$).get("status") ?? "all";
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const { toast } = useToast();

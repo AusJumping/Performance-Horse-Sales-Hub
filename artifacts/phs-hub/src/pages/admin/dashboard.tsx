@@ -37,60 +37,66 @@ export default function Dashboard() {
           Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
         ) : (
           <>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.total || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">All time records</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Awaiting Review</CardTitle>
-                <Clock className="h-4 w-4 text-accent" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.awaitingReview || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Published</CardTitle>
-                <CheckCircle className="h-4 w-4 text-[#24384e]" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.published || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">Live listings</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.recentCount || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">In the last 7 days</p>
-              </CardContent>
-            </Card>
-            <Card className="border-l-4 border-l-sky-400">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">New EOIs</CardTitle>
-                <Mail className="h-4 w-4 text-sky-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{newEoiCount}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <Link href="/admin/eois" className="hover:underline text-sky-600">
-                    View all EOIs →
-                  </Link>
-                </p>
-              </CardContent>
-            </Card>
+            <Link href="/admin/submissions">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.total || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">View all →</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/admin/submissions?status=awaiting_review">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-accent/40 border-l-4 border-l-accent">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Awaiting Review</CardTitle>
+                  <Clock className="h-4 w-4 text-accent" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.awaitingReview || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Requires attention →</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/admin/submissions?status=published">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Published</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-[#24384e]" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.published || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Live listings →</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/admin/submissions">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.recentCount || 0}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Last 7 days →</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/admin/eois?status=new">
+              <Card className="cursor-pointer transition-all hover:shadow-md hover:border-sky-400/40 border-l-4 border-l-sky-400">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">New EOIs</CardTitle>
+                  <Mail className="h-4 w-4 text-sky-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{newEoiCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">View new EOIs →</p>
+                </CardContent>
+              </Card>
+            </Link>
           </>
         )}
       </div>

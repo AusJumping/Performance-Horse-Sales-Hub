@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -56,7 +56,9 @@ async function fetchEois(): Promise<Eoi[]> {
 }
 
 export default function EoisList() {
-  const [statusFilter, setStatusFilter] = useState("all");
+  const search$ = useSearch();
+  const initialStatus = new URLSearchParams(search$).get("status") ?? "all";
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = useQuery({ queryKey: ["eois"], queryFn: fetchEois });

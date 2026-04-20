@@ -437,12 +437,12 @@ export default function EoiDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {(["To Buyer", "To Seller"] as const).map((group) => (
-                      <>
-                        <div key={group} className="px-2 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group}</div>
+                      <div key={group}>
+                        <div className="px-2 pt-2 pb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group}</div>
                         {EMAIL_TEMPLATES.filter((t) => t.group === group).map((t) => (
                           <SelectItem key={t.id} value={t.id} className="pl-4">{t.label}</SelectItem>
                         ))}
-                      </>
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
