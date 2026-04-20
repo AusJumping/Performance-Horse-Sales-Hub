@@ -1563,31 +1563,28 @@ export default function SubmissionDetail() {
         <div className="space-y-6">
           {/* Status Management Card */}
           <Card>
-            <CardHeader className="pb-3 border-b bg-muted/30">
-              <CardTitle className="text-base">Workflow Status</CardTitle>
+            <CardHeader className="py-2 px-4 border-b bg-muted/30">
+              <CardTitle className="text-sm">Workflow Status</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Status</Label>
-                <div className="pt-0.5"><StatusBadge status={sub.status} /></div>
+            <CardContent className="px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground shrink-0">Current</span>
+                <StatusBadge status={sub.status} />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Move to</Label>
-                <Select
-                  value={sub.status}
-                  onValueChange={handleStatusChange}
-                  disabled={updateStatus.isPending}
-                >
-                  <SelectTrigger className="w-full" data-testid="select-status">
-                    <SelectValue placeholder="Change status…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ALL_STATUSES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={sub.status}
+                onValueChange={handleStatusChange}
+                disabled={updateStatus.isPending}
+              >
+                <SelectTrigger className="h-8 text-xs w-full" data-testid="select-status">
+                  <SelectValue placeholder="Change status…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {updateStatus.isPending && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" /> Saving…
