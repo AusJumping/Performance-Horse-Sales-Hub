@@ -679,26 +679,24 @@ export default function SubmissionDetail() {
         </div>
       </div>
 
-      {/* Section navigation dropdown */}
-      <div className="flex items-center gap-3 mb-6">
-        <Select value={activeTab} onValueChange={setActiveTab}>
-          <SelectTrigger className="w-[280px]" data-testid="select-tab-nav">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TAB_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
+          {/* Section navigation dropdown */}
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-[280px]" data-testid="select-tab-nav">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TAB_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
 
             {/* ── Working Record ── */}
-            <TabsContent value="working-record" className="pt-6">
+            <TabsContent value="working-record" className="">
               <Card>
                 <CardHeader className="pb-4 border-b">
                   <div className="flex items-start justify-between">
@@ -792,7 +790,7 @@ export default function SubmissionDetail() {
             </TabsContent>
 
             {/* ── Owner Response Certificate ── */}
-            <TabsContent value="orc" className="pt-6">
+            <TabsContent value="orc" className="">
               <Card>
                 <CardHeader className="pb-4 border-b">
                   <div className="flex items-start justify-between gap-4">
@@ -949,7 +947,7 @@ export default function SubmissionDetail() {
             </TabsContent>
 
             {/* ── Horse Description ── */}
-            <TabsContent value="horse-description" className="pt-6">
+            <TabsContent value="horse-description" className="">
               <Card>
                 <CardHeader className="pb-4 border-b">
                   <div className="flex items-start justify-between gap-4">
@@ -1071,7 +1069,7 @@ export default function SubmissionDetail() {
             </TabsContent>
 
             {/* ── Seller Approval Pack ── */}
-            <TabsContent value="approval-pack" className="pt-6 space-y-4">
+            <TabsContent value="approval-pack" className="space-y-4">
 
               {/* Readiness checklist */}
               <Card>
@@ -1199,7 +1197,7 @@ export default function SubmissionDetail() {
             </TabsContent>
 
             {/* ── Listing Agreement ── */}
-            <TabsContent value="listing-agreement" className="pt-6 space-y-4">
+            <TabsContent value="listing-agreement" className="space-y-4">
               <Card>
                 <CardHeader className="pb-3 border-b bg-muted/30">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -1333,7 +1331,7 @@ export default function SubmissionDetail() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="form" className="pt-6">
+            <TabsContent value="form" className="">
               <Card>
                 <CardHeader className="bg-amber-50/60 pb-4 border-b border-amber-200">
                   <div className="flex justify-between items-center">
@@ -1375,7 +1373,7 @@ export default function SubmissionDetail() {
               </Card>
             </TabsContent>
             
-            <TabsContent value="media" className="pt-6 space-y-6">
+            <TabsContent value="media" className="space-y-6">
               {/* Upload Zone */}
               <Card>
                 <CardHeader className="pb-3">
@@ -1527,7 +1525,7 @@ export default function SubmissionDetail() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="history" className="pt-6">
+            <TabsContent value="history" className="">
               <Card>
                 <CardHeader>
                   <CardTitle>Status Timeline</CardTitle>
