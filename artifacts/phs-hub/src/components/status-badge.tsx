@@ -5,7 +5,7 @@ const MAP: Record<string, string> = {
   needs_more_information: "bg-red-50 text-red-700 border-red-400",
   ready_to_list: "bg-sky-50 text-sky-700 border-sky-400",
   seller_review_sent: "bg-violet-50 text-violet-700 border-violet-400",
-  approved_to_market: "bg-emerald-50 text-emerald-700 border-emerald-500",
+  approved_to_market: "bg-emerald-600 text-white border-emerald-600",
   live: "bg-[#24384e] text-white border-[#24384e]",
   viewing_pending: "bg-cyan-50 text-cyan-700 border-cyan-400",
   sold_pending: "bg-indigo-50 text-indigo-700 border-indigo-400",
@@ -13,7 +13,7 @@ const MAP: Record<string, string> = {
   sold: "bg-emerald-700 text-white border-emerald-700",
   archived: "bg-gray-100 text-gray-600 border-gray-300",
   processing: "bg-blue-50 text-blue-700 border-blue-400",
-  approved: "bg-emerald-50 text-emerald-700 border-emerald-500",
+  approved: "bg-emerald-600 text-white border-emerald-600",
   published: "bg-[#24384e] text-white border-[#24384e]",
 };
 
