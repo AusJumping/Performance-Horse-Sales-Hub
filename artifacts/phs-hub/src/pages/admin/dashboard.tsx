@@ -97,7 +97,7 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-1">
                       <span className="font-medium text-lg">{sub.horseName || 'Unnamed Horse'}</span>
                       <span className="text-sm text-muted-foreground">
-                        {sub.breed} • {sub.sellerName}
+                        {sub.sellerName}
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
