@@ -690,21 +690,6 @@ export default function SubmissionDetail() {
                             {orcSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                             Save
                           </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => openOrcPrintWindow({
-                              horseName: sub.horseName ?? "Horse",
-                              breed: sub.breed,
-                              sellerName: sub.sellerName,
-                              askingPrice: sub.askingPrice,
-                              submissionId: sub.id,
-                              generatedAt: (aiOutput as any)?.orcUpdatedAt ?? null,
-                              orcText: orcDraft,
-                            })}
-                            data-testid="button-orcPdf"
-                          >
-                            <FileDown className="h-4 w-4 mr-2" /> Download PDF
-                          </Button>
                           {orcStatus !== "ready_to_send" && (
                             <Button
                               onClick={() => handleSaveOrc("ready_to_send")}
@@ -731,21 +716,40 @@ export default function SubmissionDetail() {
                     </div>
                   </div>
 
-                  {/* ORC status indicator */}
+                  {/* ORC status indicator + secondary actions */}
                   {orcStatus !== "not_generated" && (
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-muted-foreground">Status:</span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
                         {orcStatusLabel[orcStatus]?.label}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs ml-auto"
-                        onClick={() => { navigator.clipboard.writeText(orcDraft); toast({ title: "ORC copied to clipboard" }); }}
-                      >
-                        <Copy className="h-3 w-3 mr-1" /> Copy
-                      </Button>
+                      <div className="ml-auto flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => { navigator.clipboard.writeText(orcDraft); toast({ title: "ORC copied to clipboard" }); }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" /> Copy text
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-3 text-xs font-medium border-[#24384e] text-[#24384e] hover:bg-[#24384e] hover:text-white"
+                          onClick={() => openOrcPrintWindow({
+                            horseName: sub.horseName ?? "Horse",
+                            breed: sub.breed,
+                            sellerName: sub.sellerName,
+                            askingPrice: sub.askingPrice,
+                            submissionId: sub.id,
+                            generatedAt: (aiOutput as any)?.orcUpdatedAt ?? null,
+                            orcText: orcDraft,
+                          })}
+                          data-testid="button-orcPdf"
+                        >
+                          <FileDown className="h-3 w-3 mr-1" /> Download PDF
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardHeader>
