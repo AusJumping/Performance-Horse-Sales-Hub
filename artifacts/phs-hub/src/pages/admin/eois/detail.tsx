@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download } from "lucide-react";
 import { EoiStatusBadge } from "./index";
 
 interface Eoi {
@@ -326,6 +326,11 @@ export default function EoiDetail() {
               <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
                 <a href={`tel:${eoi.buyerPhone}`}>
                   <Phone className="h-4 w-4" /> Call buyer
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
+                <a href={`/api/eois/${eoi.id}/pdf`} target="_blank" rel="noreferrer">
+                  <Download className="h-4 w-4" /> Download EOI Summary PDF
                 </a>
               </Button>
             </CardContent>
