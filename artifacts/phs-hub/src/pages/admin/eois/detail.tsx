@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download, Copy, MessageSquare, ExternalLink } from "lucide-react";
 import { EoiStatusBadge } from "./index";
 
 interface Eoi {
@@ -39,6 +39,76 @@ const EOI_STATUSES = [
   { value: "proceeding", label: "Proceeding" },
   { value: "declined", label: "Declined" },
 ];
+
+const EMAIL_TEMPLATES = [
+  { id: "acknowledgement",    label: "Acknowledgement",           group: "buyer" },
+  { id: "under_review",       label: "Under Review — With Seller", group: "buyer" },
+  { id: "suitable_phone",     label: "Suitable — Phone Call",     group: "buyer" },
+  { id: "suitable_viewing",   label: "Suitable — Arrange Viewing", group: "buyer" },
+  { id: "not_suitable",       label: "Not Suitable",              group: "buyer" },
+  { id: "viewing_confirmed",  label: "Viewing Confirmed",         group: "buyer" },
+  { id: "share_with_seller",  label: "Share EOI with Seller",     group: "seller" },
+] as const;
+
+function generateDraft(templateId: string, eoi: Eoi): { to: string; subject: string; body: string } {
+  const name   = eoi.buyerFirstName;
+  const horse  = eoi.horseName;
+  const fd     = eoi.formData ?? {};
+  const reqTypes  = (fd.requestTypes   as string[] | undefined) ?? [];
+  const disciplines = (fd.disciplines  as string[] | undefined) ?? [];
+  const riderLevel  = (fd.riderCompetenceLevel as string | undefined) ?? "—";
+  const riderGoals  = (fd.riderGoals            as string | undefined) ?? "—";
+  const budget      = (fd.budgetStatus          as string | undefined) ?? "—";
+  const fullName    = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
+  const sig = "Kind regards,\nPerformance Horse Sales\n0428 239 317\nperformancehorsesales.com.au";
+
+  switch (templateId) {
+    case "acknowledgement":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – We've received your EOI for ${horse}`,
+        body: `Hi ${name},\n\nThank you for submitting your Expression of Interest for ${horse}.\n\nWe've received your form and will be reviewing it shortly. Our aim is to respond within 12 hours.\n\nIf you have any questions in the meantime, please contact us on 0428 239 317.\n\n${sig}`,
+      };
+    case "under_review":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – Your EOI for ${horse} is being reviewed`,
+        body: `Hi ${name},\n\nThank you for your patience. We've shared your EOI with the seller of ${horse} and are awaiting their assessment.\n\nThe seller will review whether this horse could be a suitable match for your experience, goals and situation. We'll be in touch as soon as we have an update — usually within 24–48 hours.\n\n${sig}`,
+      };
+    case "suitable_phone":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – We'd like to arrange a call about ${horse}`,
+        body: `Hi ${name},\n\nThank you for your interest in ${horse}. After reviewing your EOI, we'd like to arrange a brief phone call to discuss whether this horse could be the right match for you.\n\nPlease reply with some suitable times, or call us directly on 0428 239 317.\n\n${sig}`,
+      };
+    case "suitable_viewing":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – Great news! We'd like to arrange a viewing of ${horse}`,
+        body: `Hi ${name},\n\nGreat news! After reviewing your EOI, the seller believes ${horse} could be a suitable match for you.\n\nWe'd love to arrange a viewing. Please reply with some suitable dates and times, or call us on 0428 239 317.\n\nPlease ensure you have read our Terms and Conditions before attending:\nhttps://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nWe look forward to hearing from you.\n\n${sig}`,
+      };
+    case "not_suitable":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – Regarding your EOI for ${horse}`,
+        body: `Hi ${name},\n\nThank you for your interest in ${horse} and for taking the time to complete your EOI.\n\nAfter careful consideration, we don't feel that this particular horse is the right match for your current experience and goals. We make this assessment with your safety and the horse's welfare in mind.\n\nHowever, we may be able to find you a more suitable horse from our other listings. If you'd like us to keep your profile on file and contact you when something more appropriate becomes available, please let us know.\n\nWe appreciate your understanding and look forward to helping you find the right horse.\n\n${sig}`,
+      };
+    case "viewing_confirmed":
+      return {
+        to: eoi.buyerEmail,
+        subject: `PHS – Your viewing of ${horse} is confirmed`,
+        body: `Hi ${name},\n\nYour viewing of ${horse} has been confirmed.\n\nAs a reminder:\n- Please wear appropriate riding gear and a safety-approved helmet\n- Do not consume alcohol before or during the viewing\n- Follow the directions of the horse's connections at all times\n- Please read and agree to our Terms and Conditions:\n  https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions\n\nIf you need to reschedule, please contact us on 0428 239 317 as soon as possible.\n\nWe look forward to seeing you!\n\n${sig}`,
+      };
+    case "share_with_seller":
+      return {
+        to: "",
+        subject: `PHS – New EOI received for ${horse}`,
+        body: `Hi,\n\nWe've received a new Expression of Interest for ${horse}. Please see the buyer summary below.\n\n─── BUYER SUMMARY ──────────────────────────\nName:        ${fullName}\nLocation:    ${eoi.buyerLocation}\nRequesting:  ${reqTypes.join(", ") || "—"}\nRider Level: ${riderLevel}\nGoals:       ${riderGoals}\nDisciplines: ${disciplines.join(", ") || "—"}\nBudget:      ${budget}\n────────────────────────────────────────────\n\nPlease review and let us know whether you'd like to proceed to the next step.\n\n${sig}`,
+      };
+    default:
+      return { to: "", subject: "", body: "" };
+  }
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
