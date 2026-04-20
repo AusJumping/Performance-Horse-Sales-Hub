@@ -7,6 +7,8 @@ import AdminGuard from "@/components/admin-guard";
 
 import Home from "./pages/home";
 import ThankYou from "./pages/thank-you";
+import EoiPage from "./pages/eoi";
+import EoiThankYou from "./pages/eoi-thank-you";
 import AdminLogin from "./pages/admin/login";
 import Dashboard from "./pages/admin/dashboard";
 import SubmissionsList from "./pages/admin/submissions/index";
@@ -21,6 +23,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/thank-you" component={ThankYou} />
+      <Route path="/eoi" component={EoiPage} />
+      <Route path="/eoi-thank-you" component={EoiThankYou} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminGuard>
