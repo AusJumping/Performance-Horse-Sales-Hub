@@ -9,11 +9,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, Eye, Trash2 } from "lucide-react";
+import { Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -45,28 +45,6 @@ export default function SubmissionsList() {
     onError: () => toast({ title: "Error", description: "Could not delete submission.", variant: "destructive" }),
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "new": return <Badge variant="secondary">New</Badge>;
-      case "awaiting_review": return <Badge variant="outline" className="text-amber-600 border-amber-400">Awaiting Review</Badge>;
-      case "awaiting_seller_response": return <Badge variant="outline" className="text-orange-600 border-orange-400">Awaiting Seller</Badge>;
-      case "needs_more_information": return <Badge variant="destructive">Needs More Info</Badge>;
-      case "ready_to_list": return <Badge variant="outline" className="text-sky-600 border-sky-400">Ready to List</Badge>;
-      case "seller_review_sent": return <Badge variant="outline" className="text-violet-600 border-violet-400">Review Sent</Badge>;
-      case "approved_to_market": return <Badge variant="outline" className="text-emerald-600 border-emerald-500">Approved to Market</Badge>;
-      case "live": return <Badge className="bg-[#24384e] hover:bg-[#1a2d3f]">Live</Badge>;
-      case "viewing_pending": return <Badge variant="outline" className="text-cyan-600 border-cyan-400">Viewing Pending</Badge>;
-      case "sold_pending": return <Badge variant="outline" className="text-indigo-600 border-indigo-400">Sold Pending</Badge>;
-      case "in_vetting": return <Badge variant="outline" className="text-yellow-700 border-yellow-500">In Vetting</Badge>;
-      case "sold": return <Badge className="bg-emerald-700 hover:bg-emerald-800">Sold</Badge>;
-      case "archived": return <Badge variant="outline" className="text-gray-500">Archived</Badge>;
-      // Legacy
-      case "processing": return <Badge variant="outline" className="text-blue-500 border-blue-500">Processing</Badge>;
-      case "approved": return <Badge variant="outline" className="text-emerald-500 border-emerald-500">Approved</Badge>;
-      case "published": return <Badge className="bg-[#24384e] hover:bg-[#1a2d3f]">Published</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   return (
     <AdminLayout>
@@ -162,14 +140,11 @@ export default function SubmissionsList() {
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(sub.createdAt), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                    <TableCell><StatusBadge status={sub.status} /></TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" asChild className="h-10 w-10 p-0">
-                          <Link href={`/admin/submissions/${sub.id}`}>
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">View Details</span>
-                          </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0" asChild>
+                          <Link href={`/admin/submissions/${sub.id}`}>View</Link>
                         </Button>
                         <Button
                           variant="ghost"
