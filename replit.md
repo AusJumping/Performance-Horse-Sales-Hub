@@ -47,7 +47,10 @@ lib/
 - Overview stats: total, awaiting review, published, recent activity
 - Submissions list with status filtering and search
 - Detailed submission view with original data, media gallery, notes
-- Status workflow: new → processing → awaiting_review → needs_edit → approved → published → archived
+- Expanded status workflow (13 statuses): new → awaiting_review → awaiting_seller_response → needs_more_information → ready_to_list → seller_review_sent → approved_to_market → live → viewing_pending → sold_pending → in_vetting → sold → archived
+- Seller intent displayed on detail page header (happy_to_proceed / would_like_to_speak)
+- Working Record tab: Sally's editable internal copy of submission data (used for AI generation)
+- Locked Original Submission tab: read-only original seller data (cannot be edited)
 
 ### AI Content Generation
 - Triggered from admin submission detail page
@@ -59,18 +62,24 @@ lib/
 ## Database Schema
 
 Tables:
-- `submissions` — core submission record with status, top-level fields, full formData JSON
+- `submissions` — core record with status, top-level fields, formData JSON (locked), workingRecord JSON (editable), sellerIntent
 - `ai_outputs` — all AI-generated content linked to a submission
 - `media_files` — uploaded file metadata
 - `notes` — internal staff notes per submission
 - `status_history` — audit trail of status changes
 
+Key design principles:
+- `form_data` is LOCKED after creation — never edits original seller submission
+- `working_record` is Sally's editable internal copy — AI generation reads from here
+- `seller_intent` is extracted at submission time: "happy_to_proceed" | "would_like_to_speak"
+
 ## API Routes (all under /api)
 
 - GET/POST /submissions — list and create
-- GET/PATCH /submissions/:id — get detail and update
-- POST /submissions/:id/approve — approve
-- POST /submissions/:id/publish — publish
+- GET/PATCH /submissions/:id — get detail and update status/tags
+- PATCH /submissions/:id/working-record — update Sally's editable working record
+- POST /submissions/:id/approve — approve (sets to approved_to_market)
+- POST /submissions/:id/publish — publish (sets to live)
 - GET/POST /submissions/:id/notes — notes
 - GET /submissions/:id/media — list media
 - GET /submissions/:id/ai-output — get AI output

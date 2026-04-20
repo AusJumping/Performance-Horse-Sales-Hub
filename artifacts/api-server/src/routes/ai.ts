@@ -82,7 +82,11 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
     .from(mediaFilesTable)
     .where(eq(mediaFilesTable.submissionId, id));
 
-  const formData = submission.formData as Record<string, unknown>;
+  // Use workingRecord if Sally has edited it; otherwise fall back to original formData
+  const workingRecord = submission.workingRecord as Record<string, unknown>;
+  const formData = (workingRecord && Object.keys(workingRecord).length > 0)
+    ? workingRecord
+    : submission.formData as Record<string, unknown>;
 
   // Build a structured summary of the submission for the AI
   const submissionSummary = buildSubmissionSummary(submission, formData, media);

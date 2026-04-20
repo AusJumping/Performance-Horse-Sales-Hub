@@ -269,6 +269,7 @@ type FD = {
   vetChecksAdditionalInfo: string;
   reasonForSale: string;
   idealHome: string;
+  sellerIntent: string;
   generalTermsAgreed: boolean;
   digitalSignatureConfirmation: string;
   signature: string;
@@ -406,6 +407,7 @@ const SAMPLE: FD = {
     "Seller is expecting her first child and will not have the time or energy to give Copper the consistent riding and attention he deserves. It is a very difficult decision — he has been a wonderful partner.",
   idealHome:
     "Looking for a committed amateur or junior competitor who trains regularly with a coach and wants a genuine, talented horse to develop their dressage or eventing career. Copper thrives with consistency, regular work, and lots of positive attention. He would also suit a more experienced pleasure rider who wants a reliable, beautiful horse to enjoy.",
+  sellerIntent: "happy_to_proceed",
   generalTermsAgreed: true,
   digitalSignatureConfirmation:
     "I understand the service that I have selected and confirm that I want to list the horse with PHS. To speed up the process, I will send photos and videos to 0428239317 via WhatsApp to confirm the listing - PHS will start drafting the ad and portfolio.",
@@ -516,6 +518,7 @@ export default function Home() {
       case 9:
         if (!s("reasonForSale")) e.reasonForSale = "Required";
         if (!s("idealHome")) e.idealHome = "Required";
+        if (!s("sellerIntent")) e.sellerIntent = "Please select an option";
         if (!b("generalTermsAgreed"))
           e.generalTermsAgreed = "You must agree to the terms to proceed";
         if (!s("digitalSignatureConfirmation"))
@@ -557,6 +560,7 @@ export default function Home() {
       const result = await createSubmission.mutateAsync({
         data: {
           formData: fd as unknown as Record<string, unknown>,
+          sellerIntent: fd.sellerIntent || null,
           sellerName: `${fd.firstName} ${fd.secondName}`.trim(),
           sellerEmail: fd.email,
           sellerPhone: fd.phoneNumber,
@@ -569,7 +573,7 @@ export default function Home() {
           askingPrice: fd.preferredSalesPrice,
           location: fd.horseLocation || fd.suburbTownStatePostcode,
           discipline: fd.disciplines.join(", "),
-        },
+        } as any,
       });
       setSubmissionId((result as { id: number }).id);
       setStep(10);
@@ -1903,6 +1907,32 @@ export default function Home() {
                 rows={4}
               />
               <FieldError message={errors.idealHome} />
+            </div>
+
+            <div>
+              <FieldLabel label="How would you like to proceed with PHS?" required />
+              <p className="text-sm text-stone-500 mb-3">
+                This helps us prioritise your enquiry and prepare the right next steps.
+              </p>
+              <div className="space-y-3">
+                {[
+                  { value: "happy_to_proceed", label: "I am happy to go ahead with the listing" },
+                  { value: "would_like_to_speak", label: "I would like to speak with PHS before proceeding" },
+                ].map(({ value, label }) => (
+                  <label key={value} className="flex items-start gap-3 cursor-pointer p-4 border rounded-lg hover:bg-stone-50 transition-colors" style={{ borderColor: s("sellerIntent") === value ? "#24384e" : undefined, backgroundColor: s("sellerIntent") === value ? "#f0f4f7" : undefined }}>
+                    <input
+                      type="radio"
+                      name="sellerIntent"
+                      value={value}
+                      checked={s("sellerIntent") === value}
+                      onChange={() => setField("sellerIntent")(value)}
+                      className="mt-0.5 h-4 w-4 accent-[#24384e] shrink-0"
+                    />
+                    <span className="text-sm text-stone-800">{label}</span>
+                  </label>
+                ))}
+              </div>
+              <FieldError message={errors.sellerIntent} />
             </div>
 
             <SectionHeader title="General Listing Terms" />

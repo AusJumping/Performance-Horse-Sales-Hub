@@ -33,11 +33,57 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
-  UploadCloud, Video, Loader2, Eye, Film
+  UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall
 } from "lucide-react";
+
+const ALL_STATUSES = [
+  { value: "new", label: "New" },
+  { value: "awaiting_review", label: "Awaiting Review" },
+  { value: "awaiting_seller_response", label: "Awaiting Seller Response" },
+  { value: "needs_more_information", label: "Needs More Information" },
+  { value: "ready_to_list", label: "Ready to List" },
+  { value: "seller_review_sent", label: "Seller Review Sent" },
+  { value: "approved_to_market", label: "Approved to Market" },
+  { value: "live", label: "Live" },
+  { value: "viewing_pending", label: "Viewing Pending" },
+  { value: "sold_pending", label: "Sold Pending" },
+  { value: "in_vetting", label: "In Vetting" },
+  { value: "sold", label: "Sold" },
+  { value: "archived", label: "Archived" },
+] as const;
+
+function StatusBadge({ status }: { status: string }) {
+  const MAP: Record<string, string> = {
+    new: "bg-stone-100 text-stone-700 border-stone-300",
+    awaiting_review: "bg-amber-50 text-amber-700 border-amber-400",
+    awaiting_seller_response: "bg-orange-50 text-orange-700 border-orange-400",
+    needs_more_information: "bg-red-50 text-red-700 border-red-400",
+    ready_to_list: "bg-sky-50 text-sky-700 border-sky-400",
+    seller_review_sent: "bg-violet-50 text-violet-700 border-violet-400",
+    approved_to_market: "bg-emerald-50 text-emerald-700 border-emerald-500",
+    live: "bg-[#24384e] text-white border-[#24384e]",
+    viewing_pending: "bg-cyan-50 text-cyan-700 border-cyan-400",
+    sold_pending: "bg-indigo-50 text-indigo-700 border-indigo-400",
+    in_vetting: "bg-yellow-50 text-yellow-700 border-yellow-500",
+    sold: "bg-emerald-700 text-white border-emerald-700",
+    archived: "bg-gray-100 text-gray-600 border-gray-300",
+    processing: "bg-blue-50 text-blue-700 border-blue-400",
+    approved: "bg-emerald-50 text-emerald-700 border-emerald-500",
+    published: "bg-[#24384e] text-white border-[#24384e]",
+  };
+  const cls = MAP[status] ?? "bg-muted text-muted-foreground border-muted";
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+      {status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+    </span>
+  );
+}
 
 export default function SubmissionDetail() {
   const { id } = useParams<{ id: string }>();
@@ -246,6 +292,63 @@ export default function SubmissionDetail() {
     );
   };
 
+  // ── Working Record ──────────────────────────────────────────────────────────
+  const [wrDraft, setWrDraft] = useState<{
+    horseName: string; breed: string; age: string; colour: string;
+    height: string; sex: string; askingPrice: string; location: string;
+    discipline: string; adminNotes: string;
+  } | null>(null);
+
+  const [wrSaving, setWrSaving] = useState(false);
+
+  // Initialise the draft from the sub when it loads (once only)
+  useEffect(() => {
+    if (sub && wrDraft === null) {
+      const wr = sub.workingRecord as Record<string, any> ?? {};
+      setWrDraft({
+        horseName: String(sub.horseName ?? wr.horseName ?? ""),
+        breed: String(sub.breed ?? wr.breed ?? ""),
+        age: String(sub.age ?? wr.age ?? ""),
+        colour: String(sub.colour ?? wr.colour ?? ""),
+        height: String(sub.height ?? wr.height ?? ""),
+        sex: String(sub.sex ?? wr.sex ?? ""),
+        askingPrice: String(sub.askingPrice ?? wr.askingPrice ?? ""),
+        location: String(sub.location ?? wr.location ?? ""),
+        discipline: String(sub.discipline ?? wr.discipline ?? ""),
+        adminNotes: String(wr.adminNotes ?? ""),
+      });
+    }
+  }, [sub]);
+
+  const handleSaveWorkingRecord = async () => {
+    if (!wrDraft) return;
+    setWrSaving(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/working-record`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...wrDraft,
+          workingRecord: { ...((sub?.workingRecord as Record<string, any>) ?? {}), ...wrDraft },
+        }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      queryClient.invalidateQueries({ queryKey: getListSubmissionsQueryKey() });
+      toast({ title: "Working record saved" });
+    } catch {
+      toast({ title: "Failed to save working record", variant: "destructive" });
+    } finally {
+      setWrSaving(false);
+    }
+  };
+
+  const wrField = (field: keyof NonNullable<typeof wrDraft>) => ({
+    value: wrDraft?.[field] ?? "",
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setWrDraft((prev) => prev ? { ...prev, [field]: e.target.value } : prev),
+  });
+
   const handleDeleteMedia = (mediaId: number) => {
     if (confirm("Are you sure you want to delete this file?")) {
       deleteMedia.mutate(
@@ -335,37 +438,30 @@ export default function SubmissionDetail() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="icon" asChild>
+      <div className="flex items-start gap-4 mb-6">
+        <Button variant="outline" size="icon" asChild className="mt-1 shrink-0">
           <Link href="/admin/submissions"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-serif font-bold tracking-tight" data-testid="text-horseName">{sub.horseName || "Unnamed Horse"}</h1>
-            <Badge variant={sub.status === 'published' ? 'default' : 'secondary'} className="text-sm">
-              {sub.status.replace('_', ' ').toUpperCase()}
-            </Badge>
+            <StatusBadge status={sub.status} />
+            {sub.sellerIntent && (
+              <Badge variant="outline" className={sub.sellerIntent === "happy_to_proceed" ? "text-emerald-700 border-emerald-400 bg-emerald-50" : "text-amber-700 border-amber-400 bg-amber-50"}>
+                {sub.sellerIntent === "happy_to_proceed"
+                  ? <><CheckCircle className="h-3 w-3 mr-1 inline" /> Ready to list</>
+                  : <><PhoneCall className="h-3 w-3 mr-1 inline" /> Wants to speak first</>
+                }
+              </Badge>
+            )}
           </div>
-          <p className="text-muted-foreground">{sub.breed} • {sub.age} yrs • Submitted by {sub.sellerName}</p>
+          <p className="text-muted-foreground mt-1">{sub.breed} • {sub.age} yrs • Submitted by {sub.sellerName}</p>
         </div>
         
-        <div className="flex items-center gap-2">
-          {sub.status === 'new' && (
-            <Button onClick={() => handleStatusChange('processing')} variant="outline" data-testid="button-startProcessing">Start Processing</Button>
-          )}
-          {(sub.status === 'processing' || sub.status === 'awaiting_review') && (
-            <Button onClick={handleApprove} className="bg-[#24384e] hover:bg-[#1a2d3f]" data-testid="button-approve">
-              <CheckCircle className="mr-2 h-4 w-4" /> Approve
-            </Button>
-          )}
-          {sub.status === 'approved' && (
-            <Button onClick={handlePublish} className="bg-primary hover:bg-primary/90" data-testid="button-publish">
-              Publish Listing
-            </Button>
-          )}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button asChild variant="outline" data-testid="button-downloadPdf">
             <a href={`/api/submissions/${sub.id}/pdf`} target="_blank" rel="noreferrer">
-              <Download className="mr-2 h-4 w-4" /> Download PDF
+              <Download className="mr-2 h-4 w-4" /> PDF
             </a>
           </Button>
           <Button asChild variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90" data-testid="button-aiContent">
@@ -386,10 +482,13 @@ export default function SubmissionDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="form">
+          <Tabs defaultValue="working-record">
             <TabsList className="w-full justify-start border-b rounded-none h-auto bg-transparent p-0">
+              <TabsTrigger value="working-record" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-working-record">
+                <ClipboardEdit className="h-4 w-4 mr-1.5" /> Working Record
+              </TabsTrigger>
               <TabsTrigger value="form" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-form">
-                Original Seller Submission
+                <Lock className="h-3.5 w-3.5 mr-1.5 opacity-60" /> Original Submission
               </TabsTrigger>
               <TabsTrigger value="media" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-media">
                 Media & Docs
@@ -398,14 +497,90 @@ export default function SubmissionDetail() {
                 Status History
               </TabsTrigger>
             </TabsList>
-            
+
+            {/* ── Working Record ── */}
+            <TabsContent value="working-record" className="pt-6">
+              <Card>
+                <CardHeader className="pb-4 border-b">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <ClipboardEdit className="h-5 w-5 text-[#24384e]" /> Working Record
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Sally's editable internal copy. Changes here are used for AI generation and do not alter the original submission.
+                        {sub.workingRecordUpdatedAt && (
+                          <span className="block mt-1 text-xs">Last saved: {format(new Date(sub.workingRecordUpdatedAt as string), 'MMM d, yyyy h:mm a')}</span>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      onClick={handleSaveWorkingRecord}
+                      disabled={wrSaving || !wrDraft}
+                      className="bg-[#24384e] hover:bg-[#1a2d3f] shrink-0"
+                      data-testid="button-saveWorkingRecord"
+                    >
+                      {wrSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                      {wrSaving ? "Saving…" : "Save Changes"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Horse Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {([
+                        { field: "horseName", label: "Horse Name" },
+                        { field: "breed", label: "Breed" },
+                        { field: "age", label: "Age" },
+                        { field: "colour", label: "Colour / Markings" },
+                        { field: "height", label: "Height" },
+                        { field: "sex", label: "Sex" },
+                        { field: "askingPrice", label: "Asking Price" },
+                        { field: "location", label: "Location" },
+                      ] as const).map(({ field, label }) => (
+                        <div key={field} className="space-y-1.5">
+                          <Label htmlFor={`wr-${field}`} className="text-sm font-medium">{label}</Label>
+                          <Input
+                            id={`wr-${field}`}
+                            {...wrField(field)}
+                            className="bg-white"
+                          />
+                        </div>
+                      ))}
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label htmlFor="wr-discipline" className="text-sm font-medium">Discipline(s)</Label>
+                        <Input id="wr-discipline" {...wrField("discipline")} className="bg-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="wr-adminNotes" className="text-sm font-medium">Internal Notes / Corrections</Label>
+                    <p className="text-xs text-muted-foreground">Add any corrections, context, or notes about this horse that Sally wants to capture internally.</p>
+                    <Textarea
+                      id="wr-adminNotes"
+                      {...wrField("adminNotes")}
+                      rows={5}
+                      placeholder="E.g. seller confirmed price is negotiable, horse has been competing at national level..."
+                      className="bg-white"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="form" className="pt-6">
               <Card>
-                <CardHeader className="bg-muted/30 pb-4 border-b">
+                <CardHeader className="bg-amber-50/60 pb-4 border-b border-amber-200">
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle className="text-lg">Form Data</CardTitle>
-                      <CardDescription>Read-only view of the data exactly as provided by the seller.</CardDescription>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-amber-600" /> Original Seller Submission
+                      </CardTitle>
+                      <CardDescription className="text-amber-700">This is the locked original record. It cannot be edited. Use the Working Record tab to make corrections.</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -617,6 +792,41 @@ export default function SubmissionDetail() {
         </div>
 
         <div className="space-y-6">
+          {/* Status Management Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base">Workflow Status</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Current Status</Label>
+                <div className="pt-0.5"><StatusBadge status={sub.status} /></div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Move to</Label>
+                <Select
+                  value={sub.status}
+                  onValueChange={handleStatusChange}
+                  disabled={updateStatus.isPending}
+                >
+                  <SelectTrigger className="w-full" data-testid="select-status">
+                    <SelectValue placeholder="Change status…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ALL_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {updateStatus.isPending && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Saving…
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="pb-3 border-b bg-muted/30">
               <CardTitle className="text-base flex items-center gap-2">

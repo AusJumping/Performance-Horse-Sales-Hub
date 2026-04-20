@@ -59,6 +59,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const body = req.body as {
     formData: Record<string, unknown>;
+    sellerIntent?: string;
     sellerName?: string;
     sellerEmail?: string;
     sellerPhone?: string;
@@ -73,11 +74,21 @@ router.post("/", async (req, res) => {
     discipline?: string;
   };
 
+  // Extract sellerIntent from body or formData
+  const sellerIntent = body.sellerIntent
+    ?? (body.formData?.sellerIntent as string | undefined)
+    ?? null;
+
+  // workingRecord starts as a full copy of formData so Sally can edit it
+  const formData = body.formData ?? {};
+
   const [submission] = await db
     .insert(submissionsTable)
     .values({
       status: "new",
-      formData: body.formData ?? {},
+      formData,
+      workingRecord: formData,
+      sellerIntent,
       sellerName: body.sellerName ?? null,
       sellerEmail: body.sellerEmail ?? null,
       sellerPhone: body.sellerPhone ?? null,
@@ -133,15 +144,14 @@ router.get("/:id", async (req, res) => {
   });
 });
 
-// Update submission
+// Update submission (status, tags — NOT formData which is locked)
 router.patch("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
-  const { status, tags, internalNotes } = req.body as {
+  const { status, tags } = req.body as {
     status?: string;
     tags?: string[];
-    internalNotes?: string;
   };
 
   const [existing] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
@@ -168,6 +178,50 @@ router.patch("/:id", async (req, res) => {
   res.json(updated);
 });
 
+// Update working record (Sally's editable copy — separate from locked formData)
+router.patch("/:id/working-record", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const { workingRecord, horseName, breed, age, colour, height, sex, askingPrice, location, discipline } = req.body as {
+    workingRecord?: Record<string, unknown>;
+    horseName?: string;
+    breed?: string;
+    age?: string;
+    colour?: string;
+    height?: string;
+    sex?: string;
+    askingPrice?: string;
+    location?: string;
+    discipline?: string;
+  };
+
+  const [existing] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!existing) return res.status(404).json({ error: "Not found" });
+
+  const updates: Partial<typeof submissionsTable.$inferInsert> = {
+    workingRecordUpdatedAt: new Date(),
+  };
+  if (workingRecord !== undefined) updates.workingRecord = workingRecord;
+  if (horseName !== undefined) updates.horseName = horseName;
+  if (breed !== undefined) updates.breed = breed;
+  if (age !== undefined) updates.age = age;
+  if (colour !== undefined) updates.colour = colour;
+  if (height !== undefined) updates.height = height;
+  if (sex !== undefined) updates.sex = sex;
+  if (askingPrice !== undefined) updates.askingPrice = askingPrice;
+  if (location !== undefined) updates.location = location;
+  if (discipline !== undefined) updates.discipline = discipline;
+
+  const [updated] = await db
+    .update(submissionsTable)
+    .set(updates)
+    .where(eq(submissionsTable.id, id))
+    .returning();
+
+  res.json(updated);
+});
+
 // Approve
 router.post("/:id/approve", async (req, res) => {
   const id = parseInt(req.params.id);
@@ -178,20 +232,20 @@ router.post("/:id/approve", async (req, res) => {
 
   const [updated] = await db
     .update(submissionsTable)
-    .set({ status: "approved" })
+    .set({ status: "approved_to_market" })
     .where(eq(submissionsTable.id, id))
     .returning();
 
   await db.insert(statusHistoryTable).values({
     submissionId: id,
     fromStatus: existing.status,
-    toStatus: "approved",
+    toStatus: "approved_to_market",
   });
 
   res.json(updated);
 });
 
-// Publish
+// Publish (mark as live)
 router.post("/:id/publish", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -201,14 +255,14 @@ router.post("/:id/publish", async (req, res) => {
 
   const [updated] = await db
     .update(submissionsTable)
-    .set({ status: "published" })
+    .set({ status: "live" })
     .where(eq(submissionsTable.id, id))
     .returning();
 
   await db.insert(statusHistoryTable).values({
     submissionId: id,
     fromStatus: existing.status,
-    toStatus: "published",
+    toStatus: "live",
   });
 
   res.json(updated);

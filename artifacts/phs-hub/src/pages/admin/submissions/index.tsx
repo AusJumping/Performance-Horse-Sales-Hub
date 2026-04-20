@@ -48,12 +48,22 @@ export default function SubmissionsList() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "new": return <Badge variant="secondary">New</Badge>;
+      case "awaiting_review": return <Badge variant="outline" className="text-amber-600 border-amber-400">Awaiting Review</Badge>;
+      case "awaiting_seller_response": return <Badge variant="outline" className="text-orange-600 border-orange-400">Awaiting Seller</Badge>;
+      case "needs_more_information": return <Badge variant="destructive">Needs More Info</Badge>;
+      case "ready_to_list": return <Badge variant="outline" className="text-sky-600 border-sky-400">Ready to List</Badge>;
+      case "seller_review_sent": return <Badge variant="outline" className="text-violet-600 border-violet-400">Review Sent</Badge>;
+      case "approved_to_market": return <Badge variant="outline" className="text-emerald-600 border-emerald-500">Approved to Market</Badge>;
+      case "live": return <Badge className="bg-[#24384e] hover:bg-[#1a2d3f]">Live</Badge>;
+      case "viewing_pending": return <Badge variant="outline" className="text-cyan-600 border-cyan-400">Viewing Pending</Badge>;
+      case "sold_pending": return <Badge variant="outline" className="text-indigo-600 border-indigo-400">Sold Pending</Badge>;
+      case "in_vetting": return <Badge variant="outline" className="text-yellow-700 border-yellow-500">In Vetting</Badge>;
+      case "sold": return <Badge className="bg-emerald-700 hover:bg-emerald-800">Sold</Badge>;
+      case "archived": return <Badge variant="outline" className="text-gray-500">Archived</Badge>;
+      // Legacy
       case "processing": return <Badge variant="outline" className="text-blue-500 border-blue-500">Processing</Badge>;
-      case "awaiting_review": return <Badge variant="outline" className="text-amber-500 border-amber-500">Awaiting Review</Badge>;
-      case "needs_edit": return <Badge variant="destructive">Needs Edit</Badge>;
       case "approved": return <Badge variant="outline" className="text-emerald-500 border-emerald-500">Approved</Badge>;
       case "published": return <Badge className="bg-[#24384e] hover:bg-[#1a2d3f]">Published</Badge>;
-      case "archived": return <Badge variant="outline" className="text-gray-500">Archived</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -87,11 +97,17 @@ export default function SubmissionsList() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
                 <SelectItem value="awaiting_review">Awaiting Review</SelectItem>
-                <SelectItem value="needs_edit">Needs Edit</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="awaiting_seller_response">Awaiting Seller</SelectItem>
+                <SelectItem value="needs_more_information">Needs More Info</SelectItem>
+                <SelectItem value="ready_to_list">Ready to List</SelectItem>
+                <SelectItem value="seller_review_sent">Review Sent</SelectItem>
+                <SelectItem value="approved_to_market">Approved to Market</SelectItem>
+                <SelectItem value="live">Live</SelectItem>
+                <SelectItem value="viewing_pending">Viewing Pending</SelectItem>
+                <SelectItem value="sold_pending">Sold Pending</SelectItem>
+                <SelectItem value="in_vetting">In Vetting</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
