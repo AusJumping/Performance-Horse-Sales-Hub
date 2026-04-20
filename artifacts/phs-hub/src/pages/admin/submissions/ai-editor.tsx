@@ -99,7 +99,7 @@ export default function AiEditor() {
           <Link href={`/admin/submissions/${submissionId}`}><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-serif font-bold tracking-tight">AI Content Editor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">AI Content Editor</h1>
           <p className="text-muted-foreground">{sub?.horseName} • Review and refine generated content</p>
         </div>
         <div className="flex items-center gap-2">

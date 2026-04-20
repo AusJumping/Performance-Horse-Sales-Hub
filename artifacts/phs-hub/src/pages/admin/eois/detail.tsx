@@ -229,7 +229,7 @@ export default function EoiDetail() {
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="text-2xl font-serif">{eoi.buyerFirstName} {eoi.buyerSurname}</CardTitle>
+                  <CardTitle className="text-2xl font-semibold">{eoi.buyerFirstName} {eoi.buyerSurname}</CardTitle>
                   <p className="text-muted-foreground mt-1">EOI for <span className="font-semibold text-foreground">{eoi.horseName}</span></p>
                   <p className="text-xs text-muted-foreground mt-1">Submitted {format(new Date(eoi.createdAt), "d MMMM yyyy 'at' h:mm a")}</p>
                 </div>

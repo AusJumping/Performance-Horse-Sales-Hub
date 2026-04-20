@@ -617,7 +617,7 @@ export default function SubmissionDetail() {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-serif font-bold tracking-tight" data-testid="text-horseName">{sub.horseName || "Unnamed Horse"}</h1>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="text-horseName">{sub.horseName || "Unnamed Horse"}</h1>
             <StatusBadge status={sub.status} />
             {sub.sellerIntent && (
               <Badge variant="outline" className={sub.sellerIntent === "happy_to_proceed" ? "text-emerald-700 border-emerald-400 bg-emerald-50" : "text-amber-700 border-amber-400 bg-amber-50"}>

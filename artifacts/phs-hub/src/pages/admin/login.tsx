@@ -48,7 +48,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <img src={phsLogo} alt="PHS logo" className="h-16 w-16 rounded-full object-cover mb-4 shadow" />
-          <h1 className="text-2xl font-serif font-bold text-[#24384e]">PHS Admin</h1>
+          <h1 className="text-2xl font-bold text-[#24384e]">PHS Admin</h1>
           <p className="text-sm text-stone-500 mt-1">Performance Horse Sales</p>
         </div>
 

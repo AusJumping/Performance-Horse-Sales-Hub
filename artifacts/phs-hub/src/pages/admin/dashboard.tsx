@@ -24,7 +24,7 @@ export default function Dashboard() {
   return (
     <AdminLayout>
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-serif font-bold tracking-tight">Dashboard Overview</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
         <Button asChild>
           <Link href="/admin/submissions">
             View All Submissions <ArrowRight className="ml-2 h-4 w-4" />
