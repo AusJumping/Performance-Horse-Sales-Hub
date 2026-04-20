@@ -312,6 +312,48 @@ router.post("/:id/notes", async (req, res) => {
   res.status(201).json(note);
 });
 
+// ── Listing Agreement (Phase 5) ─────────────────────────────────────────────
+
+router.patch("/:id/listing-agreement", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const {
+    commissionRate,
+    listingPeriodDays,
+    listingTermsNotes,
+    listingAgreementStatus,
+    listingAgreementSentAt,
+    listingAgreementSignedAt,
+  } = req.body as {
+    commissionRate?: string;
+    listingPeriodDays?: number;
+    listingTermsNotes?: string;
+    listingAgreementStatus?: string;
+    listingAgreementSentAt?: string | null;
+    listingAgreementSignedAt?: string | null;
+  };
+
+  const updates: Record<string, unknown> = {};
+  if (commissionRate !== undefined) updates.commissionRate = commissionRate;
+  if (listingPeriodDays !== undefined) updates.listingPeriodDays = listingPeriodDays;
+  if (listingTermsNotes !== undefined) updates.listingTermsNotes = listingTermsNotes;
+  if (listingAgreementStatus !== undefined) updates.listingAgreementStatus = listingAgreementStatus;
+  if (listingAgreementSentAt !== undefined) updates.listingAgreementSentAt = listingAgreementSentAt ? new Date(listingAgreementSentAt) : null;
+  if (listingAgreementSignedAt !== undefined) updates.listingAgreementSignedAt = listingAgreementSignedAt ? new Date(listingAgreementSignedAt) : null;
+
+  if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields provided" });
+
+  const [updated] = await db
+    .update(submissionsTable)
+    .set(updates)
+    .where(eq(submissionsTable.id, id))
+    .returning();
+
+  if (!updated) return res.status(404).json({ error: "Submission not found" });
+  res.json(updated);
+});
+
 // Delete submission (cascade: GCS media files + all related DB records)
 router.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id);

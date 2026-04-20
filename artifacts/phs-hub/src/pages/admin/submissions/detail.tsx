@@ -40,10 +40,11 @@ import {
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
-  MailOpen, PackageCheck, AlertCircle
+  MailOpen, PackageCheck, AlertCircle, FileSignature
 } from "lucide-react";
 import { openOrcPrintWindow } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateSellerEmailDraft } from "@/lib/approval-pack";
+import { openListingAgreementWindow } from "@/lib/listing-agreement";
 
 const ALL_STATUSES = [
   { value: "new", label: "New" },
@@ -208,7 +209,7 @@ export default function SubmissionDetail() {
     }
   };
 
-  const { data: sub, isLoading } = useGetSubmission(submissionId, {
+  const { data: sub, isLoading, refetch: refetchSubmission } = useGetSubmission(submissionId, {
     query: { enabled: !!submissionId, queryKey: getGetSubmissionQueryKey(submissionId) }
   });
 
@@ -468,6 +469,67 @@ export default function SubmissionDetail() {
     ready_to_use:  { label: "Ready to Use",   className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
   };
 
+  // ── Listing Agreement ────────────────────────────────────────────────────
+  const [laCommissionRate, setLaCommissionRate] = useState(sub.commissionRate ?? "10%");
+  const [laListingPeriod, setLaListingPeriod] = useState<number>(sub.listingPeriodDays ?? 90);
+  const [laTermsNotes, setLaTermsNotes] = useState(sub.listingTermsNotes ?? "");
+  const [laSaving, setLaSaving] = useState(false);
+
+  const laStatus = sub.listingAgreementStatus ?? "not_started";
+  const laStatusLabel: Record<string, { label: string; className: string }> = {
+    not_started:         { label: "Not Started",       className: "bg-stone-100 text-stone-600 border-stone-300" },
+    agreement_generated: { label: "Agreement Ready",   className: "bg-sky-50 text-sky-700 border-sky-400" },
+    sent_to_seller:      { label: "Sent to Seller",    className: "bg-violet-50 text-violet-700 border-violet-400" },
+    signed:              { label: "Signed",            className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
+  };
+
+  const handleSaveLaTerms = async (extraUpdates?: Record<string, unknown>) => {
+    setLaSaving(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/listing-agreement`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commissionRate: laCommissionRate,
+          listingPeriodDays: laListingPeriod,
+          listingTermsNotes: laTermsNotes,
+          listingAgreementStatus: laStatus === "not_started" ? "agreement_generated" : laStatus,
+          ...extraUpdates,
+        }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      refetchSubmission();
+      toast({ title: "Listing agreement saved" });
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setLaSaving(false);
+    }
+  };
+
+  const handleLaStatusUpdate = async (newStatus: string) => {
+    setLaSaving(true);
+    try {
+      const extra: Record<string, unknown> = { listingAgreementStatus: newStatus };
+      if (newStatus === "sent_to_seller") extra.listingAgreementSentAt = new Date().toISOString();
+      if (newStatus === "signed") extra.listingAgreementSignedAt = new Date().toISOString();
+      const res = await fetch(`/api/submissions/${submissionId}/listing-agreement`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(extra),
+      });
+      if (!res.ok) throw new Error("Update failed");
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      refetchSubmission();
+      toast({ title: newStatus === "sent_to_seller" ? "Marked as sent to seller" : newStatus === "signed" ? "Marked as signed" : "Status updated" });
+    } catch {
+      toast({ title: "Update failed", variant: "destructive" });
+    } finally {
+      setLaSaving(false);
+    }
+  };
+
   const handleDeleteMedia = (mediaId: number) => {
     if (confirm("Are you sure you want to delete this file?")) {
       deleteMedia.mutate(
@@ -624,6 +686,9 @@ export default function SubmissionDetail() {
               </TabsTrigger>
               <TabsTrigger value="approval-pack" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-approval-pack">
                 <PackageCheck className="h-4 w-4 mr-1.5 text-violet-600" /> Approval Pack
+              </TabsTrigger>
+              <TabsTrigger value="listing-agreement" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-listing-agreement">
+                <FileSignature className="h-4 w-4 mr-1.5 text-amber-600" /> Listing Agreement
               </TabsTrigger>
               <TabsTrigger value="form" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-form">
                 <Lock className="h-3.5 w-3.5 mr-1.5 opacity-60" /> Original Submission
@@ -1117,6 +1182,141 @@ export default function SubmissionDetail() {
 
             </TabsContent>
 
+            {/* ── Listing Agreement ── */}
+            <TabsContent value="listing-agreement" className="pt-6 space-y-4">
+              <Card>
+                <CardHeader className="pb-3 border-b bg-muted/30">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileSignature className="h-4 w-4 text-amber-600" /> Listing Agreement
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Define commission rate and listing period, then generate the formal listing agreement PDF for the seller to sign.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-5 space-y-5">
+
+                  {/* Status badge */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${laStatusLabel[laStatus]?.className ?? laStatusLabel.not_started.className}`}>
+                      {laStatusLabel[laStatus]?.label ?? laStatus}
+                    </span>
+                  </div>
+
+                  {/* Commission rate */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Commission Rate</Label>
+                    <Input
+                      value={laCommissionRate}
+                      onChange={(e) => setLaCommissionRate(e.target.value)}
+                      placeholder="e.g. 10%"
+                      className="max-w-xs"
+                      data-testid="input-commissionRate"
+                    />
+                    <p className="text-xs text-muted-foreground">Percentage or fixed fee — e.g. "10%" or "$5,000"</p>
+                  </div>
+
+                  {/* Listing period */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Listing Period (days)</Label>
+                    <Input
+                      type="number"
+                      value={laListingPeriod}
+                      onChange={(e) => setLaListingPeriod(Number(e.target.value))}
+                      min={1}
+                      max={730}
+                      className="max-w-xs"
+                      data-testid="input-listingPeriod"
+                    />
+                    <p className="text-xs text-muted-foreground">Standard is 90 days. Sets the agreement expiry date from today.</p>
+                  </div>
+
+                  {/* Special terms */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Special Terms / Notes <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                    <Textarea
+                      value={laTermsNotes}
+                      onChange={(e) => setLaTermsNotes(e.target.value)}
+                      rows={3}
+                      placeholder="Any additional terms or notes to include in the agreement..."
+                      data-testid="textarea-listingTermsNotes"
+                    />
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex flex-col gap-2 pt-1">
+                    {/* Save + generate PDF */}
+                    <Button
+                      className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+                      disabled={laSaving}
+                      onClick={async () => {
+                        await handleSaveLaTerms();
+                        openListingAgreementWindow({
+                          horseName: sub.horseName ?? "Horse",
+                          breed: sub.breed,
+                          colour: sub.colour ?? sub.workingRecord?.colour,
+                          age: sub.age ?? sub.workingRecord?.age,
+                          sex: sub.sex ?? sub.workingRecord?.sex,
+                          height: sub.workingRecord?.height ?? sub.height,
+                          askingPrice: sub.askingPrice,
+                          sellerName: sub.sellerName,
+                          sellerEmail: sub.sellerEmail,
+                          sellerPhone: sub.sellerPhone,
+                          submissionId: sub.id,
+                          commissionRate: laCommissionRate,
+                          listingPeriodDays: laListingPeriod,
+                          listingTermsNotes: laTermsNotes || undefined,
+                        });
+                      }}
+                      data-testid="button-generateListingAgreement"
+                    >
+                      {laSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                      Save & Generate Listing Agreement PDF
+                    </Button>
+
+                    {/* Mark as sent */}
+                    {laStatus === "agreement_generated" && (
+                      <Button
+                        variant="outline"
+                        className="w-full border-violet-400 text-violet-700 hover:bg-violet-50"
+                        disabled={laSaving}
+                        onClick={() => handleLaStatusUpdate("sent_to_seller")}
+                        data-testid="button-laMarkSent"
+                      >
+                        <Send className="h-4 w-4 mr-2" /> Mark as Sent to Seller
+                      </Button>
+                    )}
+
+                    {/* Mark as signed */}
+                    {laStatus === "sent_to_seller" && (
+                      <Button
+                        variant="outline"
+                        className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                        disabled={laSaving}
+                        onClick={() => handleLaStatusUpdate("signed")}
+                        data-testid="button-laMarkSigned"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" /> Mark as Signed
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Timestamps */}
+                  {(sub.listingAgreementSentAt || sub.listingAgreementSignedAt) && (
+                    <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t">
+                      {sub.listingAgreementSentAt && (
+                        <p>Sent to seller: {new Date(sub.listingAgreementSentAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      )}
+                      {sub.listingAgreementSignedAt && (
+                        <p>Signed: {new Date(sub.listingAgreementSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      )}
+                    </div>
+                  )}
+
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="form" className="pt-6">
               <Card>
                 <CardHeader className="bg-amber-50/60 pb-4 border-b border-amber-200">
@@ -1516,6 +1716,59 @@ export default function SubmissionDetail() {
                   <Copy className="h-3 w-3 mr-2" /> Copy Email Draft
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Listing Agreement Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileSignature className="h-4 w-4 text-amber-600" /> Listing Agreement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Status</span>
+                <span className={`font-semibold px-2 py-0.5 rounded border ${laStatusLabel[laStatus]?.className ?? laStatusLabel.not_started.className}`}>
+                  {laStatusLabel[laStatus]?.label ?? laStatus}
+                </span>
+              </div>
+              {sub.commissionRate && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Commission</span>
+                  <span className="font-semibold">{sub.commissionRate}</span>
+                </div>
+              )}
+              {sub.listingPeriodDays && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Period</span>
+                  <span className="font-semibold">{sub.listingPeriodDays} days</span>
+                </div>
+              )}
+              <Button
+                size="sm"
+                className="w-full bg-[#24384e] hover:bg-[#1a2d3f] mt-1"
+                onClick={() => {
+                  openListingAgreementWindow({
+                    horseName: sub.horseName ?? "Horse",
+                    breed: sub.breed,
+                    colour: sub.colour ?? sub.workingRecord?.colour,
+                    age: sub.age ?? sub.workingRecord?.age,
+                    sex: sub.sex ?? sub.workingRecord?.sex,
+                    height: sub.workingRecord?.height ?? sub.height,
+                    askingPrice: sub.askingPrice,
+                    sellerName: sub.sellerName,
+                    sellerEmail: sub.sellerEmail,
+                    sellerPhone: sub.sellerPhone,
+                    submissionId: sub.id,
+                    commissionRate: laCommissionRate,
+                    listingPeriodDays: laListingPeriod,
+                    listingTermsNotes: laTermsNotes || undefined,
+                  });
+                }}
+              >
+                <FileDown className="h-3 w-3 mr-2" /> View Agreement PDF
+              </Button>
             </CardContent>
           </Card>
 

@@ -5,6 +5,7 @@ import {
   timestamp,
   jsonb,
   boolean,
+  integer,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -68,6 +69,17 @@ export const submissionsTable = pgTable("submissions", {
   aiGenerated: boolean("ai_generated").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+
+  // ── Listing Agreement (Phase 5) ──────────────────────────────────────────
+  // Commercial terms Sally sets before generating the agreement PDF
+  commissionRate: text("commission_rate"),              // e.g. "10%"
+  listingPeriodDays: integer("listing_period_days"),    // e.g. 90
+  listingTermsNotes: text("listing_terms_notes"),       // special conditions
+
+  // Workflow states: not_started | agreement_generated | sent_to_seller | signed
+  listingAgreementStatus: text("listing_agreement_status").notNull().default("not_started"),
+  listingAgreementSentAt: timestamp("listing_agreement_sent_at", { withTimezone: true }),
+  listingAgreementSignedAt: timestamp("listing_agreement_signed_at", { withTimezone: true }),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissionsTable).omit({
