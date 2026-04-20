@@ -410,6 +410,62 @@ export default function SubmissionDetail() {
     ready_to_send: { label: "Ready to Send",  className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
   };
 
+  // ── Horse Description ────────────────────────────────────────────────────
+  const [hdDraft, setHdDraft] = useState<string>("");
+  const [hdGenerating, setHdGenerating] = useState(false);
+  const [hdSaving, setHdSaving] = useState(false);
+
+  useEffect(() => {
+    const hd = (aiOutput as any)?.horseDescription;
+    if (hd && !hdDraft) setHdDraft(String(hd));
+  }, [aiOutput]);
+
+  const handleGenerateHd = async () => {
+    setHdGenerating(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/generate-horse-description`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Generation failed");
+      setHdDraft(data.horseDescription ?? "");
+      refetchAiOutput();
+      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
+      toast({ title: "Horse description generated" });
+    } catch (err: any) {
+      toast({ title: err.message ?? "Generation failed", variant: "destructive" });
+    } finally {
+      setHdGenerating(false);
+    }
+  };
+
+  const handleSaveHd = async (newStatus?: string) => {
+    setHdSaving(true);
+    try {
+      const currentHdStatus = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
+      const status = newStatus ?? (currentHdStatus === "generated" ? "edited" : currentHdStatus);
+      const res = await fetch(`/api/submissions/${submissionId}/horse-description`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ horseDescription: hdDraft, horseDescriptionStatus: status }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      refetchAiOutput();
+      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
+      toast({ title: newStatus === "ready_to_use" ? "Marked as ready to use" : "Horse description saved" });
+    } catch {
+      toast({ title: "Save failed", variant: "destructive" });
+    } finally {
+      setHdSaving(false);
+    }
+  };
+
+  const hdStatus = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
+  const hdStatusLabel: Record<string, { label: string; className: string }> = {
+    not_generated: { label: "Not Generated", className: "bg-stone-100 text-stone-600 border-stone-300" },
+    generated:     { label: "Generated",     className: "bg-sky-50 text-sky-700 border-sky-400" },
+    edited:        { label: "Edited",         className: "bg-amber-50 text-amber-700 border-amber-400" },
+    ready_to_use:  { label: "Ready to Use",   className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
+  };
+
   const handleDeleteMedia = (mediaId: number) => {
     if (confirm("Are you sure you want to delete this file?")) {
       deleteMedia.mutate(
@@ -553,6 +609,14 @@ export default function SubmissionDetail() {
                 {orcStatus !== "not_generated" && (
                   <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold border ${orcStatusLabel[orcStatus]?.className ?? ""}`}>
                     {orcStatusLabel[orcStatus]?.label}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="horse-description" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 py-2" data-testid="tab-horse-description">
+                <Sparkles className="h-4 w-4 mr-1.5 text-amber-500" /> Horse Description
+                {hdStatus !== "not_generated" && (
+                  <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[10px] font-semibold border ${hdStatusLabel[hdStatus]?.className ?? ""}`}>
+                    {hdStatusLabel[hdStatus]?.label}
                   </span>
                 )}
               </TabsTrigger>
@@ -791,6 +855,128 @@ export default function SubmissionDetail() {
                         placeholder="Owner Response Certificate will appear here after generation…"
                         data-testid="textarea-orc"
                         readOnly={orcStatus === "ready_to_send"}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Horse Description ── */}
+            <TabsContent value="horse-description" className="pt-6">
+              <Card>
+                <CardHeader className="pb-4 border-b">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-amber-500" /> Horse Description
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Polished marketing copy written from the Owner Response Certificate. Flows as prose — no bullet points. Ready for listing pages and approval packs.
+                        {(aiOutput as any)?.horseDescriptionUpdatedAt && (
+                          <span className="block mt-1 text-xs">
+                            Last updated: {format(new Date((aiOutput as any).horseDescriptionUpdatedAt), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      {hdStatus === "not_generated" ? (
+                        <Button
+                          onClick={handleGenerateHd}
+                          disabled={hdGenerating || orcStatus === "not_generated"}
+                          className="bg-[#24384e] hover:bg-[#1a2d3f]"
+                          title={orcStatus === "not_generated" ? "Generate the ORC first" : undefined}
+                          data-testid="button-generateHd"
+                        >
+                          {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          {hdGenerating ? "Generating…" : "Generate Horse Description"}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button variant="outline" onClick={handleGenerateHd} disabled={hdGenerating} data-testid="button-regenerateHd">
+                            {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                            Regenerate
+                          </Button>
+                          <Button variant="outline" onClick={() => handleSaveHd()} disabled={hdSaving} data-testid="button-saveHd">
+                            {hdSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                            Save
+                          </Button>
+                          {hdStatus !== "ready_to_use" && (
+                            <Button onClick={() => handleSaveHd("ready_to_use")} disabled={hdSaving} className="bg-emerald-700 hover:bg-emerald-800" data-testid="button-hdReadyToUse">
+                              <CheckCircle className="h-4 w-4 mr-2" /> Mark Ready to Use
+                            </Button>
+                          )}
+                          {hdStatus === "ready_to_use" && (
+                            <Button variant="outline" onClick={() => handleSaveHd("edited")} disabled={hdSaving}>
+                              Reopen for Editing
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {hdStatus !== "not_generated" && (
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground">Status:</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${hdStatusLabel[hdStatus]?.className ?? ""}`}>
+                        {hdStatusLabel[hdStatus]?.label}
+                      </span>
+                      <div className="ml-auto">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => { navigator.clipboard.writeText(hdDraft); toast({ title: "Horse description copied to clipboard" }); }}
+                        >
+                          <Copy className="h-3 w-3 mr-1" /> Copy text
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardHeader>
+
+                <CardContent className="pt-6">
+                  {hdStatus === "not_generated" ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center">
+                        <Sparkles className="h-8 w-8 text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-stone-700">No horse description yet</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                          {orcStatus === "not_generated"
+                            ? "Generate the Owner Response Certificate first — the horse description is written from it."
+                            : "Generate flowing marketing prose from the ORC. Ready for listings and the seller approval pack."}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleGenerateHd}
+                        disabled={hdGenerating || orcStatus === "not_generated"}
+                        className="bg-[#24384e] hover:bg-[#1a2d3f] mt-2"
+                        title={orcStatus === "not_generated" ? "Generate the ORC first" : undefined}
+                      >
+                        {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                        {hdGenerating ? "Generating…" : orcStatus === "not_generated" ? "Generate ORC First" : "Generate Horse Description"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Edit the description below. Changes are not saved automatically — use the Save button above.
+                        {hdStatus === "ready_to_use" && (
+                          <span className="ml-2 font-semibold text-emerald-700">This description is marked as ready to use.</span>
+                        )}
+                      </p>
+                      <Textarea
+                        value={hdDraft}
+                        onChange={(e) => setHdDraft(e.target.value)}
+                        rows={18}
+                        className="text-sm leading-relaxed bg-white resize-y font-sans"
+                        placeholder="Horse description will appear here after generation…"
+                        data-testid="textarea-horseDescription"
+                        readOnly={hdStatus === "ready_to_use"}
                       />
                     </div>
                   )}
@@ -1089,6 +1275,49 @@ export default function SubmissionDetail() {
                   </Button>
                   {orcStatus === "ready_to_send" && (
                     <p className="text-xs text-emerald-700 font-medium text-center">Ready to include in seller approval pack</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Horse Description Status Card */}
+          <Card>
+            <CardHeader className="pb-3 border-b bg-muted/30">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" /> Horse Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground font-medium">Status</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${hdStatusLabel[hdStatus]?.className ?? ""}`}>
+                  {hdStatusLabel[hdStatus]?.label ?? hdStatus}
+                </span>
+              </div>
+              {hdStatus === "not_generated" ? (
+                <Button
+                  className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+                  size="sm"
+                  onClick={handleGenerateHd}
+                  disabled={hdGenerating || orcStatus === "not_generated"}
+                  title={orcStatus === "not_generated" ? "Generate the ORC first" : undefined}
+                >
+                  {hdGenerating ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
+                  {hdGenerating ? "Generating…" : orcStatus === "not_generated" ? "ORC Required First" : "Generate Description"}
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => { navigator.clipboard.writeText(hdDraft); toast({ title: "Horse description copied" }); }}
+                  >
+                    <Copy className="h-3 w-3 mr-2" /> Copy Description
+                  </Button>
+                  {hdStatus === "ready_to_use" && (
+                    <p className="text-xs text-emerald-700 font-medium text-center">Ready for listings and approval pack</p>
                   )}
                 </div>
               )}

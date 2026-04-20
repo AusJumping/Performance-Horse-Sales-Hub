@@ -258,6 +258,70 @@ router.patch("/submissions/:id/orc", async (req, res) => {
   }
 });
 
+// ── Horse Description ──────────────────────────────────────────────────────
+
+// Generate Horse Description from the ORC
+router.post("/submissions/:id/generate-horse-description", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!submission) return res.status(404).json({ error: "Submission not found" });
+
+  const [aiRow] = await db.select().from(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+  const orcText = aiRow?.ownerResponseCert;
+  if (!orcText) return res.status(400).json({ error: "Generate the Owner Response Certificate first — the Horse Description is written from it." });
+
+  try {
+    const hd = await generateContent(horseDescriptionPrompt(submission, orcText));
+
+    if (aiRow) {
+      await db.update(aiOutputsTable).set({
+        horseDescription: hd,
+        horseDescriptionStatus: "generated",
+        horseDescriptionUpdatedAt: new Date(),
+      }).where(eq(aiOutputsTable.submissionId, id));
+    } else {
+      await db.insert(aiOutputsTable).values({
+        submissionId: id,
+        horseDescription: hd,
+        horseDescriptionStatus: "generated",
+        horseDescriptionUpdatedAt: new Date(),
+      });
+    }
+
+    res.json({ horseDescription: hd, horseDescriptionStatus: "generated" });
+  } catch (err) {
+    req.log.error({ err }, "Horse description generation failed");
+    res.status(500).json({ error: "Horse description generation failed" });
+  }
+});
+
+// Save / update Horse Description
+router.patch("/submissions/:id/horse-description", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const { horseDescription, horseDescriptionStatus } = req.body as {
+    horseDescription?: string;
+    horseDescriptionStatus?: string;
+  };
+
+  const [existing] = await db.select().from(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+
+  const updates: Record<string, unknown> = { horseDescriptionUpdatedAt: new Date() };
+  if (horseDescription !== undefined) updates.horseDescription = horseDescription;
+  if (horseDescriptionStatus !== undefined) updates.horseDescriptionStatus = horseDescriptionStatus;
+
+  if (existing) {
+    const [updated] = await db.update(aiOutputsTable).set(updates).where(eq(aiOutputsTable.submissionId, id)).returning();
+    res.json(updated);
+  } else {
+    const [created] = await db.insert(aiOutputsTable).values({ submissionId: id, ...updates } as any).returning();
+    res.json(created);
+  }
+});
+
 async function generateContent(prompt: string): Promise<string> {
   const response = await openai.chat.completions.create({
     model: "gpt-5",
@@ -542,6 +606,40 @@ Return only a comma-separated list of relevant tags, no explanations.
 
 SUBMISSION DATA:
 ${summary}`;
+}
+
+function horseDescriptionPrompt(
+  submission: { horseName: string | null; breed: string | null; age: string | null; sex: string | null; location: string | null },
+  orcText: string
+): string {
+  return `You are a specialist copywriter for Performance Horse Sales Australia and New Zealand — a premium equine sales agency.
+
+Your task is to write a compelling, well-crafted horse listing description based on the Owner Response Certificate (ORC) provided below. The ORC contains verified factual information provided by the seller. Your description must be accurate — do not invent, exaggerate, or add details not present in the ORC.
+
+STRICT RULES:
+- Write in flowing prose — no bullet points or numbered lists
+- Do not use emojis
+- Do not use salesy clichés (e.g. "don't miss out", "once in a lifetime", "the perfect horse")
+- Do not use superlatives unless directly supported by fact (e.g. "multiple champion" is fine if stated; "exceptional" with no basis is not)
+- Be emotive and engaging, but remain credible and horse-savvy
+- Tone: premium, warm, confident, knowledgeable — written for a discerning horse buyer
+- Length: 250–400 words
+- Write in third person (e.g. "He is...", "She offers...", "This gelding...")
+- Do not repeat the horse's name more than 3 times — vary with pronouns
+
+STRUCTURE (prose — not headings, just natural flow):
+1. Opening: Introduce the horse — name, breed, age, sex — and the impression they make overall
+2. What they do: disciplines, training, competition highlights if present
+3. Who they are: character, temperament, ground manners — bring them to life
+4. Health and care: briefly if notable
+5. Ideal home: what kind of rider or situation would suit them, as described by the seller
+6. Closing sentence: a confident, warm sign-off that leaves the reader wanting to enquire
+
+HORSE: ${submission.horseName ?? "Unknown"} (${submission.sex ?? ""} ${submission.breed ?? ""}, ${submission.age ?? "?"} yo)
+LOCATION: ${submission.location ?? "Not specified"}
+
+OWNER RESPONSE CERTIFICATE:
+${orcText}`;
 }
 
 export default router;
