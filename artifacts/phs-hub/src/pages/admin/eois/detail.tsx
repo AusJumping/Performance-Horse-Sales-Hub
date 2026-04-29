@@ -9,7 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download, Copy, MessageSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download, Copy, MessageSquare, ExternalLink, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EoiStatusBadge } from "./index";
 
 interface Eoi {
@@ -145,6 +149,7 @@ export default function EoiDetail() {
   const [notes, setNotes] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("eoi_received");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: eoi, isLoading } = useQuery<Eoi>({
     queryKey: ["eois", id],
@@ -176,6 +181,19 @@ export default function EoiDetail() {
       toast({ title: "Saved", description: "EOI updated successfully." });
     },
     onError: () => toast({ title: "Error", description: "Could not save changes.", variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/eois/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eois"] });
+      toast({ title: "EOI deleted" });
+      window.location.href = "/admin/eois";
+    },
+    onError: () => toast({ title: "Error", description: "Could not delete EOI.", variant: "destructive" }),
   });
 
   const draft = useMemo(
@@ -214,11 +232,19 @@ export default function EoiDetail() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center justify-between gap-3 mb-6">
         <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
           <Link href="/admin/eois">
             <ArrowLeft className="h-4 w-4" /> Back to EOIs
           </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          <Trash2 className="h-4 w-4" /> Delete EOI
         </Button>
       </div>
 
@@ -501,6 +527,27 @@ export default function EoiDetail() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this EOI?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the EOI from <strong>{eoi.buyerFirstName} {eoi.buyerSurname}</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete EOI"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

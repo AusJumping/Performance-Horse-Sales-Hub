@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearch } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import AdminLayout from "@/components/layout/admin-layout";
 import {
@@ -10,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, SlidersHorizontal } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Search, SlidersHorizontal, Trash2 } from "lucide-react";
 
 const EOI_STATUSES = [
   { value: "new", label: "New", className: "bg-sky-100 text-sky-800 border-sky-200" },
@@ -60,8 +65,24 @@ export default function EoisList() {
   const initialStatus = new URLSearchParams(search$).get("status") ?? "all";
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ["eois"], queryFn: fetchEois });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/eois/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete EOI");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eois"] });
+      toast({ title: "EOI deleted" });
+      setDeleteTarget(null);
+    },
+    onError: () => toast({ title: "Error", description: "Could not delete EOI.", variant: "destructive" }),
+  });
 
   const filtered = (data ?? []).filter((e) => {
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
@@ -155,9 +176,20 @@ export default function EoisList() {
                     </TableCell>
                     <TableCell><EoiStatusBadge status={eoi.status} /></TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0">
-                        <Link href={`/admin/eois/${eoi.id}`}>View</Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0">
+                          <Link href={`/admin/eois/${eoi.id}`}>View</Link>
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget({ id: eoi.id, name: `${eoi.buyerFirstName} ${eoi.buyerSurname}` })}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -166,6 +198,27 @@ export default function EoisList() {
           </Table>
         )}
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete EOI?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the EOI from <strong>{deleteTarget?.name}</strong>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

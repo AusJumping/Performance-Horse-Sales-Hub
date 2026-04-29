@@ -368,6 +368,21 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
+// ─── Delete EOI ───────────────────────────────────────────────────────────────
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    const deleted = await db.delete(eoisTable).where(eq(eoisTable.id, id)).returning();
+    if (!deleted.length) return res.status(404).json({ error: "Not found" });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete EOI" });
+  }
+});
+
 // ─── One-time sample data seed (admin-protected, idempotent) ─────────────────
 
 router.post("/seed-samples", async (req, res) => {
