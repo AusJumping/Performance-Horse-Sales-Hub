@@ -1,0 +1,155 @@
+import { db, eoisTable } from "@workspace/db";
+import { count } from "drizzle-orm";
+import { logger } from "./logger";
+
+const SAMPLE_EOIS = [
+  {
+    buyerFirstName: "Jessica",
+    buyerSurname: "Hartley",
+    buyerEmail: "jessica.hartley@gmail.com",
+    buyerPhone: "0412 345 678",
+    buyerLocation: "Bowral, NSW",
+    horseName: "Warwick Park Obsidian",
+    waiverAgreed: true,
+    declarationAgreed: true,
+    status: "suitable",
+    adminNotes: "Seller thinks she sounds like a good match. Will arrange viewing next week.",
+    formData: {
+      ageRange: "8–12 years",
+      riderGoals: "I want to compete in showjumping at 1m–1.1m level and eventually move into eventing. I have my own float and agistment arranged.",
+      disciplines: ["Showjumping", "Eventing"],
+      heightRange: "16–16.2hh",
+      ppePurchase: "Intend to purchase",
+      budgetStatus: "Finance pre-approved",
+      requestTypes: ["Private viewing", "Video call with owner"],
+      currentHorses: "1 horse (retired)",
+      additionalInfo: "I have competed at Equissage and Camden Show. Happy to provide rider video via WhatsApp.",
+      trialRequested: true,
+      insuranceStatus: "Will arrange prior to purchase",
+      ridingFrequency: "5–6 days per week",
+      riderCompetenceLevel: "Intermediate — competing at club level",
+    },
+  },
+  {
+    buyerFirstName: "Ben",
+    buyerSurname: "McAllister",
+    buyerEmail: "ben.mcallister@outlook.com",
+    buyerPhone: "0487 654 321",
+    buyerLocation: "Scone, NSW",
+    horseName: "Highfields Copperhead",
+    waiverAgreed: true,
+    declarationAgreed: true,
+    status: "viewing_booked",
+    adminNotes: "Viewing confirmed Saturday 26 April at 10am. Seller advised.",
+    formData: {
+      ageRange: "5–9 years",
+      riderGoals: "Looking for a quality performance horse for campdrafting and working stockhorse competition at open level. Have 20 years experience with performance horses.",
+      disciplines: ["Campdrafting", "Working Stockhorse"],
+      heightRange: "15.2–16hh",
+      ppePurchase: "Already insured through existing policy",
+      budgetStatus: "Funds available",
+      requestTypes: ["Private viewing"],
+      currentHorses: "4 horses in work",
+      additionalInfo: "Happy to travel for a viewing. Can provide references from trainers.",
+      trialRequested: false,
+      insuranceStatus: "Existing equine insurance policy",
+      ridingFrequency: "Daily",
+      riderCompetenceLevel: "Advanced — professional rider",
+    },
+  },
+  {
+    buyerFirstName: "Claire",
+    buyerSurname: "Wu",
+    buyerEmail: "claire.wu@icloud.com",
+    buyerPhone: "0401 111 222",
+    buyerLocation: "Dural, NSW",
+    horseName: "Warwick Park Obsidian",
+    waiverAgreed: true,
+    declarationAgreed: true,
+    status: "not_suitable",
+    adminNotes: "Horse is too advanced for beginner rider — advised not suitable for safety reasons.",
+    formData: {
+      ageRange: "10–18 years",
+      riderGoals: "I have just started riding and am looking for a quiet, confidence-giving horse for trail riding and light arena work. Lessons once a week.",
+      disciplines: ["Trail Riding", "Pleasure"],
+      heightRange: "14.2–15.2hh",
+      ppePurchase: "Need to arrange",
+      budgetStatus: "Budget set — not seeking finance",
+      requestTypes: ["Extra photos/video", "Private viewing"],
+      currentHorses: "None",
+      additionalInfo: "",
+      trialRequested: true,
+      insuranceStatus: "Not yet arranged",
+      ridingFrequency: "1–2 days per week",
+      riderCompetenceLevel: "Beginner — less than 2 years riding",
+    },
+  },
+  {
+    buyerFirstName: "Amelia",
+    buyerSurname: "Foster",
+    buyerEmail: "amelia.foster@gmail.com",
+    buyerPhone: "0455 789 012",
+    buyerLocation: "Berry, NSW",
+    horseName: "Ridgeline Zephyr",
+    waiverAgreed: true,
+    declarationAgreed: true,
+    status: "new",
+    adminNotes: null,
+    formData: {
+      ageRange: "7–12 years",
+      riderGoals: "Looking for an eventing horse to compete at EvA80–EvA95. Currently training with Sarah Jones. Have own agistment and float.",
+      disciplines: ["Eventing", "Dressage"],
+      heightRange: "16–16.3hh",
+      ppePurchase: "Will arrange prior to purchase",
+      budgetStatus: "Finance pre-approved",
+      requestTypes: ["Video call with owner", "Private viewing"],
+      currentHorses: "1 horse (sold recently)",
+      additionalInfo: "Can provide rider video. Competed at Glenworth Valley and Nowra EC.",
+      trialRequested: true,
+      insuranceStatus: "Will arrange prior to purchase",
+      ridingFrequency: "4–5 days per week",
+      riderCompetenceLevel: "Intermediate — competing at club level",
+    },
+  },
+  {
+    buyerFirstName: "Mark",
+    buyerSurname: "Davidson",
+    buyerEmail: "mark.davidson@bigpond.com",
+    buyerPhone: "0421 333 444",
+    buyerLocation: "Orange, NSW",
+    horseName: "Highfields Copperhead",
+    waiverAgreed: true,
+    declarationAgreed: true,
+    status: "under_review",
+    adminNotes: "Sent to seller for assessment. Awaiting response.",
+    formData: {
+      ageRange: "6–12 years",
+      riderGoals: "Returning to competition after a few years off. Looking for a solid campdrafter to start back at maiden/novice level and work up. Have all facilities.",
+      disciplines: ["Campdrafting"],
+      heightRange: "15–16hh",
+      ppePurchase: "Already have cover",
+      budgetStatus: "Funds available",
+      requestTypes: ["Private viewing"],
+      currentHorses: "2 paddock horses",
+      additionalInfo: "Competed at NSW State Campdraft. Happy to discuss over the phone first.",
+      trialRequested: false,
+      insuranceStatus: "Existing policy",
+      ridingFrequency: "Weekends and occasional weekday",
+      riderCompetenceLevel: "Experienced amateur — competed at state level previously",
+    },
+  },
+];
+
+export async function seedSampleEoisIfEmpty(): Promise<void> {
+  try {
+    const [{ value: existing }] = await db.select({ value: count() }).from(eoisTable);
+    if (Number(existing) > 0) {
+      logger.info({ existing }, "EOI seed skipped — records already exist");
+      return;
+    }
+    await db.insert(eoisTable).values(SAMPLE_EOIS);
+    logger.info({ count: SAMPLE_EOIS.length }, "Seeded sample EOIs");
+  } catch (err) {
+    logger.warn({ err }, "EOI seed failed — continuing startup");
+  }
+}
