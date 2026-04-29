@@ -9,6 +9,7 @@ import {
   Clapperboard,
   Inbox,
   FileStack,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -138,6 +139,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             href="/"
             icon={FilePen}
             label="Seller Form"
+            isActive={false}
+            external
+            extraRight={<ExternalLink className="h-3 w-3 opacity-40" />}
+          />
+          <NavItem
+            href="/eoi"
+            icon={Send}
+            label="EOI Form"
             isActive={false}
             external
             extraRight={<ExternalLink className="h-3 w-3 opacity-40" />}
