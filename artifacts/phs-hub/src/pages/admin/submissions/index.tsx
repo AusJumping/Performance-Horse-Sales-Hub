@@ -39,8 +39,8 @@ export default function SubmissionsList() {
       if (!res.ok) throw new Error("Failed to delete submission");
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["submissions"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["/api/submissions"] });
+      qc.invalidateQueries({ queryKey: ["/api/dashboard"] });
       toast({ title: "Submission deleted" });
       setDeleteTarget(null);
     },
