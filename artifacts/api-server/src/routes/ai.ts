@@ -622,11 +622,109 @@ ${summary}`;
 function socialCaptionPrompt(summary: string): string {
   return `${AI_RULES}
 
-You are writing an Instagram/Facebook caption for Performance Horse Sales Australia and New Zealand.
+You are writing the Social Caption (Main) for Performance Horse Sales Australia and New Zealand (PHS).
 
-Using ONLY the information provided below, write an engaging social media caption (100-150 words). Make it warm, professional, and compelling. End with a call to action to enquire. Do not use excessive exclamation marks or hype language.
+This caption will be published on Instagram and Facebook. It must NOT read like a compressed listing, a data summary, a spec sheet, or a marketplace ad. It must feel like a thoughtful, warm, polished social media introduction to the horse — written by a person who understands both horses and buyers.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL STYLE RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DO:
+- Sound like a real person speaking naturally to an audience
+- Be conversational, warm, credible, and easy to read
+- Curate — choose the most appealing points, not all of them
+- Space the post well so each idea breathes
+- Let facts enter the narrative naturally, not in blunt lists
+- Be persuasive in a calm, honest way
+- Make rider suitability clear but frame it as thoughtful guidance, not a warning label
+
+DO NOT:
+- Open with a long string of stats or specs
+- Write like software summarising a form
+- Use em dashes anywhere — use commas or full stops instead
+- Use cheesy, pushy, gimmicky, or overly promotional phrases
+- Cram every available detail into the caption
+- Write one giant paragraph
+- Use phrases like "genuine sale", "enquire now for videos", or "proven X with placings at..." in a blunt, ad-like way
+- Make the horse sound like a problem when noting suitability
+- Repeat negatives
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED STRUCTURE — FOLLOW THIS SHAPE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Hook line
+Open with a strong, natural first sentence that gives people a reason to keep reading.
+Do NOT open with stats. Examples of good hook styles:
+- "Some horses are ready to help a rider keep building."
+- "For the right rider, this is the kind of horse that can be genuinely rewarding."
+- "There is a lot to like about a horse who is educated, careful and already proven."
+
+2. Short follow-up paragraph
+Expand on what makes this horse appealing. Focus on overall value, feel, or appeal.
+
+3. Education / competition paragraph
+Bring in competition level, education, or background in a smooth, readable way.
+Do not list too many achievements in one sentence.
+
+4. Suitability paragraph
+Be honest and clear about who this horse suits.
+This should feel like thoughtful guidance for the right buyer, not a warning.
+
+5. Optional closing paragraph
+Briefly reinforce what makes this horse appealing for the right buyer. Keep it short.
+
+6. Facts block (end of post)
+A clean, scan-friendly summary:
+[Height] | [Age] | [Breed] | [Gender]
+Discipline: [Discipline]
+Rider suitability: [Suitability]
+Price: [Price — if provided]
+Location: [Location]
+
+7. Enquiry line
+A simple, professional enquiry line directing to PHS.
+Example: "All enquiries to Performance Horse Sales — 0428 239 317 | performancehorsesales.com.au"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT FILTERING RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usually include:
+- The horse's main appeal and overall type
+- Age, height, breed if helpful to the narrative
+- Discipline and level
+- Key strengths
+- Rider suitability
+- Location and price
+
+Usually omit or minimise:
+- Full breeding strings in the opening line
+- Technical tack details
+- Detailed feed programs
+- Long medical summaries
+- Too many competition results in one paragraph
+- Overly specific maintenance notes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUALITY CHECK BEFORE OUTPUTTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Does this sound like a person talking naturally, not summarising a form?
+2. Is the opening engaging rather than just factual?
+3. Have I selected only the most important and appealing details?
+4. Is the post easy to read on social media?
+5. Is rider suitability clear but not harsh?
+6. Does the tone feel warm, polished, and credible?
+7. Have I avoided em dashes completely?
+8. Have I avoided sounding like a generic advertisement?
+
+If the answer to any of these is no, revise before outputting.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SUBMISSION DATA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${summary}`;
 }
 
