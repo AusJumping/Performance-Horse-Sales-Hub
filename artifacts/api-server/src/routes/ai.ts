@@ -567,31 +567,38 @@ SIGNIFICANT RESULTS
 - [Result 2]
 
 Introduction:
-[One concise, polished prose paragraph introducing the horse and his/her overall appeal. Lead with what makes this horse commercially interesting. Do not repeat the quick facts block. No bullet points.]
+- [Key selling point 1]
+- [Key selling point 2]
+- [Key selling point 3 — only if supported by data]
 
 Education, skills and experience:
-[A prose paragraph covering competition experience, training background, disciplines, flatwork or jumping education. Only what was provided. No bullet points.]
+- [Discipline/competition experience point]
+- [Training background point]
+- [Additional education point — only if provided]
 
 General demeanour under saddle:
-[A prose paragraph describing how the horse feels to ride. Honest but measured. Note any pressure points in calm, professional language — the goal is honest filtering, not alarm. No bullet points.]
+- [Rideability point 1]
+- [Rideability point 2 — honest, measured; note any pressure points calmly]
 
 Current workload / fitness:
-[A prose paragraph on current work status and fitness. Only if information was provided. No bullet points.]
+- [Current work status — only if provided]
 
 Handling:
-[A prose paragraph on ground manners, loading, travel, farrier, vet, day-to-day behaviour. Only if provided. No bullet points.]
+- [Ground manner / loading / travel point — only if provided]
+- [Farrier / vet behaviour — only if provided]
 
 Feeding and management:
-[A brief prose paragraph — buyer-relevant management summary only. Omit specific supplement brands unless clearly important. Only if provided. No bullet points.]
+- [Buyer-relevant management point — only if provided; omit supplement brand detail]
 
 Medical history:
-[A brief, factual prose paragraph — buyer-relevant summary only. Do not include exhaustive vet detail here — that belongs in the ORC. Only if provided. No bullet points.]
+- [Factual, buyer-relevant medical point — only if provided; exhaustive detail belongs in the ORC]
 
 Rider Suitability:
-[A clear, commercially useful prose paragraph. Who is the ideal buyer? What experience level, goals and situation does this horse suit? Use honest, measured wording for any limitations. No bullet points.]
+- [Who this horse suits — experience level, goals, situation]
+- [Any suitability limitations — honest and measured, not alarming]
 
 Reason for sale:
-[A short prose sentence or two. Honest and concise. Only if provided. No bullet points.]
+- [Honest and concise — only if provided]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CONTENT RULES
@@ -600,7 +607,7 @@ CONTENT RULES
 - Omit any section entirely if there is not enough real information to justify it.
 - Do not invent content to fill a heading.
 - Do not repeat information across sections.
-- Keep narrative sections concise — this is a listing, not a report.
+- Keep bullet points short and factual — this is a scan-friendly platform listing.
 - Tack details, detailed supplement schedules, and minor admin details belong in supporting docs, not here.
 - Enquiries must be directed to PHS (not the owner directly).
 - Do not introduce urgency phrases such as "priced to sell quickly" unless the seller has explicitly stated this.
