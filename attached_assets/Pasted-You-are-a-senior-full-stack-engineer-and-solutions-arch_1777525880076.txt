@@ -1,0 +1,395 @@
+You are a senior full stack engineer and solutions architect. You are working on an existing Replit app for Performance Horse Sales Australia and New Zealand.
+
+Your task is to add a safety-first Google Drive and Google Docs integration for Sally’s Google Drive.
+
+This integration must be designed very carefully so there is no risk of damaging, renaming, moving, deleting, or misfiling existing content in Sally’s Drive.
+
+CRITICAL INSTRUCTION
+
+Do not use Sally’s Google password anywhere in the app, code, environment variables, or setup process.
+
+Use Google OAuth 2.0 for a web server application so Sally can securely connect her Google account to the app. Tokens must be stored securely server-side, never exposed to the browser, and never logged.
+
+Do not proceed with any destructive assumptions. If anything is unclear, stop and ask questions before coding.
+
+FIRST, ASK QUESTIONS BEFORE YOU BUILD
+
+Before writing code, ask me a concise list of the specific details you still need confirmed. Do not skip this. Ask only the questions that are genuinely required to build safely.
+
+At a minimum, check whether you need confirmation on:
+1. The exact parent folder in Sally’s Drive where this app is allowed to operate
+2. Whether we should create one dedicated root folder for the app, then create subfolders inside it
+3. Whether approved horse folders should live inside a separate parent folder, or inside the Submissions area, or elsewhere
+4. The exact names of the three top-level folders:
+   - Submissions
+   - EOIs
+   - Potential Viewers
+5. Whether EOIs should be stored as a shortcut in the horse folder, or duplicated there as a second document copy
+6. The exact naming format for docs and horse folders
+7. How an EOI gets matched to a horse
+8. Which generated horse documents must be created immediately on approval
+9. Whether the app should upload only Google Docs, or also keep PDFs/JSON snapshots in Drive
+10. Any required sharing permissions for horse folders or docs
+
+If anything is unclear, ask before coding.
+
+PROJECT GOAL
+
+Add Google Drive integration to the existing Replit app so that:
+
+A. FORM BACKUP ON SUBMISSION
+Every time any form is submitted, the submission is immediately backed up into Sally’s Google Drive as a Google Doc in the correct folder.
+
+There are three form types:
+1. Submissions
+2. EOIs
+3. Potential Viewers
+
+There are three corresponding Google Drive folders:
+1. Submissions
+2. EOIs
+3. Potential Viewers
+
+Every form submission must:
+- be saved in the app database first
+- be converted into a Google Doc
+- be placed in the correct Google Drive folder immediately
+- store the resulting Drive file ID, Doc ID, and link in the app database
+- mark backup status clearly in the app
+
+B. HORSE FOLDER CREATION ON APPROVAL
+When Sally approves a horse for listing, the app must create a dedicated folder in Sally’s Google Drive for that horse.
+
+That horse folder will then hold all generated listing documents for that horse.
+
+At minimum, that horse folder must contain:
+- Owner Response Certificate
+- Horse Description
+- Listing Agreement
+
+Also, every EOI that comes in for that horse must appear in that horse’s folder.
+
+C. SAFETY FIRST
+The app must be designed so it can only create and update files inside explicitly approved folders.
+It must never scan, move, rename, overwrite, or delete unrelated content in Sally’s Drive.
+
+DESIGN PRINCIPLES
+
+1. Safety over speed
+2. No destructive operations
+3. Create only, unless specifically updating a file previously created by this app
+4. Restrict all Drive activity to known folder IDs
+5. Maintain a full audit trail in the database
+6. Make retries idempotent so submissions do not create duplicates
+7. Make failures visible in the admin dashboard
+8. Ask questions before making assumptions
+
+AUTHENTICATION REQUIREMENTS
+
+Implement Google OAuth 2.0 connection for Sally’s Google account.
+
+Requirements:
+- server-side OAuth flow
+- secure token storage
+- encrypted refresh token storage if retained
+- tokens never exposed client-side
+- clear “Connect Google Drive” and “Reconnect Google Drive” admin flow
+- clear “Google Drive connected” status in admin
+- clear handling for expired or revoked tokens
+
+Do not use password-based login.
+Do not ask me to paste Sally’s Google password into Replit.
+Do not hardcode credentials.
+
+Use least privilege practical access.
+If broader scopes are genuinely required, explain why and ask first.
+
+FOLDER STRUCTURE
+
+Use a dedicated app-managed area in Sally’s Drive.
+
+Recommended safe structure:
+[Configured Parent Folder]
+  /Submissions
+  /EOIs
+  /Potential Viewers
+  /[Approved Horses or another configured parent for horse folders]
+
+Do not operate in Sally’s full Drive root unless I explicitly approve that.
+
+If the folder structure does not exist yet, the app may create only the approved app-managed folders after confirmation.
+
+Never create folders outside the approved parent path.
+
+FORM BACKUP WORKFLOW
+
+For each form submission:
+
+1. Save submission to the app database first
+2. Generate a canonical JSON snapshot of the submission in the backend
+3. Convert that submission into a well-formatted Google Doc
+4. File it into the correct folder based on form type
+5. Store returned Google Drive metadata in the app database
+6. Update submission status to one of:
+   - drive_backup_pending
+   - drive_backup_complete
+   - drive_backup_failed
+7. If Drive backup fails, preserve the submission locally, show the failure in admin, and retry safely without creating duplicates
+
+The Google Doc should contain:
+- form type
+- submission date/time
+- record ID
+- horse name if applicable
+- applicant name if applicable
+- all form answers in a clean readable structure
+- key uploaded-file references or links if part of the submission
+
+The app must not rely on Drive as the only source of truth.
+The app database remains primary, and Drive acts as an immediate off-app backup and working document store.
+
+GOOGLE DOC CREATION RULES
+
+Create each submission as a Google Doc, not just a plain uploaded text file.
+
+The app should:
+- create the Google Doc
+- place it in the correct Drive folder
+- populate it with clean formatted content
+- save the resulting file IDs and links in the database
+
+Doc naming examples:
+- Submission_Embrook Stables Charlie_Sally Empringham_2026-04-30_1530
+- EOI_Embrook Stables Charlie_Jane Smith_2026-04-30_1605
+- PotentialViewer_John Smith_2026-04-30_1610
+
+Use a safe naming utility:
+- remove invalid characters
+- collapse duplicate spaces
+- preserve readability
+- append record ID or timestamp where needed to avoid collisions
+
+APPROVED HORSE FOLDER WORKFLOW
+
+When Sally changes a horse submission status to approved_for_listing:
+
+1. Check whether a horse folder already exists for that horse in the approved-horses location
+2. If not, create the horse folder
+3. Save the horse folder ID and link in the database
+4. Generate the approved horse documents as Google Docs
+5. Place those generated docs into the horse folder
+6. Save all resulting file IDs and links in the horse record
+
+At minimum create:
+- Owner Response Certificate
+- Horse Description
+- Listing Agreement
+
+Use app-managed templates and generate Docs that remain editable.
+
+If a horse folder already exists, do not create a duplicate.
+Use deterministic lookup based on:
+- horse record ID
+- horse name
+- app-managed metadata
+
+EOI HANDLING FOR HORSE FOLDERS
+
+Important: a Google Drive file can only have one parent folder.
+
+Because of that, do not try to place one EOI Doc into both the central EOIs folder and the horse folder as two parents.
+
+Implement one of these approaches, but ask me to confirm which one I want before coding:
+Option A:
+- create the original EOI Doc in the central EOIs folder
+- create a Google Drive shortcut to that EOI inside the horse folder
+
+Option B:
+- create the original EOI Doc in the horse folder
+- create a shortcut in the central EOIs folder
+
+Option C:
+- create a copy in both places, only if I explicitly choose duplication
+
+Default recommendation:
+Use one original document plus one shortcut, not duplication.
+
+EOI TO HORSE MATCHING
+
+Before coding, ask me exactly how EOIs are matched to a horse.
+
+Possible matching methods may include:
+- direct horse selection in the EOI form
+- horse ID hidden field
+- horse name exact match
+- submission-linked internal record ID
+
+Do not guess this mapping logic.
+
+POTENTIAL VIEWERS WORKFLOW
+
+For the Potential Viewers form:
+- save to app database
+- convert submission to a Google Doc
+- store in the Potential Viewers Drive folder
+- save file ID and doc link in the database
+- no horse folder routing unless explicitly required later
+
+APP-MANAGED FILE METADATA
+
+Use app-specific metadata on Drive files where practical so the app can safely locate only its own files.
+
+Store identifiers such as:
+- appManaged = true
+- appName = phs-replit
+- formType = submission | eoi | potential_viewer
+- submissionId
+- horseId if applicable
+- createdByAppVersion
+
+Also store the same Drive IDs and links in the app database.
+
+This is important for safe lookups, deduplication, and future maintenance.
+
+DATABASE CHANGES REQUIRED
+
+Add or extend database tables for:
+- google_account_connections
+- drive_folder_mappings
+- drive_file_records
+- submission_backup_status
+- horse_drive_folders
+- document_generation_records
+- audit_logs
+
+Minimum fields to capture:
+- local record ID
+- Google Drive file ID
+- Google Doc ID if applicable
+- parent folder ID
+- horse ID if applicable
+- form type
+- file name
+- webViewLink
+- webContentLink if applicable
+- status
+- createdAt
+- updatedAt
+- lastAttemptAt
+- retryCount
+- errorMessage if failed
+
+IDEMPOTENCY AND DUPLICATE PREVENTION
+
+This is critical.
+
+For every form submission and every document-generation job:
+- use a deterministic idempotency key
+- never create duplicate Docs on retries
+- check whether an app-managed file already exists for that record before creating a new one
+- if a prior file exists, reuse it or create a new version only if explicitly intended
+
+All retry logic must be safe.
+
+UPLOAD AND JOB PROCESSING
+
+Use a background job queue or equivalent safe async process for Drive writes if needed.
+
+But from the user’s perspective, backup must happen immediately after submission.
+
+Recommended behavior:
+- submission is accepted and stored locally first
+- Drive backup job is triggered immediately
+- UI shows backup status
+- admin can see success or failure
+- failed jobs retry with backoff
+- retries remain idempotent
+
+ADMIN UI REQUIREMENTS
+
+Add admin controls for:
+- Connect Google Drive
+- View Google Drive connection status
+- View folder mapping status
+- Retry failed Drive backup
+- Open created Google Doc
+- Open horse folder in Google Drive
+- View backup history and failures
+
+For each submission record, show:
+- Drive backup status
+- Drive doc link
+- last backup attempt
+- failure reason if any
+
+For each approved horse, show:
+- horse folder link
+- generated doc links
+- EOI links or shortcuts attached
+
+SAFETY GUARDRAILS
+
+These are mandatory:
+- never delete existing Drive files
+- never rename or move non-app-managed files
+- never write outside configured folder IDs
+- never use Drive root by default
+- never assume a folder by name alone if a folder ID is available
+- never update a file unless it was created by this app or explicitly mapped in the database
+- log all Drive create/update actions
+- provide a dry-run/test mode before live rollout
+
+REQUIRED IMPLEMENTATION APPROACH
+
+Build this in a careful phased way:
+
+Phase 1
+- Google OAuth connection
+- folder mapping configuration
+- safe folder lookup/creation
+- Drive/Docs service layer
+- database schema changes
+
+Phase 2
+- immediate form-to-Google-Doc backup for the three form types
+- idempotent retry logic
+- admin status visibility
+
+Phase 3
+- approved horse folder creation
+- generated horse docs written to horse folder
+- EOI routing into horse folder via shortcut or copy, once confirmed
+
+Phase 4
+- hardening, logging, dry run, and testing
+
+TESTING REQUIREMENTS
+
+Before finalising:
+- test submission backup for all three forms
+- test duplicate prevention
+- test failed token handling
+- test retry logic
+- test folder creation on horse approval
+- test EOI routing to horse folder
+- test that unrelated Drive content is untouched
+
+DELIVERABLES I WANT FROM YOU
+
+Please respond in this order:
+
+1. Briefly restate the safest recommended architecture
+2. List the exact questions you need me to answer before coding
+3. Propose the database changes
+4. Propose the folder mapping strategy
+5. Propose the Google OAuth flow
+6. Propose the Drive/Docs service layer design
+7. Outline the idempotent backup workflow
+8. Outline the horse folder workflow
+9. Outline the EOI routing strategy options
+10. Then begin implementation step by step
+
+FINAL RULE
+
+If there is any uncertainty about folder structure, permissions, matching rules, or file placement, stop and ask before implementing.
+Safety first. No risky assumptions.
