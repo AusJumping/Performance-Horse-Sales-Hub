@@ -383,23 +383,118 @@ CRITICAL AI RULES — FOLLOW THESE WITHOUT EXCEPTION:
 function masterListingPrompt(summary: string): string {
   return `${AI_RULES}
 
-You are writing a premium horse sales listing for Performance Horse Sales Australia and New Zealand.
+You are writing a branded, structured, buyer-facing Master Listing for Performance Horse Sales Australia and New Zealand (PHS).
 
-Using ONLY the information provided below, write a comprehensive master listing for the horse. Include:
-- Opening paragraph introducing the horse
-- Details about breed, age, height, sex, colour
-- Discipline and competition information (only if provided)
-- Training and education background (only if provided)
-- Temperament and handling (only if provided)
-- Health and soundness (only if provided)
-- Suitability and ideal rider (only if provided)
-- Location and viewing
-- Asking price
-- Contact/inquiry instructions (generic)
+This is NOT a freeform prose summary. It is a curated sales listing written in the style of an experienced equine sales professional — the benchmark is Sally Empringham's listing style at PHS.
 
-Do not use headers. Write in flowing, professional prose. Maximum 600 words.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL APPROACH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+DO:
+- Curate. Include only the most commercially relevant information.
+- Structure the listing in a predictable, branded format with labelled sections.
+- Help buyers scan quickly. Use the quick facts block. Use headings.
+- Filter for suitability clearly — help the right buyer find this horse.
+- Present the horse honestly and positively.
+- Sound like a horse-savvy, commercially aware sales professional.
+- Be polished, calm, credible, warm and selective.
+
+DO NOT:
+- Include every data point just because it exists.
+- Write one long block of flowing prose.
+- Use gushy, overblown, cliché-heavy, or cheesy language.
+- Invent facts, results, or suitability claims.
+- Use placeholder text such as [Insert X].
+- Front-load the listing with negatives or make it read like a risk report.
+- Sound generic, robotic, too clinical, or like a typical marketplace ad.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIRED STRUCTURE — FOLLOW THIS EXACTLY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Output the listing in this shape. Use the exact headings shown.
+
+[HORSE NAME IN CAPITALS]
+
+Proudly presented by Performance Horse Sales AU NZ
+All enquiries to PHS — 0428 239 317 | performancehorsesales.com.au
+Expression of Interest: performancehorsesales.com.au/eoi
+
+Asking price: [price — if not provided, omit this line]
+Height: [height]
+Age: [age]
+Gender: [gender/sex]
+Colour: [colour]
+Breed: [breed]
+Discipline: [primary discipline]
+Rider suitability: [one clear, concise suitability line]
+Location: [location]
+Please see Owner's Response Certificate for full details.
+
+SIGNIFICANT RESULTS
+(Only include this section if competition results were provided. List them as short, punchy bullet points. Omit this section entirely if no results were provided.)
+- [Result 1]
+- [Result 2]
+
+Introduction:
+[One concise, polished paragraph introducing the horse and his/her overall appeal. Lead with what makes this horse commercially interesting. Do not repeat the quick facts block.]
+
+Education, skills and experience:
+[Competition experience, training background, disciplines, flatwork or jumping education. Only what was provided.]
+
+General demeanour under saddle:
+[How the horse feels to ride. Honest but measured. Note any pressure points in calm, professional language — the goal is honest filtering, not alarm.]
+
+Current workload / fitness:
+[Current work status. Only if information was provided.]
+
+Handling:
+[Ground manners, loading, travel, farrier, vet, day-to-day behaviour. Only if provided.]
+
+Feeding and management:
+[A brief, buyer-relevant management summary only. Omit specific supplement brands unless clearly important. Only if provided.]
+
+Medical history:
+[A brief, factual, buyer-relevant summary. Do not include exhaustive vet detail here — that belongs in the ORC. Only if provided.]
+
+Rider Suitability:
+[A clear, commercially useful paragraph. Who is the ideal buyer? What experience level, goals and situation does this horse suit? Use honest, measured wording for any limitations.]
+
+Reason for sale:
+[Honest and concise. Only if provided.]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Omit any section entirely if there is not enough real information to justify it.
+- Do not invent content to fill a heading.
+- Do not repeat information across sections.
+- Keep narrative sections concise — this is a listing, not a report.
+- Tack details, detailed supplement schedules, and minor admin details belong in supporting docs, not here.
+- Enquiries must be directed to PHS (not the owner directly).
+- Do not introduce urgency phrases such as "priced to sell quickly" unless the seller has explicitly stated this.
+- Do not include unsupported superlatives.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUALITY CHECK — BEFORE OUTPUTTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before finalising the listing, verify:
+1. Does this read like a curated sales listing, not a data summary?
+2. Is rider suitability clear early in the listing?
+3. Is the structure scan-friendly with headings present?
+4. Have I included only the most buyer-relevant detail?
+5. Is the tone calm, professional, credible, and warm?
+6. Have I avoided sounding defensive, clinical, generic, or gushy?
+7. Is all content strictly grounded in the submitted facts?
+
+If the answer to any of these is no, revise before outputting.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SUBMISSION DATA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${summary}`;
 }
 
