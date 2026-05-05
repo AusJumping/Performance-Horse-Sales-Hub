@@ -2024,13 +2024,6 @@ export default function Home() {
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
       <div className="bg-[#24384e] text-white py-8 px-4 text-center relative">
-        <a
-          href="/admin"
-          className="absolute top-0 right-0 p-4 text-[10px] text-white/20 hover:text-white/50 transition-colors select-none"
-          tabIndex={-1}
-        >
-          Staff Admin
-        </a>
         <img
           src={phsLogo}
           alt="Performance Horse Sales logo"
@@ -2115,11 +2108,6 @@ export default function Home() {
           — we respond within 12 hours.
         </p>
 
-        <p className="text-center mt-6">
-          <a href="/admin" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">
-            Staff Admin
-          </a>
-        </p>
       </div>
     </div>
   );
