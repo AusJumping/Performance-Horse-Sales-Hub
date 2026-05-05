@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, XCircle, Loader2, FolderOpen, ExternalLink, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, FolderOpen, ExternalLink, RefreshCw, Plus } from "lucide-react";
 
 interface DriveSettings {
   id?: number;
@@ -59,6 +59,20 @@ export default function DriveSettings() {
     },
     onError: (err: Error) =>
       toast({ title: "Save failed", description: err.message, variant: "destructive" }),
+  });
+
+  const createRootFolderMutation = useMutation({
+    mutationFn: () => apiFetch("/drive/settings/create-root-folder", { method: "POST" }),
+    onSuccess: (data: { folderId: string; folderLink: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
+      setFolderIdInput(data.folderId);
+      toast({
+        title: "Folder created in Drive",
+        description: "PHS Seller Folders has been created in your Google Drive.",
+      });
+    },
+    onError: (err: Error) =>
+      toast({ title: "Failed to create folder", description: err.message, variant: "destructive" }),
   });
 
   const testMutation = useMutation({
@@ -143,45 +157,72 @@ export default function DriveSettings() {
               Seller Folders Location
             </CardTitle>
             <CardDescription>
-              Paste the Google Drive folder ID for the <strong>SELLER FOLDERS</strong> folder inside
-              your PHS App Folders. Horse folders will be created here.
+              The app needs a folder in your Drive where it can create horse folders. Use the button
+              below to let the app create it for you — this is the easiest option.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
+
+            {/* Primary: let app create the folder */}
+            <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+              <p className="text-sm font-medium">Option A — Let the app create the folder</p>
+              <p className="text-xs text-muted-foreground">
+                Clicking below will create a folder called <strong>PHS Seller Folders</strong> in
+                your Google Drive and save its ID automatically. Recommended.
+              </p>
+              <Button
+                onClick={() => createRootFolderMutation.mutate()}
+                disabled={createRootFolderMutation.isPending}
+                className="bg-[#24384e] hover:bg-[#1a2d3f]"
+              >
+                {createRootFolderMutation.isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  : <Plus className="h-4 w-4 mr-2" />}
+                Create PHS Seller Folders in Drive
+              </Button>
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted-foreground">or</span></div>
+            </div>
+
+            {/* Secondary: paste existing folder ID */}
             <div className="space-y-2">
-              <Label htmlFor="folderIdInput">SELLER FOLDERS — Folder ID</Label>
+              <p className="text-sm font-medium">Option B — Use an existing folder</p>
+              <p className="text-xs text-muted-foreground mb-2">
+                Note: the folder must have been created by this app. Pre-existing Drive folders
+                cannot be used due to Google's permission model.
+              </p>
+              <Label htmlFor="folderIdInput">Folder ID</Label>
               <Input
                 id="folderIdInput"
                 placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs"
                 value={folderIdInput}
                 onChange={(e) => setFolderIdInput(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                To find the folder ID: open the folder in Google Drive and copy the long string of
-                letters and numbers from the URL — it comes after{" "}
-                <code className="bg-muted px-1 rounded">/folders/</code>.
-              </p>
+              <Button
+                variant="outline"
+                onClick={() => saveMutation.mutate(folderIdInput.trim())}
+                disabled={saveMutation.isPending || !folderIdInput.trim()}
+              >
+                {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Save Folder ID
+              </Button>
             </div>
 
             {hasFolder && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-1">
                 <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Folder ID saved
+                  Folder configured
                 </Badge>
-                <span className="text-xs text-muted-foreground font-mono">
+                <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
                   {settings?.sellerFolderParentId}
                 </span>
               </div>
             )}
-
-            <Button
-              onClick={() => saveMutation.mutate(folderIdInput.trim())}
-              disabled={saveMutation.isPending || !folderIdInput.trim()}
-            >
-              {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Save Folder ID
-            </Button>
           </CardContent>
         </Card>
 

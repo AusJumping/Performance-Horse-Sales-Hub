@@ -80,6 +80,31 @@ router.post("/test", async (req, res) => {
   }
 });
 
+// ── POST /api/drive/settings/create-root-folder ───────────────────────────
+// Creates the "PHS Seller Folders" root folder at Drive root (no pre-existing parent needed)
+router.post("/settings/create-root-folder", async (req, res) => {
+  try {
+    const folder = await createDriveFolder("PHS Seller Folders", "root");
+    const existing = await getSettings();
+    let saved;
+    if (existing) {
+      [saved] = await db.update(driveSettingsTable)
+        .set({ sellerFolderParentId: folder.id, updatedAt: new Date() })
+        .where(eq(driveSettingsTable.id, existing.id))
+        .returning();
+    } else {
+      [saved] = await db.insert(driveSettingsTable)
+        .values({ sellerFolderParentId: folder.id })
+        .returning();
+    }
+    res.json({ folderId: folder.id, folderLink: folder.webViewLink, settings: saved });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err }, "Failed to create root seller folder");
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── POST /api/drive/submissions/:id/create-folder ─────────────────────────
 // Creates the three-subfolder structure for an approved horse in Drive
 router.post("/submissions/:id/create-folder", async (req, res) => {
