@@ -5,7 +5,7 @@ import {
   submissionsTable,
   eoisTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, lte, and } from "drizzle-orm";
 import {
   testDriveConnection,
   createDriveFolder,
@@ -203,8 +203,20 @@ router.post("/drive/eois/:id/backup", async (req, res) => {
       targetFolderId = settings.sellerFolderParentId;
     }
 
-    const buyerName = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
-    const title = buildEoiDocTitle(eoi.horseName, buyerName, eoi.createdAt);
+    // Viewer number = position of this EOI in arrival order for this horse
+    // Count all EOIs with the same horseName (case-insensitive match) received at or before this one
+    const allForHorse = await db
+      .select({ id: eoisTable.id })
+      .from(eoisTable)
+      .where(
+        and(
+          eq(eoisTable.horseName, eoi.horseName),
+          lte(eoisTable.id, eoi.id)
+        )
+      );
+    const viewerNumber = allForHorse.length;
+
+    const title = buildEoiDocTitle(viewerNumber, eoi.buyerFirstName, eoi.buyerSurname);
     const html = formatEoiAsHtml({
       id: eoi.id,
       horseName: eoi.horseName,

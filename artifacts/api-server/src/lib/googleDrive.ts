@@ -108,9 +108,8 @@ export function formatDateTime(d: Date): string {
   return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
-export function buildEoiDocTitle(horseName: string, buyerName: string, date: Date): string {
-  const ts = formatDateTime(date).replace(/[-: ]/g, "").slice(0, 12);
-  return safeDriveName(`EOI_${horseName}_${buyerName}_${ts}`);
+export function buildEoiDocTitle(viewerNumber: number, buyerFirstName: string, buyerSurname: string): string {
+  return safeDriveName(`V${viewerNumber}. ${buyerFirstName} ${buyerSurname}`);
 }
 
 export function formatEoiAsHtml(eoi: {

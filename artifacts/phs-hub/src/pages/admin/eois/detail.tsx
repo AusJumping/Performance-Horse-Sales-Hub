@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download, Copy, MessageSquare, ExternalLink, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, CheckCircle2, XCircle, Download, Copy, MessageSquare, ExternalLink, Trash2, HardDrive, Loader2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -32,6 +32,9 @@ interface Eoi {
   adminNotes: string | null;
   createdAt: string;
   updatedAt: string;
+  driveFileId: string | null;
+  driveFileLink: string | null;
+  driveBackedUpAt: string | null;
 }
 
 const EOI_STATUSES = [
@@ -181,6 +184,23 @@ export default function EoiDetail() {
       toast({ title: "Saved", description: "EOI updated successfully." });
     },
     onError: () => toast({ title: "Error", description: "Could not save changes.", variant: "destructive" }),
+  });
+
+  const driveBackupMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch(`/api/drive/eois/${id}/backup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({ error: res.statusText })); throw new Error(e.error ?? res.statusText); }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eois", id] });
+      toast({ title: "Backed up to Drive", description: "EOI viewer form saved as a Google Doc." });
+    },
+    onError: (err: Error) => toast({ title: "Drive error", description: err.message, variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -434,6 +454,33 @@ export default function EoiDetail() {
                   <Download className="h-4 w-4" /> Download EOI Summary PDF
                 </a>
               </Button>
+
+              {/* Drive backup */}
+              {eoi.driveFileLink ? (
+                <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
+                  <a href={eoi.driveFileLink} target="_blank" rel="noreferrer">
+                    <HardDrive className="h-4 w-4 text-green-700" /> View in Drive <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start gap-2"
+                  onClick={() => driveBackupMutation.mutate()}
+                  disabled={driveBackupMutation.isPending}
+                >
+                  {driveBackupMutation.isPending
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <HardDrive className="h-4 w-4" />}
+                  Backup to Drive
+                </Button>
+              )}
+              {eoi.driveBackedUpAt && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Last backed up {format(new Date(eoi.driveBackedUpAt), "d MMM 'at' h:mm a")}
+                </p>
+              )}
             </CardContent>
           </Card>
 

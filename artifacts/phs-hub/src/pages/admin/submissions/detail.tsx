@@ -40,12 +40,99 @@ import {
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
-  MailOpen, PackageCheck, AlertCircle, FileSignature
+  MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink
 } from "lucide-react";
 import { openOrcPrintWindow } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateSellerEmailDraft } from "@/lib/approval-pack";
 import { openListingAgreementWindow } from "@/lib/listing-agreement";
 import { StatusBadge } from "@/components/status-badge";
+
+// ── Google Drive Card ──────────────────────────────────────────────────────
+function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const driveSetupStatus: string = sub?.driveSetupStatus ?? "not_started";
+  const driveFolderLink: string | null = sub?.driveFolderLink ?? null;
+  const driveSetupError: string | null = sub?.driveSetupError ?? null;
+
+  const createFolderMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch(`/api/drive/submissions/${submissionId}/create-folder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({ error: res.statusText })); throw new Error(e.error ?? res.statusText); }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      toast({ title: "Drive folder created", description: "Horse folder structure created in Google Drive." });
+    },
+    onError: (err: Error) => toast({ title: "Drive error", description: err.message, variant: "destructive" }),
+  });
+
+  const statusColors: Record<string, string> = {
+    not_started: "text-muted-foreground",
+    creating: "text-blue-600",
+    done: "text-green-700",
+    failed: "text-red-600",
+  };
+  const statusLabels: Record<string, string> = {
+    not_started: "Not set up",
+    creating: "Creating…",
+    done: "Folder ready",
+    failed: "Setup failed",
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 border-b bg-muted/30">
+        <CardTitle className="text-base flex items-center gap-2">
+          <HardDrive className="h-4 w-4 text-[#24384e]" /> Google Drive
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-medium">Folder status</span>
+          <span className={`text-xs font-semibold ${statusColors[driveSetupStatus] ?? ""}`}>
+            {driveSetupStatus === "creating" && <Loader2 className="inline h-3 w-3 mr-1 animate-spin" />}
+            {statusLabels[driveSetupStatus] ?? driveSetupStatus}
+          </span>
+        </div>
+
+        {driveSetupError && (
+          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1.5">{driveSetupError}</p>
+        )}
+
+        {driveFolderLink ? (
+          <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
+            <a href={driveFolderLink} target="_blank" rel="noreferrer">
+              <FolderOpen className="h-4 w-4" /> Open Horse Folder <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
+            </a>
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
+            onClick={() => createFolderMutation.mutate()}
+            disabled={createFolderMutation.isPending || driveSetupStatus === "creating"}
+          >
+            {createFolderMutation.isPending ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <HardDrive className="h-3 w-3 mr-2" />}
+            Create Drive Folder
+          </Button>
+        )}
+
+        {driveSetupStatus === "done" && (
+          <p className="text-xs text-muted-foreground text-center">
+            Portfolio · Documents · EOI Viewer Forms
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 const ALL_STATUSES = [
   { value: "new", label: "New" },
@@ -1910,6 +1997,9 @@ export default function SubmissionDetail() {
               ) : null}
             </CardContent>
           </Card>
+
+          {/* Google Drive Card */}
+          <DriveCard submissionId={submissionId} sub={sub as any} />
 
           <Card>
             <CardHeader className="pb-3 border-b bg-muted/30">
