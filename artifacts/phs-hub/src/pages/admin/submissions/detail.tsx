@@ -608,6 +608,17 @@ export default function SubmissionDetail() {
       refetchAiOutput();
       queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
       toast({ title: newStatus === "ready_to_send" ? "Marked as ready to send" : "ORC saved" });
+      // Auto-save to Drive when ORC is marked ready
+      if (newStatus === "ready_to_send" && orcDraft) {
+        saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcHtml({
+          horseName: sub?.horseName ?? "Horse",
+          breed: sub?.breed,
+          sellerName: sub?.sellerName,
+          askingPrice: sub?.askingPrice,
+          submissionId,
+          orcText: orcDraft,
+        }));
+      }
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
     } finally {
@@ -632,6 +643,57 @@ export default function SubmissionDetail() {
     const hd = (aiOutput as any)?.horseDescription;
     if (hd && !hdDraft) setHdDraft(String(hd));
   }, [aiOutput]);
+
+  // ── Auto-save existing docs when Drive folder is first created ────────────
+  const prevDocsFolderRef = useRef<string | null>(null);
+  useEffect(() => {
+    const folderId = sub?.driveDocumentsFolderId ?? null;
+    const wasNull = prevDocsFolderRef.current === null;
+    prevDocsFolderRef.current = folderId;
+    // Only fire once when the folder transitions from null → a real value
+    if (!wasNull || !folderId) return;
+    const currentOrcStatus = (aiOutput as any)?.orcStatus ?? "not_generated";
+    const currentHdStatus  = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
+    if (orcDraft && currentOrcStatus !== "not_generated") {
+      saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcHtml({
+        horseName: sub?.horseName ?? "Horse",
+        breed: sub?.breed,
+        sellerName: sub?.sellerName,
+        askingPrice: sub?.askingPrice,
+        submissionId,
+        orcText: orcDraft,
+      }));
+    }
+    if (orcDraft && hdDraft && currentHdStatus !== "not_generated") {
+      saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
+        horseName: sub?.horseName ?? "Horse",
+        breed: sub?.breed,
+        sellerName: sub?.sellerName,
+        askingPrice: sub?.askingPrice,
+        submissionId,
+        orcText: orcDraft,
+        horseDescription: hdDraft,
+      }));
+    }
+    if (laCommissionRate) {
+      saveDocToDrive("listing_agreement", `Listing Agreement — ${sub?.horseName ?? "Horse"}`, generateListingAgreementHtml({
+        horseName: sub?.horseName ?? "Horse",
+        breed: sub?.breed,
+        colour: sub?.colour ?? sub?.workingRecord?.colour,
+        age: sub?.age ?? sub?.workingRecord?.age,
+        sex: sub?.sex ?? sub?.workingRecord?.sex,
+        height: sub?.workingRecord?.height ?? sub?.height,
+        askingPrice: sub?.askingPrice,
+        sellerName: sub?.sellerName,
+        sellerEmail: sub?.sellerEmail,
+        sellerPhone: sub?.sellerPhone,
+        submissionId,
+        commissionRate: laCommissionRate,
+        listingPeriodDays: laListingPeriod,
+        listingTermsNotes: laTermsNotes || undefined,
+      }));
+    }
+  }, [sub?.driveDocumentsFolderId]);
 
   const handleGenerateHd = async () => {
     setHdGenerating(true);
@@ -664,6 +726,18 @@ export default function SubmissionDetail() {
       refetchAiOutput();
       queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
       toast({ title: newStatus === "ready_to_use" ? "Marked as ready to use" : "Horse description saved" });
+      // Auto-save Approval Pack to Drive when HD is marked ready (if ORC also exists)
+      if (newStatus === "ready_to_use" && hdDraft && orcDraft) {
+        saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
+          horseName: sub?.horseName ?? "Horse",
+          breed: sub?.breed,
+          sellerName: sub?.sellerName,
+          askingPrice: sub?.askingPrice,
+          submissionId,
+          orcText: orcDraft,
+          horseDescription: hdDraft,
+        }));
+      }
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
     } finally {
@@ -711,6 +785,23 @@ export default function SubmissionDetail() {
       queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
       refetchSubmission();
       toast({ title: "Listing agreement saved" });
+      // Auto-save Listing Agreement to Drive
+      saveDocToDrive("listing_agreement", `Listing Agreement — ${sub?.horseName ?? "Horse"}`, generateListingAgreementHtml({
+        horseName: sub?.horseName ?? "Horse",
+        breed: sub?.breed,
+        colour: sub?.colour ?? sub?.workingRecord?.colour,
+        age: sub?.age ?? sub?.workingRecord?.age,
+        sex: sub?.sex ?? sub?.workingRecord?.sex,
+        height: sub?.workingRecord?.height ?? sub?.height,
+        askingPrice: sub?.askingPrice,
+        sellerName: sub?.sellerName,
+        sellerEmail: sub?.sellerEmail,
+        sellerPhone: sub?.sellerPhone,
+        submissionId,
+        commissionRate: laCommissionRate,
+        listingPeriodDays: laListingPeriod,
+        listingTermsNotes: laTermsNotes || undefined,
+      }));
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
     } finally {
