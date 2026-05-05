@@ -10,11 +10,14 @@ import {
   testDriveConnection,
   createDriveFolder,
   createGoogleDoc,
+  uploadFileToDrive,
   safeDriveName,
   formatDateTime,
   buildEoiDocTitle,
   formatEoiAsHtml,
 } from "../lib/googleDrive.js";
+import { mediaFilesTable } from "@workspace/db";
+import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router: IRouter = Router();
 
@@ -197,13 +200,15 @@ router.post("/submissions/:id/create-folder", async (req, res) => {
 });
 
 // ── POST /api/drive/submissions/:id/save-document ─────────────────────────
-// Saves an HTML document as a Google Doc in the submission's Documents folder
+// Saves an HTML document as a Google Doc.
+// ORC + horse_description → Portfolio folder (seller-facing content)
+// approval_pack + listing_agreement → Documents folder (contracts)
 router.post("/submissions/:id/save-document", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const { docType, title, html } = req.body as {
-    docType: "orc" | "approval_pack" | "listing_agreement";
+    docType: "orc" | "horse_description" | "approval_pack" | "listing_agreement";
     title: string;
     html: string;
   };
@@ -215,9 +220,14 @@ router.post("/submissions/:id/save-document", async (req, res) => {
   const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  const folderId = submission.driveDocumentsFolderId;
+  // Route to the correct subfolder based on document type
+  const portfolioTypes = ["orc", "horse_description"] as const;
+  const isPortfolio = (portfolioTypes as readonly string[]).includes(docType);
+  const folderId = isPortfolio ? submission.drivePortfolioFolderId : submission.driveDocumentsFolderId;
+
   if (!folderId) {
-    return res.status(400).json({ error: "Drive Documents folder not set up. Create the Drive folder for this submission first." });
+    const folderName = isPortfolio ? "Portfolio" : "Documents";
+    return res.status(400).json({ error: `Drive ${folderName} folder not set up. Create the Drive folder for this submission first.` });
   }
 
   try {
@@ -225,6 +235,7 @@ router.post("/submissions/:id/save-document", async (req, res) => {
 
     const updates: Record<string, string> = {};
     if (docType === "orc") updates.driveOrcDocLink = doc.webViewLink;
+    if (docType === "horse_description") updates.driveHorseDescriptionDocLink = doc.webViewLink;
     if (docType === "approval_pack") updates.driveApprovalPackDocLink = doc.webViewLink;
     if (docType === "listing_agreement") updates.driveListingAgreementDocLink = doc.webViewLink;
 
@@ -236,6 +247,63 @@ router.post("/submissions/:id/save-document", async (req, res) => {
     req.log.error({ err }, "Failed to save document to Drive");
     res.status(500).json({ error: msg });
   }
+});
+
+// ── POST /api/drive/submissions/:id/sync-media ────────────────────────────
+// Downloads all photo/video media files from object storage and uploads them
+// to the submission's Portfolio folder in Drive.
+router.post("/submissions/:id/sync-media", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!submission) return res.status(404).json({ error: "Submission not found" });
+
+  const portfolioFolderId = submission.drivePortfolioFolderId;
+  if (!portfolioFolderId) {
+    return res.status(400).json({ error: "Portfolio folder not set up. Create the Drive folder for this submission first." });
+  }
+
+  const mediaFiles = await db
+    .select()
+    .from(mediaFilesTable)
+    .where(eq(mediaFilesTable.submissionId, id));
+
+  const syncable = mediaFiles.filter(f => f.storagePath && (f.mediaType === "photo" || f.mediaType === "video"));
+
+  if (syncable.length === 0) {
+    return res.json({ synced: 0, failed: 0, message: "No media files to sync" });
+  }
+
+  const storage = new ObjectStorageService();
+  let synced = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (const file of syncable) {
+    try {
+      const signedUrl = await storage.getObjectEntityDownloadURL(file.storagePath!, 600);
+      const fileResp = await fetch(signedUrl);
+      if (!fileResp.ok) throw new Error(`GCS download failed: ${fileResp.status}`);
+
+      const arrayBuffer = await fileResp.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      await uploadFileToDrive(file.originalName, file.mimeType, buffer, portfolioFolderId);
+      synced++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      req.log.error({ err, fileId: file.id }, "Failed to sync media file to Drive");
+      failed++;
+      errors.push(`${file.originalName}: ${msg}`);
+    }
+  }
+
+  await db.update(submissionsTable)
+    .set({ driveMediaSyncedAt: new Date() })
+    .where(eq(submissionsTable.id, id));
+
+  res.json({ synced, failed, errors });
 });
 
 // ── POST /api/drive/eois/:id/backup ───────────────────────────────────────

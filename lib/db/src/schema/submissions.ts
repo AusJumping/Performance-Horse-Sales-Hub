@@ -91,10 +91,15 @@ export const submissionsTable = pgTable("submissions", {
   driveSetupStatus: text("drive_setup_status").notNull().default("not_started"),
   driveSetupError: text("drive_setup_error"),
 
-  // Links to generated documents saved in the Drive Documents folder
+  // Links to generated documents
+  // Portfolio folder docs (seller-facing content)
   driveOrcDocLink: text("drive_orc_doc_link"),
+  driveHorseDescriptionDocLink: text("drive_horse_description_doc_link"),
+  // Documents folder docs (contracts / agreements)
   driveApprovalPackDocLink: text("drive_approval_pack_doc_link"),
   driveListingAgreementDocLink: text("drive_listing_agreement_doc_link"),
+  // Media sync
+  driveMediaSyncedAt: timestamp("drive_media_synced_at", { withTimezone: true }),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissionsTable).omit({

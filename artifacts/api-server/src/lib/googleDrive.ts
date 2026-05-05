@@ -92,6 +92,38 @@ export async function createGoogleDoc(
   return response.json() as Promise<DriveFile>;
 }
 
+export async function uploadFileToDrive(
+  name: string,
+  mimeType: string,
+  fileBuffer: Buffer,
+  parentFolderId: string
+): Promise<DriveFile> {
+  const connectors = getConnectors();
+  const boundary = `phs_media_${Date.now()}`;
+  const metadata = JSON.stringify({ name, mimeType, parents: [parentFolderId] });
+
+  const headerBuf = Buffer.from(
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`
+  );
+  const footerBuf = Buffer.from(`\r\n--${boundary}--`);
+  const body = Buffer.concat([headerBuf, fileBuffer, footerBuf]);
+
+  const response = await connectors.proxy(
+    "google-drive",
+    "/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    {
+      method: "POST",
+      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+      body: body as unknown as string,
+    }
+  );
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Failed to upload "${name}": ${response.status} — ${err}`);
+  }
+  return response.json() as Promise<DriveFile>;
+}
+
 export function safeDriveName(str: string): string {
   return str
     .replace(/[\/\\:*?"<>|]/g, " ")

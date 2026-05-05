@@ -131,8 +131,10 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
   const driveFolderLink: string | null = sub?.driveFolderLink ?? null;
   const driveSetupError: string | null = sub?.driveSetupError ?? null;
   const driveOrcDocLink: string | null = sub?.driveOrcDocLink ?? null;
+  const driveHorseDescriptionDocLink: string | null = sub?.driveHorseDescriptionDocLink ?? null;
   const driveApprovalPackDocLink: string | null = sub?.driveApprovalPackDocLink ?? null;
   const driveListingAgreementDocLink: string | null = sub?.driveListingAgreementDocLink ?? null;
+  const driveMediaSyncedAt: string | null = sub?.driveMediaSyncedAt ?? null;
 
   const createFolderMutation = useMutation({
     mutationFn: async () => {
@@ -203,32 +205,52 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
         )}
 
         {driveSetupStatus === "done" && (
-          <div className="space-y-1.5 pt-1 border-t">
-            <p className="text-xs text-muted-foreground font-medium">Saved documents</p>
-            {driveOrcDocLink ? (
-              <a href={driveOrcDocLink} target="_blank" rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
-                <ExternalLink className="h-3 w-3 flex-shrink-0" /> ORC
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground/60 italic">ORC — not yet saved</p>
-            )}
-            {driveApprovalPackDocLink ? (
-              <a href={driveApprovalPackDocLink} target="_blank" rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
-                <ExternalLink className="h-3 w-3 flex-shrink-0" /> Approval Pack
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground/60 italic">Approval Pack — not yet saved</p>
-            )}
-            {driveListingAgreementDocLink ? (
-              <a href={driveListingAgreementDocLink} target="_blank" rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
-                <ExternalLink className="h-3 w-3 flex-shrink-0" /> Listing Agreement
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground/60 italic">Listing Agreement — not yet saved</p>
-            )}
+          <div className="space-y-3 pt-1 border-t">
+            {/* Portfolio folder */}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Portfolio</p>
+              {driveOrcDocLink ? (
+                <a href={driveOrcDocLink} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                  <ExternalLink className="h-3 w-3 flex-shrink-0" /> ORC
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic">ORC — not yet saved</p>
+              )}
+              {driveHorseDescriptionDocLink ? (
+                <a href={driveHorseDescriptionDocLink} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                  <ExternalLink className="h-3 w-3 flex-shrink-0" /> Horse Description
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic">Horse Description — not yet saved</p>
+              )}
+              <p className="text-xs text-muted-foreground/60 italic">
+                {driveMediaSyncedAt
+                  ? `Photos & videos synced`
+                  : "Photos & videos — not yet synced"}
+              </p>
+            </div>
+            {/* Documents folder */}
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Documents</p>
+              {driveApprovalPackDocLink ? (
+                <a href={driveApprovalPackDocLink} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                  <ExternalLink className="h-3 w-3 flex-shrink-0" /> Approval Pack
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic">Approval Pack — not yet saved</p>
+              )}
+              {driveListingAgreementDocLink ? (
+                <a href={driveListingAgreementDocLink} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                  <ExternalLink className="h-3 w-3 flex-shrink-0" /> Listing Agreement
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground/60 italic">Listing Agreement — not yet saved</p>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
@@ -415,11 +437,12 @@ export default function SubmissionDetail() {
 
   // ── Save document to Drive (silent background save) ──────────────────────
   const saveDocToDrive = async (
-    docType: "orc" | "approval_pack" | "listing_agreement",
+    docType: "orc" | "horse_description" | "approval_pack" | "listing_agreement",
     title: string,
     html: string
   ) => {
     const token = localStorage.getItem("admin_token");
+    const folderLabel = (docType === "orc" || docType === "horse_description") ? "Portfolio" : "Documents";
     try {
       const res = await fetch(`/api/drive/submissions/${submissionId}/save-document`, {
         method: "POST",
@@ -428,11 +451,31 @@ export default function SubmissionDetail() {
       });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
-        toast({ title: "Saved to Drive", description: `${title} saved to the Documents folder.` });
+        toast({ title: "Saved to Drive", description: `${title} saved to the ${folderLabel} folder.` });
       }
       // silently skip if Drive not configured (400) — don't block the popup
     } catch {
       // network error — ignore silently
+    }
+  };
+
+  // ── Sync photos/videos to Drive Portfolio folder ──────────────────────────
+  const syncMediaToDrive = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/drive/submissions/${submissionId}/sync-media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+        const data = await res.json();
+        if (data.synced > 0) {
+          toast({ title: "Media synced to Drive", description: `${data.synced} file${data.synced !== 1 ? "s" : ""} uploaded to Portfolio folder.` });
+        }
+      }
+    } catch {
+      // silently ignore — Drive may not be configured
     }
   };
 
@@ -644,7 +687,7 @@ export default function SubmissionDetail() {
     if (hd && !hdDraft) setHdDraft(String(hd));
   }, [aiOutput]);
 
-  // ── Auto-save existing docs when Drive folder is first created ────────────
+  // ── Auto-save existing docs & media when Drive folder is first created ─────
   const prevDocsFolderRef = useRef<string | null>(null);
   useEffect(() => {
     const folderId = sub?.driveDocumentsFolderId ?? null;
@@ -654,6 +697,7 @@ export default function SubmissionDetail() {
     if (!wasNull || !folderId) return;
     const currentOrcStatus = (aiOutput as any)?.orcStatus ?? "not_generated";
     const currentHdStatus  = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
+    // Portfolio: ORC
     if (orcDraft && currentOrcStatus !== "not_generated") {
       saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcHtml({
         horseName: sub?.horseName ?? "Horse",
@@ -664,6 +708,21 @@ export default function SubmissionDetail() {
         orcText: orcDraft,
       }));
     }
+    // Portfolio: Horse Description
+    if (hdDraft && currentHdStatus !== "not_generated") {
+      saveDocToDrive("horse_description", `Horse Description — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
+        horseName: sub?.horseName ?? "Horse",
+        breed: sub?.breed,
+        sellerName: sub?.sellerName,
+        askingPrice: sub?.askingPrice,
+        submissionId,
+        orcText: orcDraft,
+        horseDescription: hdDraft,
+      }));
+    }
+    // Portfolio: photos & videos
+    syncMediaToDrive();
+    // Documents: Approval Pack (if both ORC and HD exist)
     if (orcDraft && hdDraft && currentHdStatus !== "not_generated") {
       saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
         horseName: sub?.horseName ?? "Horse",
@@ -675,6 +734,7 @@ export default function SubmissionDetail() {
         horseDescription: hdDraft,
       }));
     }
+    // Documents: Listing Agreement
     if (laCommissionRate) {
       saveDocToDrive("listing_agreement", `Listing Agreement — ${sub?.horseName ?? "Horse"}`, generateListingAgreementHtml({
         horseName: sub?.horseName ?? "Horse",
@@ -726,9 +786,9 @@ export default function SubmissionDetail() {
       refetchAiOutput();
       queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
       toast({ title: newStatus === "ready_to_use" ? "Marked as ready to use" : "Horse description saved" });
-      // Auto-save Approval Pack to Drive when HD is marked ready (if ORC also exists)
-      if (newStatus === "ready_to_use" && hdDraft && orcDraft) {
-        saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
+      if (newStatus === "ready_to_use" && hdDraft) {
+        // Portfolio: Horse Description doc
+        saveDocToDrive("horse_description", `Horse Description — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
           horseName: sub?.horseName ?? "Horse",
           breed: sub?.breed,
           sellerName: sub?.sellerName,
@@ -737,6 +797,18 @@ export default function SubmissionDetail() {
           orcText: orcDraft,
           horseDescription: hdDraft,
         }));
+        // Documents: Approval Pack (ORC + HD combined) — only if ORC also exists
+        if (orcDraft) {
+          saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
+            horseName: sub?.horseName ?? "Horse",
+            breed: sub?.breed,
+            sellerName: sub?.sellerName,
+            askingPrice: sub?.askingPrice,
+            submissionId,
+            orcText: orcDraft,
+            horseDescription: hdDraft,
+          }));
+        }
       }
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
