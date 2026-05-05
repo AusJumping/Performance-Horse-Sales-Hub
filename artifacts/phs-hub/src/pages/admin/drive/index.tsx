@@ -1,13 +1,11 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, XCircle, Loader2, FolderOpen, ExternalLink, RefreshCw, Plus } from "lucide-react";
+
 
 interface DriveSettings {
   id?: number;
@@ -40,28 +38,9 @@ async function apiFetch(path: string, options?: RequestInit) {
 export default function DriveSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [folderIdInput, setFolderIdInput] = useState("");
-
   const { data: settings, isLoading } = useQuery<DriveSettings>({
     queryKey: ["/api/drive/settings"],
     queryFn: () => apiFetch("/drive/settings"),
-    onSuccess: (data) => {
-      if (data.sellerFolderParentId) setFolderIdInput(data.sellerFolderParentId);
-    },
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: (sellerFolderParentId: string) =>
-      apiFetch("/drive/settings", {
-        method: "POST",
-        body: JSON.stringify({ sellerFolderParentId }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      toast({ title: "Folder ID saved" });
-    },
-    onError: (err: Error) =>
-      toast({ title: "Save failed", description: err.message, variant: "destructive" }),
   });
 
   const createRootFolderMutation = useMutation({
@@ -91,7 +70,6 @@ export default function DriveSettings() {
   });
 
   const connected = settings?.isConnected;
-  const hasFolder = !!settings?.sellerFolderParentId;
 
   return (
     <AdminLayout>
@@ -166,9 +144,8 @@ export default function DriveSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
 
-            {/* Primary: let app create the folder */}
             <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
-              <p className="text-sm font-medium">Option A — Let the app create the folders</p>
+              <p className="text-sm font-medium">Folder structure</p>
               <p className="text-xs text-muted-foreground">
                 Creates the full folder structure in your Google Drive:
               </p>
@@ -215,47 +192,6 @@ export default function DriveSettings() {
               )}
             </div>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-              <div className="relative flex justify-center"><span className="bg-background px-2 text-xs text-muted-foreground">or</span></div>
-            </div>
-
-            {/* Secondary: paste existing folder ID */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Option B — Use an existing folder</p>
-              <p className="text-xs text-muted-foreground mb-2">
-                Note: the folder must have been created by this app. Pre-existing Drive folders
-                cannot be used due to Google's permission model.
-              </p>
-              <Label htmlFor="folderIdInput">Folder ID</Label>
-              <Input
-                id="folderIdInput"
-                placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs"
-                value={folderIdInput}
-                onChange={(e) => setFolderIdInput(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={() => saveMutation.mutate(folderIdInput.trim())}
-                disabled={saveMutation.isPending || !folderIdInput.trim()}
-              >
-                {saveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Save Folder ID
-              </Button>
-            </div>
-
-            {hasFolder && (
-              <div className="flex items-center gap-2 pt-1">
-                <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Folder configured
-                </Badge>
-                <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
-                  {settings?.sellerFolderParentId}
-                </span>
-              </div>
-            )}
           </CardContent>
         </Card>
 
