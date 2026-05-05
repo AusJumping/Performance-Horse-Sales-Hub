@@ -12,6 +12,8 @@ export const driveSettingsTable = pgTable("drive_settings", {
   rootFolderLink: text("root_folder_link"),
   sellerFolderParentId: text("seller_folder_parent_id"), // "SELLER FOLDERS" (inside root)
   sellerFolderLink: text("seller_folder_link"),
+  searchFolderParentId: text("search_folder_parent_id"), // "Search Folders" (inside root)
+  searchFolderLink: text("search_folder_link"),
   isConnected: boolean("is_connected").notNull().default(false),
   lastTestedAt: timestamp("last_tested_at", { withTimezone: true }),
   lastTestError: text("last_test_error"),

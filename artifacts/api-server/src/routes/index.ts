@@ -9,6 +9,7 @@ import authRouter from "./auth";
 import creatomateRouter from "./creatomate";
 import eoisRouter from "./eois";
 import driveRouter from "./drive";
+import horseSearchesRouter from "./horse-searches";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(pdfRouter);
 router.use(creatomateRouter);
 router.use("/eois", eoisRouter);
 router.use("/drive", driveRouter);
+router.use("/horse-searches", horseSearchesRouter);
 
 export default router;

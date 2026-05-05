@@ -9,6 +9,10 @@ import Home from "./pages/home";
 import ThankYou from "./pages/thank-you";
 import EoiPage from "./pages/eoi";
 import EoiThankYou from "./pages/eoi-thank-you";
+import FindAHorse from "./pages/find-a-horse";
+import FindAHorseThankYou from "./pages/find-a-horse-thank-you";
+import HorseSearchesList from "./pages/admin/horse-searches/index";
+import HorseSearchDetail from "./pages/admin/horse-searches/detail";
 import EoisList from "./pages/admin/eois/index";
 import EoiDetail from "./pages/admin/eois/detail";
 import AdminLogin from "./pages/admin/login";
@@ -31,6 +35,8 @@ function Router() {
       <Route path="/seller/thank-you" component={ThankYou} />
       <Route path="/eoi" component={EoiPage} />
       <Route path="/eoi-thank-you" component={EoiThankYou} />
+      <Route path="/find-a-horse" component={FindAHorse} />
+      <Route path="/find-a-horse/thank-you" component={FindAHorseThankYou} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminGuard>
@@ -75,6 +81,18 @@ function Router() {
         {() => (
           <AdminGuard>
             <EoiDetail />
+          </AdminGuard>
+        )}
+      </Route>
+      <Route path="/admin/horse-searches">
+        <AdminGuard>
+          <HorseSearchesList />
+        </AdminGuard>
+      </Route>
+      <Route path="/admin/horse-searches/:id">
+        {() => (
+          <AdminGuard>
+            <HorseSearchDetail />
           </AdminGuard>
         )}
       </Route>

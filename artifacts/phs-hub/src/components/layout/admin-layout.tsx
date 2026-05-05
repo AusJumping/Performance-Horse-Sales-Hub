@@ -11,6 +11,7 @@ import {
   FileStack,
   Send,
   HardDrive,
+  SearchCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -25,9 +26,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
 
   const navigation = [
-    { name: "Dashboard",    href: "/admin",             icon: LayoutDashboard },
-    { name: "Submissions",  href: "/admin/submissions", icon: FileStack },
-    { name: "EOIs",         href: "/admin/eois",        icon: Inbox },
+    { name: "Dashboard",       href: "/admin",                  icon: LayoutDashboard },
+    { name: "Submissions",     href: "/admin/submissions",      icon: FileStack },
+    { name: "EOIs",            href: "/admin/eois",             icon: Inbox },
+    { name: "Horse Searches",  href: "/admin/horse-searches",   icon: SearchCheck },
   ];
 
   const handleLogout = () => {
@@ -154,6 +156,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             href="/eoi"
             icon={Send}
             label="EOI Form"
+            isActive={false}
+            external
+            extraRight={<ExternalLink className="h-3 w-3 opacity-40" />}
+          />
+          <NavItem
+            href="/find-a-horse"
+            icon={SearchCheck}
+            label="Horse Finder Form"
             isActive={false}
             external
             extraRight={<ExternalLink className="h-3 w-3 opacity-40" />}
