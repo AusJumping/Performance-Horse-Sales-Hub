@@ -42,7 +42,7 @@ import {
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
   MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink, Mail
 } from "lucide-react";
-import { openOrcPrintWindow, generateOrcHtml } from "@/lib/orc-pdf";
+import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
 import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
 import { StatusBadge } from "@/components/status-badge";
@@ -653,7 +653,7 @@ export default function SubmissionDetail() {
       toast({ title: newStatus === "ready_to_send" ? "Marked as ready to send" : "ORC saved" });
       // Auto-save to Drive when ORC is marked ready
       if (newStatus === "ready_to_send" && orcDraft) {
-        saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcHtml({
+        saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcDriveHtml({
           horseName: sub?.horseName ?? "Horse",
           breed: sub?.breed,
           sellerName: sub?.sellerName,
@@ -699,7 +699,7 @@ export default function SubmissionDetail() {
     const currentHdStatus  = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
     // Portfolio: ORC
     if (orcDraft && currentOrcStatus !== "not_generated") {
-      saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcHtml({
+      saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcDriveHtml({
         horseName: sub?.horseName ?? "Horse",
         breed: sub?.breed,
         sellerName: sub?.sellerName,
@@ -1274,7 +1274,7 @@ export default function SubmissionDetail() {
                               orcText: orcDraft,
                             };
                             openOrcPrintWindow(data);
-                            saveDocToDrive("orc", `ORC — ${sub.horseName ?? "Horse"}`, generateOrcHtml(data));
+                            saveDocToDrive("orc", `ORC — ${sub.horseName ?? "Horse"}`, generateOrcDriveHtml(data));
                           }}
                           data-testid="button-orcPdf"
                         >
