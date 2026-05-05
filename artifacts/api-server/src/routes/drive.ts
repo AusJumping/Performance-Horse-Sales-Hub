@@ -24,13 +24,13 @@ async function getSettings() {
 }
 
 // ── GET /api/drive/settings ────────────────────────────────────────────────
-router.get("/drive/settings", async (req, res) => {
+router.get("/settings", async (req, res) => {
   const settings = await getSettings();
   res.json(settings ?? { sellerFolderParentId: null, isConnected: false });
 });
 
 // ── POST /api/drive/settings ───────────────────────────────────────────────
-router.post("/drive/settings", async (req, res) => {
+router.post("/settings", async (req, res) => {
   const { sellerFolderParentId } = req.body as { sellerFolderParentId: string };
   if (!sellerFolderParentId?.trim()) {
     return res.status(400).json({ error: "sellerFolderParentId is required" });
@@ -53,7 +53,7 @@ router.post("/drive/settings", async (req, res) => {
 });
 
 // ── POST /api/drive/test ───────────────────────────────────────────────────
-router.post("/drive/test", async (req, res) => {
+router.post("/test", async (req, res) => {
   try {
     const result = await testDriveConnection();
     const existing = await getSettings();
@@ -82,7 +82,7 @@ router.post("/drive/test", async (req, res) => {
 
 // ── POST /api/drive/submissions/:id/create-folder ─────────────────────────
 // Creates the three-subfolder structure for an approved horse in Drive
-router.post("/drive/submissions/:id/create-folder", async (req, res) => {
+router.post("/submissions/:id/create-folder", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
@@ -156,7 +156,7 @@ router.post("/drive/submissions/:id/create-folder", async (req, res) => {
 
 // ── POST /api/drive/eois/:id/backup ───────────────────────────────────────
 // Backs up an EOI as a Google Doc, filed into the matching horse folder if found
-router.post("/drive/eois/:id/backup", async (req, res) => {
+router.post("/eois/:id/backup", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
