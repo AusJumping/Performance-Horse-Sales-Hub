@@ -42,9 +42,9 @@ import {
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
   MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink
 } from "lucide-react";
-import { openOrcPrintWindow } from "@/lib/orc-pdf";
-import { openApprovalPackWindow, generateSellerEmailDraft } from "@/lib/approval-pack";
-import { openListingAgreementWindow } from "@/lib/listing-agreement";
+import { openOrcPrintWindow, generateOrcHtml } from "@/lib/orc-pdf";
+import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
+import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
 import { StatusBadge } from "@/components/status-badge";
 
 // ── Google Drive Card ──────────────────────────────────────────────────────
@@ -55,6 +55,9 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
   const driveSetupStatus: string = sub?.driveSetupStatus ?? "not_started";
   const driveFolderLink: string | null = sub?.driveFolderLink ?? null;
   const driveSetupError: string | null = sub?.driveSetupError ?? null;
+  const driveOrcDocLink: string | null = sub?.driveOrcDocLink ?? null;
+  const driveApprovalPackDocLink: string | null = sub?.driveApprovalPackDocLink ?? null;
+  const driveListingAgreementDocLink: string | null = sub?.driveListingAgreementDocLink ?? null;
 
   const createFolderMutation = useMutation({
     mutationFn: async () => {
@@ -125,9 +128,33 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
         )}
 
         {driveSetupStatus === "done" && (
-          <p className="text-xs text-muted-foreground text-center">
-            Portfolio · Documents · EOI Viewer Forms
-          </p>
+          <div className="space-y-1.5 pt-1 border-t">
+            <p className="text-xs text-muted-foreground font-medium">Saved documents</p>
+            {driveOrcDocLink ? (
+              <a href={driveOrcDocLink} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                <ExternalLink className="h-3 w-3 flex-shrink-0" /> ORC
+              </a>
+            ) : (
+              <p className="text-xs text-muted-foreground/60 italic">ORC — not yet saved</p>
+            )}
+            {driveApprovalPackDocLink ? (
+              <a href={driveApprovalPackDocLink} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                <ExternalLink className="h-3 w-3 flex-shrink-0" /> Approval Pack
+              </a>
+            ) : (
+              <p className="text-xs text-muted-foreground/60 italic">Approval Pack — not yet saved</p>
+            )}
+            {driveListingAgreementDocLink ? (
+              <a href={driveListingAgreementDocLink} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline">
+                <ExternalLink className="h-3 w-3 flex-shrink-0" /> Listing Agreement
+              </a>
+            ) : (
+              <p className="text-xs text-muted-foreground/60 italic">Listing Agreement — not yet saved</p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -293,6 +320,29 @@ export default function SubmissionDetail() {
   const generateAi = useGenerateAiContent();
   const addNote = useAddSubmissionNote();
   const deleteMedia = useDeleteMedia();
+
+  // ── Save document to Drive (silent background save) ──────────────────────
+  const saveDocToDrive = async (
+    docType: "orc" | "approval_pack" | "listing_agreement",
+    title: string,
+    html: string
+  ) => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/drive/submissions/${submissionId}/save-document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ docType, title, html }),
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+        toast({ title: "Saved to Drive", description: `${title} saved to the Documents folder.` });
+      }
+      // silently skip if Drive not configured (400) — don't block the popup
+    } catch {
+      // network error — ignore silently
+    }
+  };
 
   const handleStatusChange = (newStatus: any) => {
     updateStatus.mutate(
@@ -958,15 +1008,19 @@ export default function SubmissionDetail() {
                           variant="outline"
                           size="sm"
                           className="h-7 px-3 text-xs font-medium border-[#24384e] text-[#24384e] hover:bg-[#24384e] hover:text-white"
-                          onClick={() => openOrcPrintWindow({
-                            horseName: sub.horseName ?? "Horse",
-                            breed: sub.breed,
-                            sellerName: sub.sellerName,
-                            askingPrice: sub.askingPrice,
-                            submissionId: sub.id,
-                            generatedAt: (aiOutput as any)?.orcUpdatedAt ?? null,
-                            orcText: orcDraft,
-                          })}
+                          onClick={() => {
+                            const data = {
+                              horseName: sub.horseName ?? "Horse",
+                              breed: sub.breed,
+                              sellerName: sub.sellerName,
+                              askingPrice: sub.askingPrice,
+                              submissionId: sub.id,
+                              generatedAt: (aiOutput as any)?.orcUpdatedAt ?? null,
+                              orcText: orcDraft,
+                            };
+                            openOrcPrintWindow(data);
+                            saveDocToDrive("orc", `ORC — ${sub.horseName ?? "Horse"}`, generateOrcHtml(data));
+                          }}
                           data-testid="button-orcPdf"
                         >
                           <FileDown className="h-3 w-3 mr-1" /> Download PDF
@@ -1199,15 +1253,19 @@ export default function SubmissionDetail() {
                     <Button
                       className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
                       disabled={!orcDraft || !hdDraft}
-                      onClick={() => openApprovalPackWindow({
-                        horseName: sub.horseName ?? "Horse",
-                        breed: sub.breed,
-                        sellerName: sub.sellerName,
-                        askingPrice: sub.askingPrice,
-                        submissionId: sub.id,
-                        orcText: orcDraft,
-                        horseDescription: hdDraft,
-                      })}
+                      onClick={() => {
+                        const data = {
+                          horseName: sub.horseName ?? "Horse",
+                          breed: sub.breed,
+                          sellerName: sub.sellerName,
+                          askingPrice: sub.askingPrice,
+                          submissionId: sub.id,
+                          orcText: orcDraft,
+                          horseDescription: hdDraft,
+                        };
+                        openApprovalPackWindow(data);
+                        saveDocToDrive("approval_pack", `Approval Pack — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml(data));
+                      }}
                       data-testid="button-downloadApprovalPack"
                     >
                       <FileDown className="h-4 w-4 mr-2" /> Download Approval Pack PDF
@@ -1339,7 +1397,7 @@ export default function SubmissionDetail() {
                       disabled={laSaving}
                       onClick={async () => {
                         await handleSaveLaTerms();
-                        openListingAgreementWindow({
+                        const laData = {
                           horseName: sub.horseName ?? "Horse",
                           breed: sub.breed,
                           colour: sub.colour ?? sub.workingRecord?.colour,
@@ -1354,7 +1412,9 @@ export default function SubmissionDetail() {
                           commissionRate: laCommissionRate,
                           listingPeriodDays: laListingPeriod,
                           listingTermsNotes: laTermsNotes || undefined,
-                        });
+                        };
+                        openListingAgreementWindow(laData);
+                        saveDocToDrive("listing_agreement", `Listing Agreement — ${sub.horseName ?? "Horse"}`, generateListingAgreementHtml(laData));
                       }}
                       data-testid="button-generateListingAgreement"
                     >
@@ -1767,15 +1827,19 @@ export default function SubmissionDetail() {
                   size="sm"
                   className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
                   disabled={!orcDraft || !hdDraft}
-                  onClick={() => openApprovalPackWindow({
-                    horseName: sub.horseName ?? "Horse",
-                    breed: sub.breed,
-                    sellerName: sub.sellerName,
-                    askingPrice: sub.askingPrice,
-                    submissionId: sub.id,
-                    orcText: orcDraft,
-                    horseDescription: hdDraft,
-                  })}
+                  onClick={() => {
+                    const data = {
+                      horseName: sub.horseName ?? "Horse",
+                      breed: sub.breed,
+                      sellerName: sub.sellerName,
+                      askingPrice: sub.askingPrice,
+                      submissionId: sub.id,
+                      orcText: orcDraft,
+                      horseDescription: hdDraft,
+                    };
+                    openApprovalPackWindow(data);
+                    saveDocToDrive("approval_pack", `Approval Pack — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml(data));
+                  }}
                 >
                   <FileDown className="h-3 w-3 mr-2" /> Download Pack PDF
                 </Button>
@@ -1834,7 +1898,7 @@ export default function SubmissionDetail() {
                 size="sm"
                 className="w-full bg-[#24384e] hover:bg-[#1a2d3f] mt-1"
                 onClick={() => {
-                  openListingAgreementWindow({
+                  const laData = {
                     horseName: sub.horseName ?? "Horse",
                     breed: sub.breed,
                     colour: sub.colour ?? sub.workingRecord?.colour,
@@ -1849,7 +1913,9 @@ export default function SubmissionDetail() {
                     commissionRate: laCommissionRate,
                     listingPeriodDays: laListingPeriod,
                     listingTermsNotes: laTermsNotes || undefined,
-                  });
+                  };
+                  openListingAgreementWindow(laData);
+                  saveDocToDrive("listing_agreement", `Listing Agreement — ${sub.horseName ?? "Horse"}`, generateListingAgreementHtml(laData));
                 }}
               >
                 <FileDown className="h-3 w-3 mr-2" /> View Agreement PDF

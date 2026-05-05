@@ -196,6 +196,48 @@ router.post("/submissions/:id/create-folder", async (req, res) => {
   }
 });
 
+// ── POST /api/drive/submissions/:id/save-document ─────────────────────────
+// Saves an HTML document as a Google Doc in the submission's Documents folder
+router.post("/submissions/:id/save-document", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const { docType, title, html } = req.body as {
+    docType: "orc" | "approval_pack" | "listing_agreement";
+    title: string;
+    html: string;
+  };
+
+  if (!docType || !title || !html) {
+    return res.status(400).json({ error: "docType, title, and html are required" });
+  }
+
+  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
+  if (!submission) return res.status(404).json({ error: "Submission not found" });
+
+  const folderId = submission.driveDocumentsFolderId;
+  if (!folderId) {
+    return res.status(400).json({ error: "Drive Documents folder not set up. Create the Drive folder for this submission first." });
+  }
+
+  try {
+    const doc = await createGoogleDoc(title, html, folderId);
+
+    const updates: Record<string, string> = {};
+    if (docType === "orc") updates.driveOrcDocLink = doc.webViewLink;
+    if (docType === "approval_pack") updates.driveApprovalPackDocLink = doc.webViewLink;
+    if (docType === "listing_agreement") updates.driveListingAgreementDocLink = doc.webViewLink;
+
+    await db.update(submissionsTable).set(updates).where(eq(submissionsTable.id, id));
+
+    res.json({ docId: doc.id, docLink: doc.webViewLink });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err }, "Failed to save document to Drive");
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── POST /api/drive/eois/:id/backup ───────────────────────────────────────
 // Backs up an EOI as a Google Doc, filed into the matching horse folder if found
 router.post("/eois/:id/backup", async (req, res) => {

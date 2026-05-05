@@ -90,6 +90,11 @@ export const submissionsTable = pgTable("submissions", {
   // not_started | creating | done | failed
   driveSetupStatus: text("drive_setup_status").notNull().default("not_started"),
   driveSetupError: text("drive_setup_error"),
+
+  // Links to generated documents saved in the Drive Documents folder
+  driveOrcDocLink: text("drive_orc_doc_link"),
+  driveApprovalPackDocLink: text("drive_approval_pack_doc_link"),
+  driveListingAgreementDocLink: text("drive_listing_agreement_doc_link"),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissionsTable).omit({
