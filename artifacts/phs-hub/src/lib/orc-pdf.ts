@@ -35,19 +35,45 @@ function parseOrcSections(text: string): OrcSection[] {
   });
 }
 
+// Map indent character count → visual nesting level (0-based)
+function indentLevel(raw: string): number {
+  const spaces = raw.match(/^(\s*)/)?.[1] ?? "";
+  const count = spaces.replace(/\t/g, "    ").length;
+  if (count < 2) return 0;
+  if (count < 4) return 1;
+  if (count < 7) return 2;
+  return 3;
+}
+
 function contentToHtml(content: string): string {
   const lines = content.split("\n");
   let html = "";
+
   for (const raw of lines) {
     const line = raw.trimEnd();
     if (!line.trim()) continue;
+
     const trimmed = line.trimStart();
-    if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
-      html += `<div class="bullet-row"><span class="bullet">•</span><span>${escapeHtml(trimmed.slice(2))}</span></div>`;
+    const level = indentLevel(raw);
+
+    const isBullet =
+      trimmed.startsWith("- ") ||
+      trimmed.startsWith("• ") ||
+      trimmed.startsWith("* ");
+
+    if (isBullet) {
+      const text = trimmed.slice(2);
+      // Level 0 → •  Level 1 → –  Level 2+ → ·
+      const marker = level === 0 ? "•" : level === 1 ? "–" : "·";
+      const cls = `bullet-row bullet-l${level}`;
+      html += `<div class="${cls}"><span class="bullet">${marker}</span><span>${escapeHtml(text)}</span></div>`;
     } else {
-      html += `<p class="section-para">${escapeHtml(trimmed)}</p>`;
+      // Plain text line — indent if it was indented in source
+      const cls = level > 0 ? `section-para section-para-l${level}` : "section-para";
+      html += `<p class="${cls}">${escapeHtml(trimmed)}</p>`;
     }
   }
+
   return html || `<p class="not-provided">Not provided</p>`;
 }
 
@@ -284,28 +310,51 @@ export function generateOrcHtml(data: OrcDocumentData): string {
   }
 
   .section-content {
-    padding-left: 32px;
+    padding-left: 16px;
   }
+
+  /* Bullet rows — all levels share base styles */
   .bullet-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 5px;
+    gap: 9px;
+    margin-bottom: 4px;
     line-height: 1.6;
     font-size: 14px;
+    color: #2a2a2a;
   }
   .bullet {
-    color: #24384e;
     flex-shrink: 0;
     margin-top: 1px;
-    font-size: 16px;
-    line-height: 1.45;
+    line-height: 1.5;
+    user-select: none;
   }
+
+  /* Level 0 — top-level bullet */
+  .bullet-l0 { padding-left: 0; }
+  .bullet-l0 .bullet { color: #24384e; font-size: 15px; }
+
+  /* Level 1 — sub-bullet */
+  .bullet-l1 { padding-left: 20px; }
+  .bullet-l1 .bullet { color: #5a7a9a; font-size: 13px; margin-top: 3px; }
+
+  /* Level 2 — sub-sub-bullet */
+  .bullet-l2 { padding-left: 40px; }
+  .bullet-l2 .bullet { color: #8a9aaa; font-size: 12px; margin-top: 4px; }
+
+  /* Level 3 — deepest */
+  .bullet-l3 { padding-left: 60px; }
+  .bullet-l3 .bullet { color: #aaa; font-size: 11px; margin-top: 4px; }
+
   .section-para {
     font-size: 14px;
     line-height: 1.7;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #2a2a2a;
   }
+  .section-para-l1 { padding-left: 20px; }
+  .section-para-l2 { padding-left: 40px; }
+  .section-para-l3 { padding-left: 60px; }
+
   .not-provided {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     font-size: 13px;
