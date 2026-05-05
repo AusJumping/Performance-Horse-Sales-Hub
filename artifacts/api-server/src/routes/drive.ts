@@ -84,20 +84,37 @@ router.post("/test", async (req, res) => {
 // Creates the "PHS Seller Folders" root folder at Drive root (no pre-existing parent needed)
 router.post("/settings/create-root-folder", async (req, res) => {
   try {
-    const folder = await createDriveFolder("PHS Seller Folders", "root");
+    // Level 1: PHS App Folders (at Drive root)
+    const rootFolder = await createDriveFolder("PHS App Folders", "root");
+    // Level 2: SELLER FOLDERS (inside PHS App Folders)
+    const sellerFolder = await createDriveFolder("SELLER FOLDERS", rootFolder.id);
+
     const existing = await getSettings();
     let saved;
+    const vals = {
+      rootFolderId: rootFolder.id,
+      rootFolderLink: rootFolder.webViewLink,
+      sellerFolderParentId: sellerFolder.id,
+      sellerFolderLink: sellerFolder.webViewLink,
+      updatedAt: new Date(),
+    };
     if (existing) {
       [saved] = await db.update(driveSettingsTable)
-        .set({ sellerFolderParentId: folder.id, updatedAt: new Date() })
+        .set(vals)
         .where(eq(driveSettingsTable.id, existing.id))
         .returning();
     } else {
       [saved] = await db.insert(driveSettingsTable)
-        .values({ sellerFolderParentId: folder.id })
+        .values(vals)
         .returning();
     }
-    res.json({ folderId: folder.id, folderLink: folder.webViewLink, settings: saved });
+    res.json({
+      rootFolderId: rootFolder.id,
+      rootFolderLink: rootFolder.webViewLink,
+      sellerFolderId: sellerFolder.id,
+      sellerFolderLink: sellerFolder.webViewLink,
+      settings: saved,
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err }, "Failed to create root seller folder");

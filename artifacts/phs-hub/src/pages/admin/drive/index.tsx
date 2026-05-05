@@ -11,7 +11,10 @@ import { CheckCircle2, XCircle, Loader2, FolderOpen, ExternalLink, RefreshCw, Pl
 
 interface DriveSettings {
   id?: number;
+  rootFolderId?: string | null;
+  rootFolderLink?: string | null;
   sellerFolderParentId: string | null;
+  sellerFolderLink?: string | null;
   isConnected: boolean;
   lastTestedAt?: string | null;
   lastTestError?: string | null;
@@ -63,16 +66,16 @@ export default function DriveSettings() {
 
   const createRootFolderMutation = useMutation({
     mutationFn: () => apiFetch("/drive/settings/create-root-folder", { method: "POST" }),
-    onSuccess: (data: { folderId: string; folderLink: string }) => {
+    onSuccess: (data: { sellerFolderId: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      setFolderIdInput(data.folderId);
+      setFolderIdInput(data.sellerFolderId);
       toast({
-        title: "Folder created in Drive",
-        description: "PHS Seller Folders has been created in your Google Drive.",
+        title: "Drive folders created",
+        description: "PHS App Folders → SELLER FOLDERS created in your Google Drive.",
       });
     },
     onError: (err: Error) =>
-      toast({ title: "Failed to create folder", description: err.message, variant: "destructive" }),
+      toast({ title: "Failed to create folders", description: err.message, variant: "destructive" }),
   });
 
   const testMutation = useMutation({
@@ -165,21 +168,51 @@ export default function DriveSettings() {
 
             {/* Primary: let app create the folder */}
             <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
-              <p className="text-sm font-medium">Option A — Let the app create the folder</p>
+              <p className="text-sm font-medium">Option A — Let the app create the folders</p>
               <p className="text-xs text-muted-foreground">
-                Clicking below will create a folder called <strong>PHS Seller Folders</strong> in
-                your Google Drive and save its ID automatically. Recommended.
+                Creates the full folder structure in your Google Drive:
               </p>
-              <Button
-                onClick={() => createRootFolderMutation.mutate()}
-                disabled={createRootFolderMutation.isPending}
-                className="bg-[#24384e] hover:bg-[#1a2d3f]"
-              >
-                {createRootFolderMutation.isPending
-                  ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  : <Plus className="h-4 w-4 mr-2" />}
-                Create PHS Seller Folders in Drive
-              </Button>
+              <div className="text-xs font-mono bg-background border rounded px-3 py-2 space-y-0.5 text-foreground">
+                <div>📁 PHS App Folders</div>
+                <div className="pl-4">📁 SELLER FOLDERS</div>
+                <div className="pl-8 text-muted-foreground">← horse folders go here</div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Once created, Sally can move her existing seller folders into{" "}
+                <strong>SELLER FOLDERS</strong>.
+              </p>
+              {settings?.rootFolderId ? (
+                <div className="space-y-1.5">
+                  <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Folders already created
+                  </Badge>
+                  <div className="flex gap-2">
+                    {settings.rootFolderLink && (
+                      <a href={settings.rootFolderLink} target="_blank" rel="noreferrer"
+                        className="text-xs text-blue-600 underline flex items-center gap-1">
+                        PHS App Folders <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    {settings.sellerFolderLink && (
+                      <a href={settings.sellerFolderLink} target="_blank" rel="noreferrer"
+                        className="text-xs text-blue-600 underline flex items-center gap-1">
+                        SELLER FOLDERS <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => createRootFolderMutation.mutate()}
+                  disabled={createRootFolderMutation.isPending}
+                  className="bg-[#24384e] hover:bg-[#1a2d3f]"
+                >
+                  {createRootFolderMutation.isPending
+                    ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    : <Plus className="h-4 w-4 mr-2" />}
+                  Create Folder Structure in Drive
+                </Button>
+              )}
             </div>
 
             {/* Divider */}

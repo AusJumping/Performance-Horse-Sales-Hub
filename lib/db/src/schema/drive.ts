@@ -8,7 +8,10 @@ import {
 
 export const driveSettingsTable = pgTable("drive_settings", {
   id: serial("id").primaryKey(),
-  sellerFolderParentId: text("seller_folder_parent_id"),
+  rootFolderId: text("root_folder_id"),          // "PHS App Folders"
+  rootFolderLink: text("root_folder_link"),
+  sellerFolderParentId: text("seller_folder_parent_id"), // "SELLER FOLDERS" (inside root)
+  sellerFolderLink: text("seller_folder_link"),
   isConnected: boolean("is_connected").notNull().default(false),
   lastTestedAt: timestamp("last_tested_at", { withTimezone: true }),
   lastTestError: text("last_test_error"),
