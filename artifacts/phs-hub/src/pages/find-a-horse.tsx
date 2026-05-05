@@ -674,8 +674,8 @@ export default function FindAHorse() {
                 <FieldLabel label="Your Signature" required />
                 <div className="rounded-lg border border-stone-300 overflow-hidden">
                   <SignaturePad
-                    onSave={(dataUrl) => setFd(p => ({ ...p, signature: dataUrl }))}
-                    savedSignature={s("signature")}
+                    value={s("signature")}
+                    onChange={(dataUrl) => setFd(p => ({ ...p, signature: dataUrl }))}
                   />
                 </div>
                 <FieldError message={errors.signature} />
