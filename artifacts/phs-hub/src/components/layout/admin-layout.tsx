@@ -10,6 +10,7 @@ import {
   Inbox,
   FileStack,
   Send,
+  HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -131,6 +132,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             icon={Clapperboard}
             label="Reel Templates"
             isActive={location.startsWith("/admin/settings/reel-templates")}
+          />
+          <NavItem
+            href="/admin/drive"
+            icon={HardDrive}
+            label="Google Drive"
+            isActive={location.startsWith("/admin/drive")}
           />
 
           <div className="my-3 border-t border-sidebar-border" />

@@ -31,6 +31,14 @@ export const eoisTable = pgTable("eois", {
   status: text("status").notNull().default("new"),
   adminNotes: text("admin_notes"),
 
+  // ── Google Drive backup ───────────────────────────────────────────────────
+  driveFileId: text("drive_file_id"),
+  driveDocLink: text("drive_doc_link"),
+  // not_started | backing_up | backed_up | failed
+  driveBackupStatus: text("drive_backup_status").notNull().default("not_started"),
+  driveBackupError: text("drive_backup_error"),
+  driveBackedUpAt: timestamp("drive_backed_up_at"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

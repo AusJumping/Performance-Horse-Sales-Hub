@@ -80,6 +80,16 @@ export const submissionsTable = pgTable("submissions", {
   listingAgreementStatus: text("listing_agreement_status").notNull().default("not_started"),
   listingAgreementSentAt: timestamp("listing_agreement_sent_at", { withTimezone: true }),
   listingAgreementSignedAt: timestamp("listing_agreement_signed_at", { withTimezone: true }),
+
+  // ── Google Drive (Phase 6) ────────────────────────────────────────────────
+  driveFolderId: text("drive_folder_id"),
+  driveFolderLink: text("drive_folder_link"),
+  drivePortfolioFolderId: text("drive_portfolio_folder_id"),
+  driveDocumentsFolderId: text("drive_documents_folder_id"),
+  driveEoiFormsFolderId: text("drive_eoi_forms_folder_id"),
+  // not_started | creating | done | failed
+  driveSetupStatus: text("drive_setup_status").notNull().default("not_started"),
+  driveSetupError: text("drive_setup_error"),
 });
 
 export const insertSubmissionSchema = createInsertSchema(submissionsTable).omit({

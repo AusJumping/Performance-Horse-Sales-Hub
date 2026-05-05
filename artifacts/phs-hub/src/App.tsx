@@ -17,6 +17,7 @@ import SubmissionsList from "./pages/admin/submissions/index";
 import SubmissionDetail from "./pages/admin/submissions/detail";
 import AiEditor from "./pages/admin/submissions/ai-editor";
 import ReelTemplatesSettings from "./pages/admin/settings/reel-templates";
+import DriveSettings from "./pages/admin/drive/index";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,11 @@ function Router() {
       <Route path="/admin/settings/reel-templates">
         <AdminGuard>
           <ReelTemplatesSettings />
+        </AdminGuard>
+      </Route>
+      <Route path="/admin/drive">
+        <AdminGuard>
+          <DriveSettings />
         </AdminGuard>
       </Route>
       <Route path="/admin/eois">
