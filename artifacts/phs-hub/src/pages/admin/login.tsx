@@ -100,7 +100,7 @@ export default function AdminLogin() {
         </div>
 
         <p className="text-center mt-6">
-          <a href="/" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+          <a href="/seller" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
             ← Back to seller form
           </a>
         </p>

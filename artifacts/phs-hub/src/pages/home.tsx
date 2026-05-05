@@ -2089,7 +2089,7 @@ export default function Home() {
             ) : (
               <button
                 type="button"
-                onClick={() => setLocation("/thank-you")}
+                onClick={() => setLocation("/seller/thank-you")}
                 disabled={uploadingFiles.some(u => !u.done)}
                 data-testid="button-finish"
                 className="px-6 py-3 rounded-md bg-green-700 text-white text-sm font-semibold hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"

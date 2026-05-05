@@ -10,7 +10,7 @@ export default function ThankYou() {
           Your listing has been submitted successfully. Our team will review the information and get back to you shortly.
         </p>
         <Button asChild size="lg" className="mt-8">
-          <Link href="/">Submit Another Horse</Link>
+          <Link href="/seller">Submit Another Horse</Link>
         </Button>
       </div>
     </div>
