@@ -10,6 +10,7 @@ import {
   testDriveConnection,
   createDriveFolder,
   createGoogleDoc,
+  exportDocAsPdf,
   uploadFileToDrive,
   safeDriveName,
   formatDateTime,
@@ -241,7 +242,16 @@ router.post("/submissions/:id/save-document", async (req, res) => {
 
     await db.update(submissionsTable).set(updates).where(eq(submissionsTable.id, id));
 
-    res.json({ docId: doc.id, docLink: doc.webViewLink });
+    // Also export a PDF copy to the same folder (non-blocking — don't fail the response if it errors)
+    let pdfLink: string | null = null;
+    try {
+      const pdf = await exportDocAsPdf(doc.id, `${title}.pdf`, folderId);
+      pdfLink = pdf.webViewLink;
+    } catch (pdfErr) {
+      req.log.warn({ err: pdfErr }, "PDF export to Drive failed (non-fatal)");
+    }
+
+    res.json({ docId: doc.id, docLink: doc.webViewLink, pdfLink });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err }, "Failed to save document to Drive");

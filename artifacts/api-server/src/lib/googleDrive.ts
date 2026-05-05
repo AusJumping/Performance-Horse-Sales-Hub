@@ -124,6 +124,32 @@ export async function uploadFileToDrive(
   return response.json() as Promise<DriveFile>;
 }
 
+/**
+ * Exports a Google Doc as PDF and uploads the PDF to a Drive folder.
+ * Uses the Drive export API on a doc the app created (compatible with drive.file scope).
+ */
+export async function exportDocAsPdf(
+  docId: string,
+  pdfName: string,
+  parentFolderId: string
+): Promise<DriveFile> {
+  const connectors = getConnectors();
+
+  // Export the Google Doc as PDF bytes
+  const exportRes = await connectors.proxy(
+    "google-drive",
+    `/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=application%2Fpdf`,
+    { method: "GET" }
+  );
+  if (!exportRes.ok) {
+    const err = await exportRes.text();
+    throw new Error(`Failed to export PDF: ${exportRes.status} — ${err}`);
+  }
+
+  const pdfBuffer = Buffer.from(await exportRes.arrayBuffer());
+  return uploadFileToDrive(pdfName, "application/pdf", pdfBuffer, parentFolderId);
+}
+
 export function safeDriveName(str: string): string {
   return str
     .replace(/[\/\\:*?"<>|]/g, " ")

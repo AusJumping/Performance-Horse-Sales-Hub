@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import {
   createDriveFolder,
   createGoogleDoc,
+  exportDocAsPdf,
   safeDriveName,
   formatDateTime,
 } from "../lib/googleDrive.js";
@@ -167,11 +168,17 @@ router.post("/", async (req, res) => {
       const folder = await createDriveFolder(folderName, searchParentId);
 
       // Create Google Doc summary
+      const docTitle = `${folderName} — Criteria`;
       const doc = await createGoogleDoc(
-        `${folderName} — Criteria`,
+        docTitle,
         formatSearchAsHtml({ ...hs, createdAt: hs.createdAt ?? new Date() }),
         folder.id
       );
+
+      // Export PDF copy to the same folder (non-fatal if it fails)
+      try {
+        await exportDocAsPdf(doc.id, `${docTitle}.pdf`, folder.id);
+      } catch {}
 
       await db.update(horseSearchesTable)
         .set({
@@ -250,11 +257,17 @@ router.post("/:id/retry-drive", async (req, res) => {
 
     const folderName = safeDriveName(`${hs.firstName} ${hs.surname} - Search`);
     const folder = await createDriveFolder(folderName, searchParentId);
+    const docTitle = `${folderName} — Criteria`;
     const doc = await createGoogleDoc(
-      `${folderName} — Criteria`,
+      docTitle,
       formatSearchAsHtml({ ...hs, formData: hs.formData as Record<string, unknown> }),
       folder.id
     );
+
+    // Export PDF copy (non-fatal)
+    try {
+      await exportDocAsPdf(doc.id, `${docTitle}.pdf`, folder.id);
+    } catch {}
 
     const [updated] = await db.update(horseSearchesTable)
       .set({
