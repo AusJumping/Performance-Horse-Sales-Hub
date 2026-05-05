@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { 
   useGetSubmission, 
@@ -40,12 +40,87 @@ import {
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
-  MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink
+  MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink, Mail
 } from "lucide-react";
 import { openOrcPrintWindow, generateOrcHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
 import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
 import { StatusBadge } from "@/components/status-badge";
+
+// ── Submission Email Templates ─────────────────────────────────────────────
+const SUBMISSION_EMAIL_TEMPLATES = [
+  { id: "submission_received",  label: "Submission Received",        group: "To Seller" },
+  { id: "orc_ready",           label: "ORC Ready to Review",        group: "To Seller" },
+  { id: "approval_pack_sent",  label: "Approval Pack Sent",         group: "To Seller" },
+  { id: "listing_live",        label: "Listing Now Live",           group: "To Seller" },
+  { id: "eoi_update",          label: "EOI Received — Update",      group: "To Seller" },
+  { id: "viewing_booked",      label: "Viewing Booked",             group: "To Seller" },
+  { id: "offer_received",      label: "Offer Received",             group: "To Seller" },
+  { id: "sale_completed",      label: "Sale Completed",             group: "To Seller" },
+] as const;
+
+function generateSubmissionDraft(
+  templateId: string,
+  sub: { horseName?: string | null; sellerName?: string | null; sellerEmail?: string | null }
+): { to: string; subject: string; body: string } {
+  const horse = sub.horseName ?? "your horse";
+  const sellerFirst = (sub.sellerName ?? "").split(" ")[0] || "there";
+  const to = sub.sellerEmail ?? "";
+  const sig = "Best,\nSally Empringham\nPerformance Horse Sales\n0428 239 317";
+
+  switch (templateId) {
+    case "submission_received":
+      return {
+        to,
+        subject: `PHS – Submission received for ${horse}`,
+        body: `Hi ${sellerFirst},\n\nThank you for submitting your listing form for ${horse}. I've received all the details and will be in touch shortly once I've had a chance to review everything.\n\nIf I have any questions, I'll reach out.\n\n${sig}`,
+      };
+    case "orc_ready":
+      return {
+        to,
+        subject: `PHS – ${horse}'s Owner Response Certificate — please review`,
+        body: `Hi ${sellerFirst},\n\nI've prepared the Owner Response Certificate for ${horse} based on the information you provided.\n\nCould you please have a read through and let me know if there are any corrections or changes to be made? It's important that all the details are accurate before we proceed.\n\nOnce you're happy with it, I'll move ahead with putting together the listing.\n\n${sig}`,
+      };
+    case "approval_pack_sent":
+      return {
+        to,
+        subject: `PHS – ${horse}'s Approval Pack`,
+        body: `Hi ${sellerFirst},\n\nPlease find attached the Approval Pack for ${horse}. This includes:\n- The Owner Response Certificate\n- The horse description that will appear in your listing\n\nCould you please review both documents and let me know if there are any changes needed? Once you give the go-ahead, I'll get the listing live.\n\n${sig}`,
+      };
+    case "listing_live":
+      return {
+        to,
+        subject: `PHS – ${horse} is now live!`,
+        body: `Hi ${sellerFirst},\n\nGreat news — ${horse}'s listing is now live on the Performance Horse Sales website.\n\nListing link: https://www.performancehorsesales.com.au/horses-for-sale\n\nI'll also be doing a social media post to get some early exposure. I'll keep you posted as enquiries come in.\n\n${sig}`,
+      };
+    case "eoi_update":
+      return {
+        to,
+        subject: `PHS – EOI received for ${horse}`,
+        body: `Hi ${sellerFirst},\n\nWe've received an Expression of Interest for ${horse}.\n\nI'm currently reviewing the buyer's details to assess suitability. I'll be in touch with an update once I've had a chance to go through the form.\n\n${sig}`,
+      };
+    case "viewing_booked":
+      return {
+        to,
+        subject: `PHS – Viewing booked for ${horse}`,
+        body: `Hi ${sellerFirst},\n\nA viewing has been booked for ${horse}. I'll be in touch shortly with all the details including the buyer's name and the confirmed date and time.\n\nPlease ensure ${horse} is available and ready for inspection at the agreed time.\n\nIf anything changes on your end, please let me know as soon as possible on 0428 239 317.\n\n${sig}`,
+      };
+    case "offer_received":
+      return {
+        to,
+        subject: `PHS – Offer received for ${horse}`,
+        body: `Hi ${sellerFirst},\n\nWe've received an offer for ${horse}. I'd like to give you a call to discuss the details.\n\nPlease let me know a convenient time to chat, or feel free to call me directly on 0428 239 317.\n\n${sig}`,
+      };
+    case "sale_completed":
+      return {
+        to,
+        subject: `PHS – Sale completed — congratulations!`,
+        body: `Hi ${sellerFirst},\n\nCongratulations — ${horse} has been sold!\n\nThank you for trusting Performance Horse Sales to manage the listing. It has been a pleasure working with you.\n\nIf you have other horses to sell in future, or know anyone looking to list, please don't hesitate to get in touch.\n\nWishing ${horse} all the best in their new home.\n\n${sig}`,
+      };
+    default:
+      return { to, subject: "", body: "" };
+  }
+}
 
 // ── Google Drive Card ──────────────────────────────────────────────────────
 function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
@@ -185,6 +260,7 @@ export default function SubmissionDetail() {
   
   const [, navigate] = useLocation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedEmailTemplate, setSelectedEmailTemplate] = useState("submission_received");
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -320,6 +396,22 @@ export default function SubmissionDetail() {
   const generateAi = useGenerateAiContent();
   const addNote = useAddSubmissionNote();
   const deleteMedia = useDeleteMedia();
+
+  // ── Email draft helper ────────────────────────────────────────────────────
+  const submissionDraft = useMemo(
+    () => sub ? generateSubmissionDraft(selectedEmailTemplate, {
+      horseName: sub.horseName,
+      sellerName: sub.sellerName,
+      sellerEmail: sub.sellerEmail,
+    }) : { to: "", subject: "", body: "" },
+    [selectedEmailTemplate, sub]
+  );
+
+  const copyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() =>
+      toast({ title: `${label} copied`, description: "Paste it into your email client." })
+    );
+  };
 
   // ── Save document to Drive (silent background save) ──────────────────────
   const saveDocToDrive = async (
@@ -1849,6 +1941,94 @@ export default function SubmissionDetail() {
           </Card>
         </div>
       </div>
+
+      {/* ── Email Drafts — full width below grid ── */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3 border-b bg-muted/30">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="h-4 w-4 text-accent" /> Email Drafts
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+
+            {/* Left: controls */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Template</label>
+                <Select value={selectedEmailTemplate} onValueChange={setSelectedEmailTemplate}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUBMISSION_EMAIL_TEMPLATES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">To</label>
+                {submissionDraft.to ? (
+                  <a
+                    href={`mailto:${submissionDraft.to}`}
+                    className="flex items-center gap-1.5 text-sm text-[#24384e] hover:underline break-all"
+                  >
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    {submissionDraft.to}
+                  </a>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No seller email on file</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Subject</label>
+                <div className="flex gap-1.5 items-start">
+                  <p className="flex-1 text-sm text-stone-700 leading-snug">{submissionDraft.subject}</p>
+                  <Button size="sm" variant="ghost" className="shrink-0 px-2 h-7" onClick={() => copyText(submissionDraft.subject, "Subject")}>
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <Button
+                  onClick={() => copyText(submissionDraft.body, "Email body")}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <Copy className="h-4 w-4" /> Copy Email Body
+                </Button>
+                <Button
+                  asChild
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90 border-0 gap-2"
+                >
+                  <a href={`mailto:${submissionDraft.to}?subject=${encodeURIComponent(submissionDraft.subject)}&body=${encodeURIComponent(submissionDraft.body)}`}>
+                    <ExternalLink className="h-4 w-4" /> Open in Email Client
+                  </a>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right: body preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Email Body</label>
+                <span className="text-xs text-muted-foreground">Read-only preview — edit in your email client</span>
+              </div>
+              <textarea
+                readOnly
+                value={submissionDraft.body}
+                rows={16}
+                className="w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm text-stone-700 resize-none leading-relaxed font-mono"
+              />
+            </div>
+
+          </div>
+        </CardContent>
+      </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
