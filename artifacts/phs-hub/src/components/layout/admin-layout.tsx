@@ -145,7 +145,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="my-3 border-t border-sidebar-border" />
 
           <NavItem
-            href="/"
+            href="/seller"
             icon={FilePen}
             label="Seller Form"
             isActive={false}
