@@ -419,13 +419,11 @@ export function generateOrcHtml(data: OrcDocumentData): string {
     </div>
     <div class="doc-header-right">
       <div class="doc-type">Owner Response Certificate</div>
-      <div class="doc-ref">${dateStr}</div>
     </div>
   </div>
 
   <div class="title-band">
     <div class="horse-name">${escapeHtml(data.horseName || "Unnamed Horse")}</div>
-    ${data.breed ? `<div class="horse-meta"><span class="horse-meta-item">${escapeHtml(data.breed)}</span></div>` : ""}
   </div>
 
   <div class="sections-wrap">
@@ -500,12 +498,11 @@ export function generateOrcDriveHtml(data: OrcDocumentData): string {
 <body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#222">
 
   <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#24384e;text-transform:uppercase;margin:0 0 2px 0">Performance Horse Sales — Australia &amp; New Zealand</p>
-  <p style="font-size:10px;color:#888;margin:0 0 16px 0">Owner Response Certificate &nbsp;|&nbsp; ${dateStr}</p>
+  <p style="font-size:10px;color:#888;margin:0 0 16px 0">Owner Response Certificate</p>
 
   <hr style="border:none;border-top:3px solid #24384e;margin:0 0 16px 0">
 
-  <h1 style="font-size:26px;font-weight:700;color:#24384e;margin:0 0 6px 0;font-family:Georgia,serif">${escapeHtml(data.horseName || "Unnamed Horse")}</h1>
-  ${metaLine ? `<p style="font-size:13px;color:#555;margin:0 0 16px 0">${metaLine}</p>` : ""}
+  <h1 style="font-size:26px;font-weight:700;color:#24384e;margin:0 0 16px 0;font-family:Georgia,serif">${escapeHtml(data.horseName || "Unnamed Horse")}</h1>
 
   <p style="font-size:11px;color:#7a6010;border:1px solid #e8d98a;padding:8px 12px;margin:0 0 24px 0;border-radius:3px">
     ⚑&nbsp; This is a factual record based on seller-provided information. It is not a sales document and is for internal PHS use only.
