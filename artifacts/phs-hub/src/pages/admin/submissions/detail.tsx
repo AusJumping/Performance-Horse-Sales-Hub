@@ -687,6 +687,9 @@ export default function SubmissionDetail() {
     if (hd && !hdDraft) setHdDraft(String(hd));
   }, [aiOutput]);
 
+  // Master listing used in the approval pack (comes from main AI generation)
+  const masterListingForPack = (aiOutput as any)?.masterListing ?? "";
+
   // ── Auto-save existing docs & media when Drive folder is first created ─────
   const prevDocsFolderRef = useRef<string | null>(null);
   useEffect(() => {
@@ -722,8 +725,8 @@ export default function SubmissionDetail() {
     }
     // Portfolio: photos & videos
     syncMediaToDrive();
-    // Documents: Approval Pack (if both ORC and HD exist)
-    if (orcDraft && hdDraft && currentHdStatus !== "not_generated") {
+    // Documents: Approval Pack (ORC + Master Listing combined)
+    if (orcDraft && masterListingForPack) {
       saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
         horseName: sub?.horseName ?? "Horse",
         breed: sub?.breed,
@@ -731,7 +734,7 @@ export default function SubmissionDetail() {
         askingPrice: sub?.askingPrice,
         submissionId,
         orcText: orcDraft,
-        horseDescription: hdDraft,
+        masterListing: masterListingForPack,
       }));
     }
     // Documents: Listing Agreement
@@ -795,20 +798,8 @@ export default function SubmissionDetail() {
           askingPrice: sub?.askingPrice,
           submissionId,
           orcText: orcDraft,
-          horseDescription: hdDraft,
+          masterListing: masterListingForPack,
         }));
-        // Documents: Approval Pack (ORC + HD combined) — only if ORC also exists
-        if (orcDraft) {
-          saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
-            horseName: sub?.horseName ?? "Horse",
-            breed: sub?.breed,
-            sellerName: sub?.sellerName,
-            askingPrice: sub?.askingPrice,
-            submissionId,
-            orcText: orcDraft,
-            horseDescription: hdDraft,
-          }));
-        }
       }
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
@@ -1483,31 +1474,28 @@ export default function SubmissionDetail() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      {hdStatus === "ready_to_use" ? (
+                      {masterListingForPack ? (
                         <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-                      ) : hdStatus === "not_generated" ? (
-                        <AlertCircle className="h-4 w-4 text-stone-400 shrink-0" />
                       ) : (
-                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                        <AlertCircle className="h-4 w-4 text-stone-400 shrink-0" />
                       )}
-                      <span className={hdStatus === "ready_to_use" ? "text-emerald-800 font-medium" : hdStatus === "not_generated" ? "text-stone-400" : "text-amber-700"}>
-                        Horse Description
-                        {hdStatus === "not_generated" && <span className="ml-1 text-xs font-normal text-muted-foreground">— not yet generated</span>}
-                        {hdStatus !== "not_generated" && hdStatus !== "ready_to_use" && <span className="ml-1 text-xs font-normal text-amber-600">— not marked ready</span>}
+                      <span className={masterListingForPack ? "text-emerald-800 font-medium" : "text-stone-400"}>
+                        Master Listing
+                        {!masterListingForPack && <span className="ml-1 text-xs font-normal text-muted-foreground">— not yet generated</span>}
                       </span>
                     </div>
                   </div>
 
-                  {(orcStatus === "not_generated" || hdStatus === "not_generated") && (
+                  {(orcStatus === "not_generated" || !masterListingForPack) && (
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                      Generate and save both the ORC and Horse Description before sending the approval pack.
+                      Generate the ORC and Master Listing (via Generate AI Content) before downloading the approval pack.
                     </p>
                   )}
 
                   <div className="flex flex-col gap-2 pt-1">
                     <Button
                       className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
-                      disabled={!orcDraft || !hdDraft}
+                      disabled={!orcDraft || !masterListingForPack}
                       onClick={() => {
                         const data = {
                           horseName: sub.horseName ?? "Horse",
@@ -1516,7 +1504,7 @@ export default function SubmissionDetail() {
                           askingPrice: sub.askingPrice,
                           submissionId: sub.id,
                           orcText: orcDraft,
-                          horseDescription: hdDraft,
+                          masterListing: masterListingForPack,
                         };
                         openApprovalPackWindow(data);
                         saveDocToDrive("approval_pack", `Approval Pack — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml(data));
@@ -1528,7 +1516,7 @@ export default function SubmissionDetail() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      disabled={!orcDraft || !hdDraft}
+                      disabled={!orcDraft || !masterListingForPack}
                       onClick={() => {
                         const email = generateSellerEmailDraft({
                           horseName: sub.horseName ?? "Horse",
@@ -1537,7 +1525,7 @@ export default function SubmissionDetail() {
                           askingPrice: sub.askingPrice,
                           submissionId: sub.id,
                           orcText: orcDraft,
-                          horseDescription: hdDraft,
+                          masterListing: masterListingForPack,
                         });
                         navigator.clipboard.writeText(email);
                         toast({ title: "Email draft copied to clipboard" });
@@ -1551,7 +1539,7 @@ export default function SubmissionDetail() {
               </Card>
 
               {/* Email draft preview */}
-              {orcDraft && hdDraft && (
+              {orcDraft && masterListingForPack && (
                 <Card>
                   <CardHeader className="pb-3 border-b">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -1573,7 +1561,7 @@ export default function SubmissionDetail() {
                         askingPrice: sub.askingPrice,
                         submissionId: sub.id,
                         orcText: orcDraft,
-                        horseDescription: hdDraft,
+                        masterListing: masterListingForPack,
                       })}
                       data-testid="textarea-emailDraft"
                     />

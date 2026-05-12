@@ -5,7 +5,7 @@ export interface ApprovalPackData {
   askingPrice?: string | null;
   submissionId: number | string;
   orcText: string;
-  horseDescription: string;
+  masterListing: string;
   generatedAt?: string | null;
 }
 
@@ -386,11 +386,11 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
   <div class="pack-section">
     <div class="section-heading-row">
       <span class="section-num">1</span>
-      <span class="section-heading">Your Listing Description</span>
+      <span class="section-heading">Your Master Listing</span>
     </div>
-    <div class="section-sub">This is the marketing copy that will appear on your public listing. Please review and let us know if you'd like any adjustments.</div>
+    <div class="section-sub">This is the full marketing listing that will appear on your public advertisement. Please review all sections and let us know if you'd like any adjustments.</div>
     <div class="hd-body">
-      ${proseToHtml(data.horseDescription)}
+      ${orcToHtml(data.masterListing)}
     </div>
   </div>
 
@@ -441,12 +441,12 @@ Thank you for submitting ${data.horseName} to Performance Horse Sales. We have r
 Please find below two items for your review:
 
 ──────────────────────────────────────
-1. YOUR LISTING DESCRIPTION
+1. YOUR MASTER LISTING
 ──────────────────────────────────────
 
-This is the marketing copy that will appear on your public listing. Please read through carefully and let us know if you would like any changes.
+This is the full marketing listing that will appear on your public advertisement. Please read through carefully and let us know if you would like any changes.
 
-${data.horseDescription}
+${data.masterListing}
 
 ──────────────────────────────────────
 2. OWNER RESPONSE CERTIFICATE
