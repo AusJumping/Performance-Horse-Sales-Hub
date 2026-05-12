@@ -21,13 +21,7 @@ interface AckEmailOptions {
   horseName?: string;
 }
 
-function buildHtml(firstName: string, formType: AckEmailOptions["formType"], horseName?: string): string {
-  const horseRef = horseName ? ` regarding <strong>${horseName}</strong>` : "";
-  const formLabel =
-    formType === "seller" ? "seller listing" :
-    formType === "eoi"    ? "expression of interest" :
-                            "horse search";
-
+function buildHtml(firstName: string): string {
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -47,15 +41,16 @@ function buildHtml(firstName: string, formType: AckEmailOptions["formType"], hor
         <tr><td style="padding:36px 40px 28px">
           <p style="margin:0 0 16px;font-size:15px;color:#1a1a1a">Hi ${firstName},</p>
           <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.7">
-            Thank you so much for submitting your ${formLabel} form${horseRef} to Performance Horse Sales.
+            Thank you for submitting your form to Performance Horse Sales. We've received your information and appreciate you taking the time to complete it.
+          </p>
+          <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.7">
+            We will review your submission and be in contact within the next 24 hours.
           </p>
           <p style="margin:0 0 24px;font-size:15px;color:#333;line-height:1.7">
-            We will review your submission and contact you within 24 hours.
+            In the meantime, if you have any urgent questions, please feel free to reply to this email or contact us directly on <strong>0428 239 317</strong>.
           </p>
-          <p style="margin:0;font-size:14px;color:#555;line-height:1.7">
-            Warm regards,<br>
-            <strong>Sally Empringham</strong><br>
-            Performance Horse Sales Australia &amp; New Zealand
+          <p style="margin:0;font-size:15px;color:#333;line-height:1.7">
+            We appreciate your enquiry and look forward to speaking with you soon.
           </p>
         </td></tr>
 
@@ -73,23 +68,17 @@ function buildHtml(firstName: string, formType: AckEmailOptions["formType"], hor
 </html>`;
 }
 
-function buildText(firstName: string, formType: AckEmailOptions["formType"], horseName?: string): string {
-  const horseRef = horseName ? ` regarding ${horseName}` : "";
-  const formLabel =
-    formType === "seller" ? "seller listing" :
-    formType === "eoi"    ? "expression of interest" :
-                            "horse search";
-
+function buildText(firstName: string): string {
   return [
     `Hi ${firstName},`,
     "",
-    `Thank you so much for submitting your ${formLabel} form${horseRef} to Performance Horse Sales.`,
+    "Thank you for submitting your form to Performance Horse Sales. We've received your information and appreciate you taking the time to complete it.",
     "",
-    "We will review your submission and contact you within 24 hours.",
+    "We will review your submission and be in contact within the next 24 hours.",
     "",
-    "Warm regards,",
-    "Sally Empringham",
-    "Performance Horse Sales Australia & New Zealand",
+    "In the meantime, if you have any urgent questions, please feel free to reply to this email or contact us directly on 0428 239 317.",
+    "",
+    "We appreciate your enquiry and look forward to speaking with you soon.",
   ].join("\n");
 }
 
@@ -111,8 +100,8 @@ export async function sendAcknowledgementEmail(opts: AckEmailOptions): Promise<v
       from: `"Performance Horse Sales" <${fromAddress}>`,
       to: opts.to,
       subject,
-      html: buildHtml(opts.firstName, opts.formType, opts.horseName),
-      text: buildText(opts.firstName, opts.formType, opts.horseName),
+      html: buildHtml(opts.firstName),
+      text: buildText(opts.firstName),
     });
     logger.info("Acknowledgement email sent", { to: opts.to, formType: opts.formType });
   } catch (err) {
