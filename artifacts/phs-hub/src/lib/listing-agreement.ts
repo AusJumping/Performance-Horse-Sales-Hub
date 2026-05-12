@@ -12,6 +12,8 @@ export interface ListingAgreementData {
   sellerPhone?: string | null;
   submissionId: number | string;
   commissionRate: string;
+  minimumFee?: string | null;
+  maximumFee?: string | null;
   listingPeriodDays: number;
   listingTermsNotes?: string | null;
   agreementDate?: string;
@@ -212,6 +214,16 @@ export function generateListingAgreementHtml(data: ListingAgreementData): string
           <div class="fee-value">${escapeHtml(commissionDisplay)}</div>
           <div class="fee-sub">of final sale price</div>
         </div>
+        ${data.minimumFee ? `<div class="fee-item">
+          <div class="fee-label">Minimum Fee</div>
+          <div class="fee-value" style="font-size:18px">${escapeHtml(data.minimumFee)}</div>
+          <div class="fee-sub">minimum commission payable</div>
+        </div>` : ""}
+        ${data.maximumFee ? `<div class="fee-item">
+          <div class="fee-label">Maximum Fee</div>
+          <div class="fee-value" style="font-size:18px">${escapeHtml(data.maximumFee)}</div>
+          <div class="fee-sub">maximum commission payable</div>
+        </div>` : ""}
         <div class="fee-item">
           <div class="fee-label">Listing Period</div>
           <div class="fee-value">${data.listingPeriodDays ?? 90}</div>
@@ -235,7 +247,7 @@ export function generateListingAgreementHtml(data: ListingAgreementData): string
       <div class="section-title">Terms &amp; Conditions</div>
       <ol class="clause-list">
         <li data-n="1"><strong>Appointment.</strong> The Seller appoints Performance Horse Sales (PHS) as their agent to market, advertise and facilitate the sale of the above horse for the duration of the listing period.</li>
-        <li data-n="2"><strong>Commission.</strong> Upon successful sale of the horse, the Seller agrees to pay PHS a commission equal to ${escapeHtml(commissionDisplay)} of the final agreed sale price (inclusive of GST where applicable). Commission is payable within 5 business days of settlement.</li>
+        <li data-n="2"><strong>Commission.</strong> Upon successful sale of the horse, the Seller agrees to pay PHS a commission equal to ${escapeHtml(commissionDisplay)} of the final agreed sale price (inclusive of GST where applicable)${data.minimumFee || data.maximumFee ? `, subject to a minimum fee of ${data.minimumFee ?? "—"}${data.maximumFee ? ` and a maximum fee of ${data.maximumFee}` : ""}` : ""}. Commission is payable within 5 business days of settlement.</li>
         <li data-n="3"><strong>Marketing.</strong> PHS will market the horse through its website, social media channels, and partner platforms. The Seller grants PHS a non-exclusive licence to use photographs, videos and other media provided for the purpose of marketing the horse.</li>
         <li data-n="4"><strong>Seller's Warranties.</strong> The Seller warrants that: (a) they are the lawful owner of the horse or are authorised to act on the owner's behalf; (b) the horse is free from any undisclosed finance, encumbrance or lien; and (c) all information provided to PHS is accurate and complete to the best of their knowledge.</li>
         <li data-n="5"><strong>Enquiries &amp; Viewings.</strong> PHS will manage buyer enquiries and coordinate viewings. The Seller agrees to make reasonable efforts to facilitate viewings and respond to enquiries in a timely manner.</li>

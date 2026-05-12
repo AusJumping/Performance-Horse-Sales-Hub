@@ -817,7 +817,9 @@ export default function SubmissionDetail() {
   };
 
   // ── Listing Agreement ────────────────────────────────────────────────────
-  const [laCommissionRate, setLaCommissionRate] = useState(sub?.commissionRate ?? "10%");
+  const [laCommissionRate, setLaCommissionRate] = useState(sub?.commissionRate ?? "5%");
+  const [laMinimumFee, setLaMinimumFee] = useState(sub?.minimumFee ?? "$500");
+  const [laMaximumFee, setLaMaximumFee] = useState(sub?.maximumFee ?? "$2,000");
   const [laListingPeriod, setLaListingPeriod] = useState<number>(sub?.listingPeriodDays ?? 90);
   const [laTermsNotes, setLaTermsNotes] = useState(sub?.listingTermsNotes ?? "");
   const [laSaving, setLaSaving] = useState(false);

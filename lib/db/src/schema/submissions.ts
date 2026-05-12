@@ -72,7 +72,9 @@ export const submissionsTable = pgTable("submissions", {
 
   // ── Listing Agreement (Phase 5) ──────────────────────────────────────────
   // Commercial terms Sally sets before generating the agreement PDF
-  commissionRate: text("commission_rate"),              // e.g. "10%"
+  commissionRate: text("commission_rate"),              // e.g. "5%"
+  minimumFee: text("minimum_fee"),                      // e.g. "$500"
+  maximumFee: text("maximum_fee"),                      // e.g. "$2,000"
   listingPeriodDays: integer("listing_period_days"),    // e.g. 90
   listingTermsNotes: text("listing_terms_notes"),       // special conditions
 
