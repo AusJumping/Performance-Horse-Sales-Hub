@@ -138,3 +138,30 @@ After changing openapi.yaml:
 ```bash
 pnpm --filter @workspace/api-spec run codegen
 ```
+
+## Secrets Still Needed
+
+The following secrets must be added in the Replit Secrets tab before email and Google Drive features will work in production.
+
+### Gmail / SMTP (outbound email)
+
+| Secret name | What it is | Where to get it |
+|---|---|---|
+| `SMTP_HOST` | Gmail SMTP server | `smtp.gmail.com` (already set) |
+| `SMTP_PORT` | Gmail SMTP port | `587` (already set) |
+| `SMTP_USER` | Gmail address used to send | e.g. `hello@performancehorsesales.com.au` (already set) |
+| `SMTP_FROM` | Display name + address in From field | e.g. `Performance Horse Sales <hello@performancehorsesales.com.au>` (already set) |
+| **`SMTP_PASS`** | **Gmail App Password — NOT the account password** | Google Account → Security → 2-Step Verification → App Passwords → create one for "Mail" |
+| **`ALERT_EMAIL`** | **Sally's email — receives internal alert on every new submission** | Sally's preferred business email address |
+
+> Gmail App Passwords require 2-Step Verification to be turned on for the Google account first.
+> Go to: https://myaccount.google.com/apppasswords
+
+### Google Drive integration
+
+The Google Drive connector is already installed via Replit Integrations (OAuth). No additional secrets are required for Drive — it uses the connected account automatically.
+
+However, after first connecting, Sally needs to:
+1. Go to **Admin → Settings** in the app
+2. Set the **Root Drive Folder ID** (copy the folder ID from the URL of the Drive folder where horse folders should be created)
+3. Optionally set a custom **Search Folders** parent folder ID
