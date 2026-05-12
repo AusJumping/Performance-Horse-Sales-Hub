@@ -1,0 +1,40 @@
+I need to clarify the requirement because the current proposed next step is still not suitable.
+I cannot get Sally’s Google login details, and Sally should not need to provide her Google OAuth Client ID, Google Client Secret, Google Cloud Console access, Replit access, or any technical details to me.
+Sally needs to be able to connect her own Google Drive from inside the app admin dashboard, exactly like a normal app user would connect Google Drive.
+The correct production requirement is:
+Jo can remove/disconnect her Australian Jumping Google Drive from the app.
+Sally logs into the Performance Horse Sales admin dashboard.
+Sally clicks “Connect Google Drive”.
+Sally is taken to Google’s normal authorisation screen.
+Sally signs into her own Google account privately.
+Sally approves Google Drive access.
+The app stores Sally’s Google Drive connection securely.
+Sally is redirected back to the admin dashboard.
+The app then saves future files into Sally’s connected Google Drive.
+Sally must not need to:
+log into Replit
+become a Replit collaborator
+access the Google Cloud Console
+provide Google passwords
+provide Google Client ID or Client Secret
+provide technical credentials to Jo
+use a shared Google account
+Please do not ask me for Sally’s Google account credentials or Google Cloud credentials.
+The app itself needs one set of app-level OAuth credentials, but those are not Sally’s personal Drive details. They are app infrastructure credentials. Once those are configured, any authorised admin user should be able to connect their own Google Drive through the admin dashboard OAuth flow.
+Please confirm whether the app-level Google OAuth credentials are required once only for the app itself. If so, either:
+Guide me to create the app-level OAuth credentials under an appropriate Google Cloud project controlled by the business/app owner, then I can add only those two values to Replit Secrets, or
+If the current Replit environment supports it, leave placeholder environment variables for:
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI
+Then complete the app-side OAuth flow so that Sally only has to click “Connect Google Drive” inside the admin dashboard.
+The most important point is this:
+Sally’s Google Drive connection must happen through the live app admin interface, not through Replit and not through Google Cloud Console.
+Please proceed on that basis.
+Also, please make sure the UI includes:
+Google Drive status
+Connected account email
+Connect Google Drive button
+Disconnect Google Drive button
+Test Google Drive Connection button
+And please confirm that Jo’s old folder IDs and Drive tokens have been cleared from drive_settings, while the Drive functionality itself remains intact.
