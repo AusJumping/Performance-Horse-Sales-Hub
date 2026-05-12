@@ -360,9 +360,7 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
         <div class="brand-name">Performance Horse Sales</div>
         <div class="brand-region">Australia &amp; New Zealand</div>
       </div>
-      <div class="doc-ref">
-        Submission #${escapeHtml(String(data.submissionId))} &nbsp;|&nbsp; ${dateStr}
-      </div>
+      <div class="doc-ref">${dateStr}</div>
     </div>
     <div class="cover-doc-type">Seller Approval Pack</div>
     <div class="cover-horse-name">${escapeHtml(data.horseName)}</div>

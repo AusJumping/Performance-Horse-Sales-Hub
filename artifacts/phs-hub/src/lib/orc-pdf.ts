@@ -419,7 +419,7 @@ export function generateOrcHtml(data: OrcDocumentData): string {
     </div>
     <div class="doc-header-right">
       <div class="doc-type">Owner Response Certificate</div>
-      ${data.submissionId ? `<div class="doc-ref">Submission #${escapeHtml(String(data.submissionId))} &nbsp;|&nbsp; ${dateStr}</div>` : `<div class="doc-ref">${dateStr}</div>`}
+      <div class="doc-ref">${dateStr}</div>
     </div>
   </div>
 
@@ -511,7 +511,7 @@ export function generateOrcDriveHtml(data: OrcDocumentData): string {
 <body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:24px;color:#222">
 
   <p style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#24384e;text-transform:uppercase;margin:0 0 2px 0">Performance Horse Sales — Australia &amp; New Zealand</p>
-  <p style="font-size:10px;color:#888;margin:0 0 16px 0">Owner Response Certificate &nbsp;|&nbsp; ${data.submissionId ? `Submission #${escapeHtml(String(data.submissionId))} &nbsp;|&nbsp; ` : ""}${dateStr}</p>
+  <p style="font-size:10px;color:#888;margin:0 0 16px 0">Owner Response Certificate &nbsp;|&nbsp; ${dateStr}</p>
 
   <hr style="border:none;border-top:3px solid #24384e;margin:0 0 16px 0">
 

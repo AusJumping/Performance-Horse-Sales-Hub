@@ -166,7 +166,7 @@ export function generateListingAgreementHtml(data: ListingAgreementData): string
     </div>
     <div class="doc-header-right">
       <div class="doc-type">Listing Agreement</div>
-      <div class="doc-ref">Submission #${escapeHtml(String(data.submissionId))} &nbsp;|&nbsp; ${dateStr}</div>
+      <div class="doc-ref">${dateStr}</div>
     </div>
   </div>
 
