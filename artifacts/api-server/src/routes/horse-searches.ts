@@ -9,6 +9,7 @@ import {
   safeDriveName,
   formatDateTime,
 } from "../lib/googleDrive.js";
+import { sendAcknowledgementEmail } from "../lib/email.js";
 
 const router: IRouter = Router();
 
@@ -146,6 +147,13 @@ router.post("/", async (req, res) => {
     signatureData: body.signatureData ?? null,
     status: "new",
   }).returning();
+
+  // Send acknowledgement email (non-blocking)
+  setImmediate(() => sendAcknowledgementEmail({
+    to: body.email,
+    firstName: body.firstName || "there",
+    formType: "search",
+  }));
 
   // Auto-create Drive folder in background (non-blocking)
   setImmediate(async () => {

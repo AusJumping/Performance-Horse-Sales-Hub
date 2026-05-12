@@ -10,6 +10,7 @@ import {
 import { eq, desc, like, and, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { sendAcknowledgementEmail } from "../lib/email.js";
 
 const router: IRouter = Router();
 
@@ -105,6 +106,17 @@ router.post("/", async (req, res) => {
       aiGenerated: false,
     })
     .returning();
+
+  // Send acknowledgement email (non-blocking — never fails the submission)
+  if (body.sellerEmail) {
+    const firstName = (body.sellerName ?? "").split(" ")[0] || "there";
+    setImmediate(() => sendAcknowledgementEmail({
+      to: body.sellerEmail!,
+      firstName,
+      formType: "seller",
+      horseName: body.horseName ?? undefined,
+    }));
+  }
 
   // Record initial status
   await db.insert(statusHistoryTable).values({
