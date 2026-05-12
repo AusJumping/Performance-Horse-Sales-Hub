@@ -830,7 +830,7 @@ function orcPrompt(
 
   return `You are creating an Owner Response Certificate (ORC) for Performance Horse Sales Australia and New Zealand.
 
-The ORC is a FACTUAL, STRUCTURED internal document based on information provided by the seller. It is NOT a sales document and must NOT use marketing language, adjectives, or persuasive tone. It is a clean, organised factual record used by PHS staff to verify details and later produce marketing materials.
+The ORC is a FACTUAL, STRUCTURED document that will be shared with buyers. It is based on information provided by the seller. It is NOT a sales document and must NOT use marketing language, adjectives, or persuasive tone. It is a clean, organised factual record.
 
 STRICT RULES:
 - Only include information that was explicitly provided by the seller
@@ -839,6 +839,8 @@ STRICT RULES:
 - If a section has no data, write "Not provided" — do not skip the section
 - Use plain, factual language throughout
 - Format as a structured document with clear section headings
+- DO NOT include: asking price, preferred sale price, listing service type, marketing options, seller contact details, seller email, seller phone, or seller address — these are private and must not appear in this document
+- For horse location, include SUBURB AND STATE ONLY (e.g. "Bowral, NSW") — never include a street address or full property address
 
 REQUIRED SECTIONS (include all, even if data is sparse):
 
@@ -868,13 +870,12 @@ REQUIRED SECTIONS (include all, even if data is sparse):
    - Rider level and type the seller has described
    - Any restrictions or requirements the seller has noted
 
-8. SALE DETAILS
-   - Asking price
-   - Reason for sale
-   - Ideal home described by seller
+8. REASON FOR SALE AND IDEAL HOME
+   - Why the seller is selling (if provided)
+   - What kind of home or rider the seller hopes for (if provided)
 
 9. ADDITIONAL INFORMATION
-   - Any other details provided by the seller
+   - Any other relevant details provided by the seller
 
 Format each section with the heading in CAPITALS followed by bullet points or short sentences.
 
