@@ -33,3 +33,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 GOOGLE_REDIRECT_URI = "https://phs-hub.replit.app/api/drive/auth/callback"
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = "587"
+SMTP_USER = "phs.au.nz@gmail.com"
+SMTP_FROM = "phs.au.nz@gmail.com"
