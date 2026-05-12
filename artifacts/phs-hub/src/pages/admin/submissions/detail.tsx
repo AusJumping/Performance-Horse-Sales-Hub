@@ -818,6 +818,84 @@ export default function SubmissionDetail() {
     ready_to_use:  { label: "Ready to Use",   className: "bg-emerald-50 text-emerald-700 border-emerald-500" },
   };
 
+  // ── Contract of Sale ──────────────────────────────────────────────────────
+  const [contractSalesPrice, setContractSalesPrice] = useState(sub?.askingPrice ?? "");
+  const [contractHoldingDeposit, setContractHoldingDeposit] = useState("");
+  const [contractCustomClauses, setContractCustomClauses] = useState("");
+  const [contractGenerating, setContractGenerating] = useState(false);
+  const [contractVoiding, setContractVoiding] = useState(false);
+  const [contractLinkCopied, setContractLinkCopied] = useState(false);
+
+  const { data: contractData, refetch: refetchContract, isLoading: contractLoading } = useQuery<{
+    id: number; token: string; status: string; horseName: string; salesPrice: string | null;
+    holdingDepositAmount: string | null; horseDescription: string | null; customClauses: string | null;
+    fillerName: string | null; fillerEmail: string | null; fillerRole: string | null;
+    buyerName: string | null; buyerEmail: string | null; sellerName: string | null; sellerEmail: string | null;
+    buyerSignature: string | null; sellerSignature: string | null;
+    agreedSalesPrice: boolean; agreedHoldingDeposit: boolean; agreedDescription: boolean;
+    agreedSection3: boolean; agreedSection4: boolean; agreedSellerDeclaration: boolean; agreedBuyerDeclaration: boolean;
+    submittedAt: string | null; createdAt: string;
+  } | null>({
+    queryKey: ["contract", submissionId],
+    queryFn: async () => {
+      const res = await fetch(`/api/submissions/${submissionId}/contract`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to fetch contract");
+      return res.json();
+    },
+    enabled: !!submissionId,
+  });
+
+  const handleGenerateContract = async () => {
+    setContractGenerating(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/contract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          salesPrice: contractSalesPrice || undefined,
+          holdingDepositAmount: contractHoldingDeposit || undefined,
+          customClauses: contractCustomClauses || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to generate");
+      refetchContract();
+      toast({ title: "Contract link generated" });
+    } catch (err: any) {
+      toast({ title: err.message ?? "Failed to generate", variant: "destructive" });
+    } finally {
+      setContractGenerating(false);
+    }
+  };
+
+  const handleVoidContract = async () => {
+    if (!confirm("Void this contract link? The URL will stop working.")) return;
+    setContractVoiding(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/contract`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to void");
+      refetchContract();
+      toast({ title: "Contract voided" });
+    } catch (err: any) {
+      toast({ title: err.message ?? "Failed to void", variant: "destructive" });
+    } finally {
+      setContractVoiding(false);
+    }
+  };
+
+  const contractUrl = contractData?.token
+    ? `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/contract/${contractData.token}`
+    : null;
+
+  const handleCopyContractUrl = () => {
+    if (!contractUrl) return;
+    navigator.clipboard.writeText(contractUrl);
+    setContractLinkCopied(true);
+    setTimeout(() => setContractLinkCopied(false), 2000);
+    toast({ title: "Contract link copied" });
+  };
+
   // ── Listing Agreement ────────────────────────────────────────────────────
   const [laCommissionRate, setLaCommissionRate] = useState(sub?.commissionRate ?? "5%");
   const [laMinimumFee, setLaMinimumFee] = useState(sub?.minimumFee ?? "$500");
@@ -995,6 +1073,7 @@ export default function SubmissionDetail() {
     { value: "horse-description", label: hdStatus !== "not_generated" ? `Horse Description — ${hdStatusLabel[hdStatus]?.label ?? hdStatus}` : "Horse Description" },
     { value: "approval-pack",     label: "Approval Pack" },
     { value: "listing-agreement", label: "Listing Agreement" },
+    { value: "contract-of-sale", label: "Contract of Sale" },
     { value: "form",              label: "Original Submission" },
     { value: "media",             label: "Media & Docs" },
     { value: "history",           label: "Status History" },
@@ -1731,6 +1810,238 @@ export default function SubmissionDetail() {
                       {sub.listingAgreementSignedAt && (
                         <p>Signed: {new Date(sub.listingAgreementSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
                       )}
+                    </div>
+                  )}
+
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Contract of Sale ── */}
+            <TabsContent value="contract-of-sale" className="space-y-4">
+              <Card>
+                <CardHeader className="pb-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileSignature className="h-4 w-4 text-[#24384e]" /> Contract of Sale
+                      </CardTitle>
+                      <CardDescription>Generate a unique link for the buyer and seller to review and sign the contract electronically.</CardDescription>
+                    </div>
+                    {contractData && contractData.status !== "voided" && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+                        contractData.status === "submitted" ? "bg-emerald-50 text-emerald-700 border-emerald-500" :
+                        contractData.status === "pending"   ? "bg-sky-50 text-sky-700 border-sky-400" :
+                        "bg-stone-100 text-stone-600 border-stone-300"
+                      }`}>
+                        {contractData.status === "submitted" ? "Submitted" :
+                         contractData.status === "pending"   ? "Link Active" : contractData.status}
+                      </span>
+                    )}
+                    {(!contractData || contractData.status === "voided") && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded border bg-stone-100 text-stone-600 border-stone-300">
+                        {contractData?.status === "voided" ? "Voided" : "Not Generated"}
+                      </span>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-5 space-y-5">
+
+                  {/* Settings for generating */}
+                  {(!contractData || contractData.status === "voided") && (
+                    <div className="space-y-4">
+                      <p className="text-sm text-stone-600">
+                        Fill in the sale details below, then generate a unique contract link to share with the buyer and seller.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Sale Price</Label>
+                          <Input
+                            value={contractSalesPrice}
+                            onChange={(e) => setContractSalesPrice(e.target.value)}
+                            placeholder="e.g. $15,000"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Holding Deposit Amount <span className="text-stone-400 font-normal">(optional)</span></Label>
+                          <Input
+                            value={contractHoldingDeposit}
+                            onChange={(e) => setContractHoldingDeposit(e.target.value)}
+                            placeholder="e.g. $1,500"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Additional Custom Clauses <span className="text-stone-400 font-normal">(optional)</span></Label>
+                        <Textarea
+                          value={contractCustomClauses}
+                          onChange={(e) => setContractCustomClauses(e.target.value)}
+                          placeholder="Any extra terms or clauses to add to the contract…"
+                          rows={3}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleGenerateContract}
+                        disabled={contractGenerating}
+                        className="w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white"
+                      >
+                        {contractGenerating
+                          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
+                          : <><FileSignature className="h-4 w-4 mr-2" /> Generate Contract Link</>}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Active contract */}
+                  {contractData && contractData.status !== "voided" && (
+                    <div className="space-y-5">
+
+                      {/* Contract details */}
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {contractData.salesPrice && (
+                          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
+                            <p className="text-xs text-stone-500 mb-0.5">Sale Price</p>
+                            <p className="font-semibold text-stone-800">{contractData.salesPrice}</p>
+                          </div>
+                        )}
+                        {contractData.holdingDepositAmount && (
+                          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
+                            <p className="text-xs text-stone-500 mb-0.5">Holding Deposit</p>
+                            <p className="font-semibold text-stone-800">{contractData.holdingDepositAmount}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Link */}
+                      {contractData.status === "pending" && contractUrl && (
+                        <div className="space-y-2">
+                          <Label className="text-sm">Contract Link (share with buyer & seller)</Label>
+                          <div className="flex gap-2">
+                            <Input value={contractUrl} readOnly className="text-xs font-mono bg-stone-50" />
+                            <Button variant="outline" size="icon" onClick={handleCopyContractUrl} title="Copy link">
+                              {contractLinkCopied ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                            <Button variant="outline" size="icon" asChild title="Open in new tab">
+                              <a href={contractUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          </div>
+                          <p className="text-xs text-stone-400">This link is unique to this horse. Share it with both parties to review and sign.</p>
+                        </div>
+                      )}
+
+                      {/* Submitted: show details */}
+                      {contractData.status === "submitted" && (
+                        <div className="space-y-4">
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-sm text-emerald-800">
+                            <strong>Contract submitted</strong> on {contractData.submittedAt ? new Date(contractData.submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-xs text-stone-500 mb-0.5">Filled in by</p>
+                                <p className="font-medium">{contractData.fillerName ?? "—"} <span className="text-stone-400">({contractData.fillerRole ?? "—"})</span></p>
+                                <p className="text-stone-500 text-xs">{contractData.fillerEmail ?? ""}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-stone-500 mb-0.5">Seller</p>
+                                <p className="font-medium">{contractData.sellerName ?? "—"}</p>
+                                <p className="text-stone-500 text-xs">{contractData.sellerEmail ?? ""}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-stone-500 mb-0.5">Buyer</p>
+                                <p className="font-medium">{contractData.buyerName ?? "—"}</p>
+                                <p className="text-stone-500 text-xs">{contractData.buyerEmail ?? ""}</p>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-xs text-stone-500 mb-1">Agreements</p>
+                              {[
+                                { key: "agreedSalesPrice", label: "Sales Price" },
+                                { key: "agreedHoldingDeposit", label: "Holding Deposit" },
+                                { key: "agreedDescription", label: "Horse Description" },
+                                { key: "agreedSection3", label: "Warranties (Section 3)" },
+                                { key: "agreedSection4", label: "Additional Clauses (Section 4)" },
+                                { key: "agreedSellerDeclaration", label: "Seller's Declaration" },
+                                { key: "agreedBuyerDeclaration", label: "Buyer's Declaration" },
+                              ].map(({ key, label }) => (
+                                <div key={key} className="flex items-center gap-2">
+                                  <CheckCircle className={`h-3.5 w-3.5 ${(contractData as any)[key] ? "text-emerald-500" : "text-stone-300"}`} />
+                                  <span className={`text-xs ${(contractData as any)[key] ? "text-stone-700" : "text-stone-400 line-through"}`}>{label}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Signatures */}
+                          {(contractData.sellerSignature || contractData.buyerSignature) && (
+                            <div className="grid grid-cols-2 gap-4">
+                              {[
+                                { sig: contractData.sellerSignature, label: "Seller's Signature" },
+                                { sig: contractData.buyerSignature, label: "Buyer's Signature" },
+                              ].map(({ sig, label }) => sig && (
+                                <div key={label} className="space-y-1">
+                                  <p className="text-xs text-stone-500">{label}</p>
+                                  <div className="border border-stone-200 rounded bg-white p-2">
+                                    <img src={sig} alt={label} className="max-h-20 w-full object-contain" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-col gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                          onClick={handleVoidContract}
+                          disabled={contractVoiding}
+                        >
+                          {contractVoiding
+                            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Voiding…</>
+                            : "Void Contract Link"}
+                        </Button>
+                        {contractData.status === "voided" || contractData.status === "submitted" ? (
+                          <Button
+                            onClick={handleGenerateContract}
+                            disabled={contractGenerating}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            {contractGenerating
+                              ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
+                              : <><FileSignature className="h-4 w-4 mr-2" /> Generate New Contract Link</>}
+                          </Button>
+                        ) : null}
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* After voided: allow regeneration */}
+                  {contractData?.status === "voided" && (
+                    <div className="space-y-4 pt-2 border-t">
+                      <p className="text-sm text-stone-500">This contract has been voided. You can generate a new link below.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Sale Price</Label>
+                          <Input value={contractSalesPrice} onChange={(e) => setContractSalesPrice(e.target.value)} placeholder="e.g. $15,000" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Holding Deposit <span className="text-stone-400 font-normal">(optional)</span></Label>
+                          <Input value={contractHoldingDeposit} onChange={(e) => setContractHoldingDeposit(e.target.value)} placeholder="e.g. $1,500" />
+                        </div>
+                      </div>
+                      <Button onClick={handleGenerateContract} disabled={contractGenerating} className="w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white">
+                        {contractGenerating
+                          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
+                          : <><FileSignature className="h-4 w-4 mr-2" /> Generate New Contract Link</>}
+                      </Button>
                     </div>
                   )}
 

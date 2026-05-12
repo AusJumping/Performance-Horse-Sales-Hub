@@ -10,6 +10,7 @@ import creatomateRouter from "./creatomate";
 import eoisRouter from "./eois";
 import driveRouter from "./drive";
 import horseSearchesRouter from "./horse-searches";
+import contractsRouter from "./contracts";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(creatomateRouter);
 router.use("/eois", eoisRouter);
 router.use("/drive", driveRouter);
 router.use("/horse-searches", horseSearchesRouter);
+router.use(contractsRouter);
 
 export default router;

@@ -22,6 +22,7 @@ import SubmissionDetail from "./pages/admin/submissions/detail";
 import AiEditor from "./pages/admin/submissions/ai-editor";
 import ReelTemplatesSettings from "./pages/admin/settings/reel-templates";
 import DriveSettings from "./pages/admin/drive/index";
+import ContractPage from "./pages/contract";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/eoi-thank-you" component={EoiThankYou} />
       <Route path="/find-a-horse" component={FindAHorse} />
       <Route path="/find-a-horse/thank-you" component={FindAHorseThankYou} />
+      <Route path="/contract/:token" component={ContractPage} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminGuard>
