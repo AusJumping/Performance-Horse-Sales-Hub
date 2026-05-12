@@ -22,38 +22,179 @@ import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router: IRouter = Router();
 
+// Temporary in-memory store for OAuth state values (CSRF protection)
+const oauthStates = new Map<string, number>();
+
+function generateState(): string {
+  const state = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  oauthStates.set(state, Date.now());
+  // Clean up states older than 10 minutes
+  for (const [k, ts] of oauthStates.entries()) {
+    if (Date.now() - ts > 600_000) oauthStates.delete(k);
+  }
+  return state;
+}
+
 async function getSettings() {
   const [settings] = await db.select().from(driveSettingsTable).limit(1);
   return settings ?? null;
 }
 
 // ── GET /api/drive/settings ────────────────────────────────────────────────
+// Returns public Drive status — never exposes tokens
 router.get("/settings", async (req, res) => {
   const settings = await getSettings();
-  res.json(settings ?? { sellerFolderParentId: null, isConnected: false });
+  if (!settings) {
+    return res.json({ isConnected: false, googleEmail: null, sellerFolderParentId: null });
+  }
+  res.json({
+    id: settings.id,
+    isConnected: settings.isConnected,
+    googleEmail: settings.googleEmail ?? null,
+    rootFolderId: settings.rootFolderId ?? null,
+    rootFolderLink: settings.rootFolderLink ?? null,
+    sellerFolderParentId: settings.sellerFolderParentId ?? null,
+    sellerFolderLink: settings.sellerFolderLink ?? null,
+    searchFolderParentId: settings.searchFolderParentId ?? null,
+    searchFolderLink: settings.searchFolderLink ?? null,
+    lastTestedAt: settings.lastTestedAt ?? null,
+    lastTestError: settings.lastTestError ?? null,
+  });
 });
 
-// ── POST /api/drive/settings ───────────────────────────────────────────────
-router.post("/settings", async (req, res) => {
-  const { sellerFolderParentId } = req.body as { sellerFolderParentId: string };
-  if (!sellerFolderParentId?.trim()) {
-    return res.status(400).json({ error: "sellerFolderParentId is required" });
+// ── GET /api/drive/auth ───────────────────────────────────────────────────
+// Starts the Google OAuth flow — redirects the browser to Google's consent screen
+router.get("/auth", (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  if (!clientId || !redirectUri) {
+    return res.status(500).send("Google OAuth is not configured. GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI must be set.");
   }
+
+  const state = generateState();
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
+    access_type: "offline",
+    prompt: "consent",
+    state,
+  });
+
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+});
+
+// ── GET /api/drive/auth/callback ──────────────────────────────────────────
+// Google redirects here after user approves — exchanges code for tokens
+router.get("/auth/callback", async (req, res) => {
+  const { code, state, error } = req.query as Record<string, string>;
+
+  if (error) {
+    req.log.warn({ error }, "Google OAuth was denied by user");
+    return res.redirect("/admin/drive?error=access_denied");
+  }
+
+  // Validate CSRF state
+  if (!state || !oauthStates.has(state)) {
+    return res.redirect("/admin/drive?error=invalid_state");
+  }
+  oauthStates.delete(state);
+
+  const clientId = process.env.GOOGLE_CLIENT_ID!;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI!;
+
+  try {
+    // Exchange code for tokens
+    const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    if (!tokenResp.ok) {
+      const err = await tokenResp.text();
+      throw new Error(`Token exchange failed: ${tokenResp.status} — ${err}`);
+    }
+
+    const tokens = await tokenResp.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+      token_type: string;
+    };
+
+    if (!tokens.refresh_token) {
+      throw new Error("No refresh token returned. This usually means the account was already connected. Please disconnect first and try again.");
+    }
+
+    // Get the connected email address
+    const userResp = await fetch(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+    );
+    const userInfo = userResp.ok
+      ? await userResp.json() as { email?: string }
+      : { email: undefined };
+
+    const expiry = new Date(Date.now() + tokens.expires_in * 1000);
+
+    // Store tokens in DB
+    const existing = await getSettings();
+    const vals = {
+      googleRefreshToken: tokens.refresh_token,
+      googleAccessToken: tokens.access_token,
+      googleTokenExpiry: expiry,
+      googleEmail: userInfo.email ?? null,
+      isConnected: true,
+      lastTestedAt: new Date(),
+      lastTestError: null,
+      updatedAt: new Date(),
+    };
+
+    if (existing) {
+      await db.update(driveSettingsTable).set(vals).where(eq(driveSettingsTable.id, existing.id));
+    } else {
+      await db.insert(driveSettingsTable).values(vals);
+    }
+
+    req.log.info({ email: userInfo.email }, "Google Drive connected successfully");
+    res.redirect("/admin/drive?connected=true");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err }, "Google OAuth callback failed");
+    res.redirect(`/admin/drive?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// ── POST /api/drive/disconnect ────────────────────────────────────────────
+// Removes stored tokens — Drive is disconnected until Sally reconnects
+router.post("/disconnect", async (req, res) => {
   const existing = await getSettings();
-  if (existing) {
-    const [updated] = await db
-      .update(driveSettingsTable)
-      .set({ sellerFolderParentId: sellerFolderParentId.trim(), updatedAt: new Date() })
-      .where(eq(driveSettingsTable.id, existing.id))
-      .returning();
-    res.json(updated);
-  } else {
-    const [created] = await db
-      .insert(driveSettingsTable)
-      .values({ sellerFolderParentId: sellerFolderParentId.trim() })
-      .returning();
-    res.json(created);
-  }
+  if (!existing) return res.json({ ok: true });
+
+  await db.update(driveSettingsTable).set({
+    googleRefreshToken: null,
+    googleAccessToken: null,
+    googleTokenExpiry: null,
+    googleEmail: null,
+    isConnected: false,
+    lastTestedAt: null,
+    lastTestError: null,
+    updatedAt: new Date(),
+  }).where(eq(driveSettingsTable.id, existing.id));
+
+  res.json({ ok: true });
 });
 
 // ── POST /api/drive/test ───────────────────────────────────────────────────
@@ -85,12 +226,9 @@ router.post("/test", async (req, res) => {
 });
 
 // ── POST /api/drive/settings/create-root-folder ───────────────────────────
-// Creates the "PHS Seller Folders" root folder at Drive root (no pre-existing parent needed)
 router.post("/settings/create-root-folder", async (req, res) => {
   try {
-    // Level 1: PHS App Folders (at Drive root)
     const rootFolder = await createDriveFolder("PHS App Folders", "root");
-    // Level 2: SELLER FOLDERS (inside PHS App Folders)
     const sellerFolder = await createDriveFolder("SELLER FOLDERS", rootFolder.id);
 
     const existing = await getSettings();
@@ -103,14 +241,9 @@ router.post("/settings/create-root-folder", async (req, res) => {
       updatedAt: new Date(),
     };
     if (existing) {
-      [saved] = await db.update(driveSettingsTable)
-        .set(vals)
-        .where(eq(driveSettingsTable.id, existing.id))
-        .returning();
+      [saved] = await db.update(driveSettingsTable).set(vals).where(eq(driveSettingsTable.id, existing.id)).returning();
     } else {
-      [saved] = await db.insert(driveSettingsTable)
-        .values(vals)
-        .returning();
+      [saved] = await db.insert(driveSettingsTable).values(vals).returning();
     }
     res.json({
       rootFolderId: rootFolder.id,
@@ -127,20 +260,16 @@ router.post("/settings/create-root-folder", async (req, res) => {
 });
 
 // ── POST /api/drive/submissions/:id/create-folder ─────────────────────────
-// Creates the three-subfolder structure for an approved horse in Drive
 router.post("/submissions/:id/create-folder", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const settings = await getSettings();
   if (!settings?.sellerFolderParentId) {
-    return res.status(400).json({ error: "Google Drive not configured. Set the Seller Folders ID first." });
+    return res.status(400).json({ error: "Google Drive not configured. Set up the folder structure first." });
   }
 
-  const [submission] = await db
-    .select()
-    .from(submissionsTable)
-    .where(eq(submissionsTable.id, id));
+  const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
   if (submission.driveFolderId) {
@@ -155,24 +284,15 @@ router.post("/submissions/:id/create-folder", async (req, res) => {
   const safeName = safeDriveName(horseName);
 
   try {
-    await db.update(submissionsTable)
-      .set({ driveSetupStatus: "creating" })
-      .where(eq(submissionsTable.id, id));
+    await db.update(submissionsTable).set({ driveSetupStatus: "creating" }).where(eq(submissionsTable.id, id));
 
-    // 1. Create the main horse folder inside SELLER FOLDERS
-    const horseFolder = await createDriveFolder(
-      `${safeName} - Seller Folder`,
-      settings.sellerFolderParentId
-    );
-
-    // 2. Create the three subfolders inside the horse folder
+    const horseFolder = await createDriveFolder(`${safeName} - Seller Folder`, settings.sellerFolderParentId);
     const [portfolio, documents, eoiForms] = await Promise.all([
       createDriveFolder(`1. ${safeName} - Portfolio`, horseFolder.id),
       createDriveFolder(`2. Documents`, horseFolder.id),
       createDriveFolder(`3. EOI Viewer Forms`, horseFolder.id),
     ]);
 
-    // 3. Persist all folder IDs
     await db.update(submissionsTable).set({
       driveFolderId: horseFolder.id,
       driveFolderLink: horseFolder.webViewLink,
@@ -201,9 +321,6 @@ router.post("/submissions/:id/create-folder", async (req, res) => {
 });
 
 // ── POST /api/drive/submissions/:id/save-document ─────────────────────────
-// Saves an HTML document as a Google Doc.
-// ORC + horse_description → Portfolio folder (seller-facing content)
-// approval_pack + listing_agreement → Documents folder (contracts)
 router.post("/submissions/:id/save-document", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -221,7 +338,6 @@ router.post("/submissions/:id/save-document", async (req, res) => {
   const [submission] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, id));
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  // Route to the correct subfolder based on document type
   const portfolioTypes = ["orc", "horse_description"] as const;
   const isPortfolio = (portfolioTypes as readonly string[]).includes(docType);
   const folderId = isPortfolio ? submission.drivePortfolioFolderId : submission.driveDocumentsFolderId;
@@ -242,7 +358,6 @@ router.post("/submissions/:id/save-document", async (req, res) => {
 
     await db.update(submissionsTable).set(updates).where(eq(submissionsTable.id, id));
 
-    // Also export a PDF copy to the same folder (non-blocking — don't fail the response if it errors)
     let pdfLink: string | null = null;
     try {
       const pdf = await exportDocAsPdf(doc.id, `${title}.pdf`, folderId);
@@ -260,8 +375,6 @@ router.post("/submissions/:id/save-document", async (req, res) => {
 });
 
 // ── POST /api/drive/submissions/:id/sync-media ────────────────────────────
-// Downloads all photo/video media files from object storage and uploads them
-// to the submission's Portfolio folder in Drive.
 router.post("/submissions/:id/sync-media", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -271,14 +384,10 @@ router.post("/submissions/:id/sync-media", async (req, res) => {
 
   const portfolioFolderId = submission.drivePortfolioFolderId;
   if (!portfolioFolderId) {
-    return res.status(400).json({ error: "Portfolio folder not set up. Create the Drive folder for this submission first." });
+    return res.status(400).json({ error: "Portfolio folder not set up. Create the Drive folder first." });
   }
 
-  const mediaFiles = await db
-    .select()
-    .from(mediaFilesTable)
-    .where(eq(mediaFilesTable.submissionId, id));
-
+  const mediaFiles = await db.select().from(mediaFilesTable).where(eq(mediaFilesTable.submissionId, id));
   const syncable = mediaFiles.filter(f => f.storagePath && (f.mediaType === "photo" || f.mediaType === "video"));
 
   if (syncable.length === 0) {
@@ -295,10 +404,7 @@ router.post("/submissions/:id/sync-media", async (req, res) => {
       const signedUrl = await storage.getObjectEntityDownloadURL(file.storagePath!, 600);
       const fileResp = await fetch(signedUrl);
       if (!fileResp.ok) throw new Error(`GCS download failed: ${fileResp.status}`);
-
-      const arrayBuffer = await fileResp.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
+      const buffer = Buffer.from(await fileResp.arrayBuffer());
       await uploadFileToDrive(file.originalName, file.mimeType, buffer, portfolioFolderId);
       synced++;
     } catch (err) {
@@ -309,73 +415,45 @@ router.post("/submissions/:id/sync-media", async (req, res) => {
     }
   }
 
-  await db.update(submissionsTable)
-    .set({ driveMediaSyncedAt: new Date() })
-    .where(eq(submissionsTable.id, id));
-
+  await db.update(submissionsTable).set({ driveMediaSyncedAt: new Date() }).where(eq(submissionsTable.id, id));
   res.json({ synced, failed, errors });
 });
 
 // ── POST /api/drive/eois/:id/backup ───────────────────────────────────────
-// Backs up an EOI as a Google Doc, filed into the matching horse folder if found
 router.post("/eois/:id/backup", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const settings = await getSettings();
   if (!settings?.sellerFolderParentId) {
-    return res.status(400).json({ error: "Google Drive not configured. Set the Seller Folders ID first." });
+    return res.status(400).json({ error: "Google Drive not configured. Set up the folder structure first." });
   }
 
   const [eoi] = await db.select().from(eoisTable).where(eq(eoisTable.id, id));
   if (!eoi) return res.status(404).json({ error: "EOI not found" });
 
   if (eoi.driveFileId) {
-    return res.json({
-      message: "Already backed up",
-      driveFileId: eoi.driveFileId,
-      driveDocLink: eoi.driveDocLink,
-    });
+    return res.json({ message: "Already backed up", driveFileId: eoi.driveFileId, driveDocLink: eoi.driveDocLink });
   }
 
   try {
-    await db.update(eoisTable)
-      .set({ driveBackupStatus: "backing_up" })
-      .where(eq(eoisTable.id, id));
+    await db.update(eoisTable).set({ driveBackupStatus: "backing_up" }).where(eq(eoisTable.id, id));
 
-    // Find the matched horse's EOI Forms folder (if submission is linked or matched by name)
     let targetFolderId: string | null = null;
-
     if (eoi.submissionId) {
       const [sub] = await db.select().from(submissionsTable).where(eq(submissionsTable.id, eoi.submissionId));
       targetFolderId = sub?.driveEoiFormsFolderId ?? null;
     }
-
     if (!targetFolderId && eoi.horseName) {
-      const submissions = await db
-        .select()
-        .from(submissionsTable)
-        .where(eq(submissionsTable.horseName, eoi.horseName));
+      const submissions = await db.select().from(submissionsTable).where(eq(submissionsTable.horseName, eoi.horseName));
       const match = submissions.find(s => s.driveEoiFormsFolderId);
       targetFolderId = match?.driveEoiFormsFolderId ?? null;
     }
+    if (!targetFolderId) targetFolderId = settings.sellerFolderParentId;
 
-    // Fall back to SELLER FOLDERS root if no horse folder is set up yet
-    if (!targetFolderId) {
-      targetFolderId = settings.sellerFolderParentId;
-    }
-
-    // Viewer number = position of this EOI in arrival order for this horse
-    // Count all EOIs with the same horseName (case-insensitive match) received at or before this one
-    const allForHorse = await db
-      .select({ id: eoisTable.id })
-      .from(eoisTable)
-      .where(
-        and(
-          eq(eoisTable.horseName, eoi.horseName),
-          lte(eoisTable.id, eoi.id)
-        )
-      );
+    const allForHorse = await db.select({ id: eoisTable.id }).from(eoisTable).where(
+      and(eq(eoisTable.horseName, eoi.horseName), lte(eoisTable.id, eoi.id))
+    );
     const viewerNumber = allForHorse.length;
 
     const title = buildEoiDocTitle(viewerNumber, eoi.buyerFirstName, eoi.buyerSurname);

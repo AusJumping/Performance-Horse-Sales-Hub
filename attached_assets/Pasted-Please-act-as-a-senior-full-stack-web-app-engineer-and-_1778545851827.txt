@@ -1,0 +1,136 @@
+Please act as a senior full-stack web app engineer and fix the Google Drive integration architecture properly.
+This app is a Performance Horse Sales marketing/admin app used by Sally and Graham. It was originally tested using Jo’s Australian Jumping Google Drive account. That Google Drive connection must now be removed from the app as an active connected account, without removing the overall Google Drive functionality.
+The current problem is that the app appears to be treating the Google Drive connection as a Replit/workspace-level connection or developer-owned connection. That is wrong for production. Sally should not need to become a Replit collaborator, log into Replit, access environment variables, use a shared Google account, or ask Jo to manually connect Drive on her behalf.
+The required behaviour is:
+1.	Keep the Google Drive functionality.
+2.	Remove Jo’s Australian Jumping Google Drive account as the connected Drive account.
+3.	Add a proper admin-facing “Connect Google Drive” flow inside the app.
+4.	Sally should be able to log into the app’s admin dashboard, click “Connect Google Drive,” sign into her own Google account through Google’s official OAuth consent screen, approve access, and have the app save that connection securely.
+5.	After Sally connects her Google Drive, all future folder creation, document uploads, generated horse folders, owner response certificates, horse descriptions, approval packs, listing agreements, photos, videos, EOIs and related files should go into Sally’s connected Google Drive, not Jo’s.
+6.	Sally must not need access to Replit at any point.
+Please inspect the current codebase and identify exactly how the existing Google Drive connection is implemented. Specifically check for:
+•	Hardcoded Google tokens
+•	Hardcoded Google account email addresses
+•	Replit workspace-level Google Drive integrations
+•	OAuth credentials stored in code
+•	Refresh tokens stored in environment variables
+•	Any database table or configuration row storing Jo’s Google Drive tokens
+•	Any root folder ID pointing to Jo’s Australian Jumping Google Drive
+•	Any references to Australian Jumping, Jo’s Google account, or test Drive folders
+Then refactor the integration as follows.
+Required architecture
+Use a standard Google OAuth 2.0 web server flow for Google Drive.
+Create or confirm these backend routes:
+•	GET /api/google-drive/status
+o	Returns whether the currently logged-in admin/business account has Google Drive connected.
+o	Returns connected Google email if available.
+o	Returns the current root folder name and root folder ID if configured.
+o	Does not return access tokens or refresh tokens.
+•	GET /api/google-drive/auth
+o	Starts the Google OAuth flow.
+o	Uses the app’s Google OAuth Client ID and Client Secret from environment variables.
+o	Requests only the minimum Drive scopes needed.
+o	Uses access_type=offline and prompt=consent when needed so a refresh token can be issued.
+o	Includes secure state validation to protect the flow.
+•	GET /api/google-drive/callback
+o	Handles the OAuth callback.
+o	Exchanges the code for tokens.
+o	Stores Sally’s refresh token securely in the database, associated with the correct app owner/business/admin account.
+o	Stores connected Google account email if available.
+o	Redirects Sally back to the app’s admin dashboard with a success message.
+•	POST /api/google-drive/disconnect
+o	Disconnects the current Google Drive account.
+o	Removes the stored access token and refresh token for that app account.
+o	Does not delete generated files from Google Drive.
+o	Updates the admin dashboard to show Drive is disconnected.
+•	POST /api/google-drive/test
+o	Confirms the app can access the connected Drive.
+o	Creates or locates the configured root folder.
+o	Returns success/failure in plain language.
+Admin dashboard requirements
+Add a Google Drive settings panel inside the admin area.
+The panel should show:
+•	Connected status
+•	Connected Google account email
+•	Root folder name
+•	Button: “Connect Google Drive”
+•	Button: “Disconnect Google Drive”
+•	Button: “Test Google Drive Connection”
+When disconnected, show a clear message:
+“Google Drive is not connected. Connect Sally’s Google account so the app can create folders and save generated documents.”
+When connected, show:
+“Google Drive is connected to [email address]. New horse folders and generated documents will be saved to this Google Drive.”
+Folder structure
+When Sally connects her Google Drive, the app should create or use this folder structure:
+PHS App Folders
+•	Search Folders (Folder)
+o	[Searcher surname] (Folder)
+	Search Submission Form
+	Generated Documents (Folder)
+	Photos (Folder)
+	Videos (Folder)
+•	Seller Folders
+o	[Horse Name] (Folder)
+	[Horse Name] Portfolio (Folder)
+	Videos [Horse Name] (Folder)
+	Photos [Horse Name] (Folder)
+	Owners Response Certificate
+	EOIs (Folder)
+The app should store the root Google Drive folder ID in the database once created, not hardcode it.
+Google Drive folder/file creation should use the Drive API correctly. When creating files in a specific folder, use the folder ID in the parents property. Google’s Drive API documentation confirms this is the correct way to place files inside a folder. 
+Important security requirements
+Do not store Google passwords anywhere.
+Do not ask Sally for her Google password.
+Do not use Jo’s Google account.
+Do not require Sally to log into Replit.
+Do not use a shared Google account.
+Do not hardcode OAuth tokens into the app.
+Do not store refresh tokens in frontend code.
+Do not expose tokens in API responses.
+Use Replit Secrets only for the app-level Google OAuth credentials:
+•	GOOGLE_CLIENT_ID
+•	GOOGLE_CLIENT_SECRET
+•	GOOGLE_REDIRECT_URI
+•	Optional: GOOGLE_DRIVE_DEFAULT_ROOT_FOLDER_NAME
+Store Sally’s individual Google Drive refresh token securely in the app database, linked to the relevant business/admin account.
+Migration and cleanup
+Before changing the code, search the full codebase for:
+•	Google Drive
+•	drive
+•	refresh_token
+•	access_token
+•	GOOGLE
+•	Australian Jumping
+•	Jo
+•	folderId
+•	rootFolder
+•	OAuth
+•	Replit integration
+Then:
+1.	Remove Jo’s stored Google Drive tokens from the database or config.
+2.	Remove any hardcoded folder IDs belonging to Jo’s Google Drive.
+3.	Keep the app-level Google OAuth Client ID and Client Secret if they are valid and generic to this app.
+4.	If the OAuth client is tied to Jo’s personal Google Cloud project and should not be used long-term, flag that clearly and tell me exactly what needs to be replaced.
+5.	Do not delete any files from Jo’s Google Drive unless specifically instructed.
+6.	Add a safe disconnect function so this does not happen again.
+Testing requirements
+After implementation, test the following:
+1.	Admin dashboard shows Google Drive disconnected after Jo’s token is removed.
+2.	Clicking “Connect Google Drive” opens Google’s OAuth consent screen.
+3.	A non-Replit user can complete the Google login flow from the live app.
+4.	After authorisation, the dashboard shows the connected Google account.
+5.	“Test Google Drive Connection” successfully creates or finds the root Performance Horse Sales folder.
+6.	Creating a horse folder saves it into the connected Google Drive account.
+7.	Generated documents save into the correct horse folder.
+8.	Disconnecting Google Drive removes the connection from the app.
+9.	After disconnecting, the app does not attempt to upload to Jo’s Drive.
+10.	No token values are visible in browser dev tools, API responses, logs, or frontend code.
+Deliverables
+Please make the code changes and then provide a plain-English summary of:
+•	What was wrong with the previous Google Drive connection
+•	What you changed
+•	Where the Google Drive connection is now stored
+•	How Sally connects her own account
+•	Whether Jo’s Google Drive has been fully disconnected
+•	Whether any manual Google Cloud or Replit Secret changes are still required
+Do not rebuild the entire Google Drive system unless absolutely necessary. First attempt a clean refactor that preserves the existing functionality and replaces only the connection/authentication layer.

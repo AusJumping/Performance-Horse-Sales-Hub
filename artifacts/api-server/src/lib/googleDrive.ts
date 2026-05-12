@@ -1,4 +1,11 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
+/**
+ * Google Drive integration — OAuth 2.0 web server flow.
+ * Uses Sally's refresh token stored in drive_settings table.
+ * No Replit connectors — all auth is done via direct Google API calls.
+ */
+import { db } from "@workspace/db";
+import { driveSettingsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 interface DriveFile {
   id: string;
@@ -6,22 +13,89 @@ interface DriveFile {
   webViewLink: string;
 }
 
-function getConnectors() {
-  return new ReplitConnectors();
+// ── Token management ──────────────────────────────────────────────────────────
+
+async function getSettings() {
+  const [settings] = await db.select().from(driveSettingsTable).limit(1);
+  return settings ?? null;
 }
 
-export async function testDriveConnection(): Promise<{ email: string }> {
-  const connectors = getConnectors();
-  const response = await connectors.proxy(
-    "google-drive",
-    "/drive/v3/about?fields=user",
-    { method: "GET" }
-  );
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Drive connection failed: ${response.status} — ${err}`);
+/**
+ * Returns a valid access token, refreshing from Google if expired.
+ * Throws a clear error if Drive is not connected.
+ */
+export async function getAccessToken(): Promise<string> {
+  const settings = await getSettings();
+  if (!settings?.googleRefreshToken) {
+    throw new Error("Google Drive is not connected. Go to Admin → Google Drive Setup and connect Sally's Google account.");
   }
-  const data = await response.json() as { user: { emailAddress: string } };
+
+  // Use cached token if still valid (with 60s buffer)
+  if (
+    settings.googleAccessToken &&
+    settings.googleTokenExpiry &&
+    new Date(settings.googleTokenExpiry).getTime() > Date.now() + 60_000
+  ) {
+    return settings.googleAccessToken;
+  }
+
+  // Refresh the access token
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: settings.googleRefreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Google token refresh failed: ${resp.status} — ${err}`);
+  }
+
+  const data = await resp.json() as { access_token: string; expires_in: number };
+  const expiry = new Date(Date.now() + data.expires_in * 1000);
+
+  await db
+    .update(driveSettingsTable)
+    .set({
+      googleAccessToken: data.access_token,
+      googleTokenExpiry: expiry,
+      updatedAt: new Date(),
+    })
+    .where(eq(driveSettingsTable.id, settings.id));
+
+  return data.access_token;
+}
+
+/**
+ * Makes an authenticated request to the Google APIs.
+ */
+async function driveRequest(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getAccessToken();
+  return fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.headers ?? {}),
+    },
+  });
+}
+
+// ── Drive API helpers ─────────────────────────────────────────────────────────
+
+export async function testDriveConnection(): Promise<{ email: string }> {
+  const resp = await driveRequest(
+    "https://www.googleapis.com/drive/v3/about?fields=user"
+  );
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Drive connection failed: ${resp.status} — ${err}`);
+  }
+  const data = await resp.json() as { user: { emailAddress: string } };
   return { email: data.user?.emailAddress ?? "unknown" };
 }
 
@@ -29,10 +103,8 @@ export async function createDriveFolder(
   name: string,
   parentFolderId: string
 ): Promise<DriveFile> {
-  const connectors = getConnectors();
-  const response = await connectors.proxy(
-    "google-drive",
-    "/drive/v3/files?fields=id,name,webViewLink",
+  const resp = await driveRequest(
+    "https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -43,11 +115,11 @@ export async function createDriveFolder(
       }),
     }
   );
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Failed to create folder "${name}": ${response.status} — ${err}`);
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Failed to create folder "${name}": ${resp.status} — ${err}`);
   }
-  return response.json() as Promise<DriveFile>;
+  return resp.json() as Promise<DriveFile>;
 }
 
 export async function createGoogleDoc(
@@ -55,7 +127,6 @@ export async function createGoogleDoc(
   htmlContent: string,
   parentFolderId: string
 ): Promise<DriveFile> {
-  const connectors = getConnectors();
   const boundary = `phs_boundary_${Date.now()}`;
   const metadata = JSON.stringify({
     name: title,
@@ -74,22 +145,19 @@ export async function createGoogleDoc(
     `--${boundary}--`,
   ].join("\r\n");
 
-  const response = await connectors.proxy(
-    "google-drive",
-    "/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+  const resp = await driveRequest(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
     {
       method: "POST",
-      headers: {
-        "Content-Type": `multipart/related; boundary=${boundary}`,
-      },
+      headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
       body,
     }
   );
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Failed to create doc "${title}": ${response.status} — ${err}`);
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Failed to create doc "${title}": ${resp.status} — ${err}`);
   }
-  return response.json() as Promise<DriveFile>;
+  return resp.json() as Promise<DriveFile>;
 }
 
 export async function uploadFileToDrive(
@@ -98,7 +166,6 @@ export async function uploadFileToDrive(
   fileBuffer: Buffer,
   parentFolderId: string
 ): Promise<DriveFile> {
-  const connectors = getConnectors();
   const boundary = `phs_media_${Date.now()}`;
   const metadata = JSON.stringify({ name, mimeType, parents: [parentFolderId] });
 
@@ -108,51 +175,42 @@ export async function uploadFileToDrive(
   const footerBuf = Buffer.from(`\r\n--${boundary}--`);
   const body = Buffer.concat([headerBuf, fileBuffer, footerBuf]);
 
-  const response = await connectors.proxy(
-    "google-drive",
-    "/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+  const resp = await driveRequest(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
     {
       method: "POST",
       headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
-      body: body as unknown as string,
+      body: body as unknown as BodyInit,
     }
   );
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Failed to upload "${name}": ${response.status} — ${err}`);
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Failed to upload "${name}": ${resp.status} — ${err}`);
   }
-  return response.json() as Promise<DriveFile>;
+  return resp.json() as Promise<DriveFile>;
 }
 
-/**
- * Exports a Google Doc as PDF and uploads the PDF to a Drive folder.
- * Uses the Drive export API on a doc the app created (compatible with drive.file scope).
- */
 export async function exportDocAsPdf(
   docId: string,
   pdfName: string,
   parentFolderId: string
 ): Promise<DriveFile> {
-  const connectors = getConnectors();
-
-  // Export the Google Doc as PDF bytes
-  const exportRes = await connectors.proxy(
-    "google-drive",
-    `/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=application%2Fpdf`,
-    { method: "GET" }
+  const exportResp = await driveRequest(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=application%2Fpdf`
   );
-  if (!exportRes.ok) {
-    const err = await exportRes.text();
-    throw new Error(`Failed to export PDF: ${exportRes.status} — ${err}`);
+  if (!exportResp.ok) {
+    const err = await exportResp.text();
+    throw new Error(`Failed to export PDF: ${exportResp.status} — ${err}`);
   }
-
-  const pdfBuffer = Buffer.from(await exportRes.arrayBuffer());
+  const pdfBuffer = Buffer.from(await exportResp.arrayBuffer());
   return uploadFileToDrive(pdfName, "application/pdf", pdfBuffer, parentFolderId);
 }
 
+// ── Utility helpers ───────────────────────────────────────────────────────────
+
 export function safeDriveName(str: string): string {
   return str
-    .replace(/[\/\\:*?"<>|]/g, " ")
+    .replace(/[/\\:*?"<>|]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .substring(0, 120);
@@ -166,7 +224,11 @@ export function formatDateTime(d: Date): string {
   return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
-export function buildEoiDocTitle(viewerNumber: number, buyerFirstName: string, buyerSurname: string): string {
+export function buildEoiDocTitle(
+  viewerNumber: number,
+  buyerFirstName: string,
+  buyerSurname: string
+): string {
   return safeDriveName(`V${viewerNumber}. ${buyerFirstName} ${buyerSurname}`);
 }
 
@@ -181,15 +243,10 @@ export function formatEoiAsHtml(eoi: {
   formData: Record<string, unknown>;
   createdAt: Date;
 }): string {
-  const f = (key: string) => {
-    const v = eoi.formData[key];
-    return v !== null && v !== undefined && v !== "" ? String(v) : null;
-  };
-
   const rows = Object.entries(eoi.formData)
     .filter(([, v]) => v !== null && v !== undefined && v !== "")
     .map(([k, v]) => {
-      const label = k.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+      const label = k.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
       const val = typeof v === "object" ? JSON.stringify(v) : String(v);
       return `<tr><td style="padding:4px 12px 4px 0;font-weight:bold;vertical-align:top;white-space:nowrap">${label}</td><td style="padding:4px 0">${val}</td></tr>`;
     })
