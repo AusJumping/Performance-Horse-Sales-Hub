@@ -752,6 +752,8 @@ export default function SubmissionDetail() {
         sellerPhone: sub?.sellerPhone,
         submissionId,
         commissionRate: laCommissionRate,
+        minimumFee: laMinimumFee || undefined,
+        maximumFee: laMaximumFee || undefined,
         listingPeriodDays: laListingPeriod,
         listingTermsNotes: laTermsNotes || undefined,
       }));
@@ -840,6 +842,8 @@ export default function SubmissionDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           commissionRate: laCommissionRate,
+          minimumFee: laMinimumFee,
+          maximumFee: laMaximumFee,
           listingPeriodDays: laListingPeriod,
           listingTermsNotes: laTermsNotes,
           listingAgreementStatus: laStatus === "not_started" ? "agreement_generated" : laStatus,
@@ -864,6 +868,8 @@ export default function SubmissionDetail() {
         sellerPhone: sub?.sellerPhone,
         submissionId,
         commissionRate: laCommissionRate,
+        minimumFee: laMinimumFee || undefined,
+        maximumFee: laMaximumFee || undefined,
         listingPeriodDays: laListingPeriod,
         listingTermsNotes: laTermsNotes || undefined,
       }));
@@ -1594,17 +1600,37 @@ export default function SubmissionDetail() {
                     </span>
                   </div>
 
-                  {/* Commission rate */}
+                  {/* Commission rate + min/max fee */}
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium">Commission Rate</Label>
                     <Input
                       value={laCommissionRate}
                       onChange={(e) => setLaCommissionRate(e.target.value)}
-                      placeholder="e.g. 10%"
+                      placeholder="e.g. 5%"
                       className="max-w-xs"
                       data-testid="input-commissionRate"
                     />
-                    <p className="text-xs text-muted-foreground">Percentage or fixed fee — e.g. "10%" or "$5,000"</p>
+                    <p className="text-xs text-muted-foreground">Percentage of final sale price.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 max-w-xs">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Minimum Fee</Label>
+                      <Input
+                        value={laMinimumFee}
+                        onChange={(e) => setLaMinimumFee(e.target.value)}
+                        placeholder="e.g. $500"
+                        data-testid="input-minimumFee"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Maximum Fee</Label>
+                      <Input
+                        value={laMaximumFee}
+                        onChange={(e) => setLaMaximumFee(e.target.value)}
+                        placeholder="e.g. $2,000"
+                        data-testid="input-maximumFee"
+                      />
+                    </div>
                   </div>
 
                   {/* Listing period */}
@@ -1655,6 +1681,8 @@ export default function SubmissionDetail() {
                           sellerPhone: sub.sellerPhone,
                           submissionId: sub.id,
                           commissionRate: laCommissionRate,
+                          minimumFee: laMinimumFee || undefined,
+                          maximumFee: laMaximumFee || undefined,
                           listingPeriodDays: laListingPeriod,
                           listingTermsNotes: laTermsNotes || undefined,
                         };

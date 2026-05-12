@@ -326,6 +326,8 @@ router.patch("/:id/listing-agreement", async (req, res) => {
 
   const {
     commissionRate,
+    minimumFee,
+    maximumFee,
     listingPeriodDays,
     listingTermsNotes,
     listingAgreementStatus,
@@ -333,6 +335,8 @@ router.patch("/:id/listing-agreement", async (req, res) => {
     listingAgreementSignedAt,
   } = req.body as {
     commissionRate?: string;
+    minimumFee?: string;
+    maximumFee?: string;
     listingPeriodDays?: number;
     listingTermsNotes?: string;
     listingAgreementStatus?: string;
@@ -342,6 +346,8 @@ router.patch("/:id/listing-agreement", async (req, res) => {
 
   const updates: Record<string, unknown> = {};
   if (commissionRate !== undefined) updates.commissionRate = commissionRate;
+  if (minimumFee !== undefined) updates.minimumFee = minimumFee;
+  if (maximumFee !== undefined) updates.maximumFee = maximumFee;
   if (listingPeriodDays !== undefined) updates.listingPeriodDays = listingPeriodDays;
   if (listingTermsNotes !== undefined) updates.listingTermsNotes = listingTermsNotes;
   if (listingAgreementStatus !== undefined) updates.listingAgreementStatus = listingAgreementStatus;
