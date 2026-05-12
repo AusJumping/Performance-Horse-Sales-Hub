@@ -4,7 +4,7 @@ import { eoisTable } from "@workspace/db";
 import { eq, desc, count } from "drizzle-orm";
 import { createHmac } from "crypto";
 import PDFDocument from "pdfkit";
-import { sendAcknowledgementEmail } from "../lib/email.js";
+import { sendAcknowledgementEmail, sendInternalAlertEmail } from "../lib/email.js";
 
 const router: IRouter = Router();
 
@@ -108,13 +108,22 @@ router.post("/", async (req, res) => {
       status: "new",
     }).returning();
 
-    // Send acknowledgement email (non-blocking)
+    // Send emails (non-blocking)
     const eoiFirstName = buyerFirstName || "there";
     setImmediate(() => sendAcknowledgementEmail({
       to: buyerEmail,
       firstName: eoiFirstName,
       formType: "eoi",
       horseName: horseName ?? undefined,
+    }));
+    setImmediate(() => sendInternalAlertEmail({
+      formType: "eoi",
+      recordId: eoi.id,
+      name: `${buyerFirstName} ${buyerSurname}`.trim(),
+      email: buyerEmail,
+      phone: buyerPhone ?? undefined,
+      horseName: horseName ?? undefined,
+      location: buyerLocation ?? undefined,
     }));
 
     res.json(eoi);
