@@ -39,6 +39,9 @@ export const eoisTable = pgTable("eois", {
   driveBackupError: text("drive_backup_error"),
   driveBackedUpAt: timestamp("drive_backed_up_at"),
 
+  // Auto-saved PDF (object storage path, saved on submission)
+  pdfStoragePath: text("pdf_storage_path"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

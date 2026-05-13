@@ -33,8 +33,9 @@ interface Eoi {
   createdAt: string;
   updatedAt: string;
   driveFileId: string | null;
-  driveFileLink: string | null;
+  driveDocLink: string | null;
   driveBackedUpAt: string | null;
+  pdfStoragePath: string | null;
 }
 
 const EOI_STATUSES = [
@@ -564,16 +565,33 @@ export default function EoiDetail() {
                   <Phone className="h-4 w-4" /> Call buyer
                 </a>
               </Button>
+              {/* Downloads */}
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pt-1">Downloads</p>
+
               <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
                 <a href={`/api/eois/${eoi.id}/pdf`} target="_blank" rel="noreferrer">
-                  <Download className="h-4 w-4" /> Download EOI Summary PDF
+                  <Download className="h-4 w-4" /> Summary PDF (generated)
                 </a>
               </Button>
 
-              {/* Drive backup */}
-              {eoi.driveFileLink ? (
+              {eoi.pdfStoragePath ? (
                 <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
-                  <a href={eoi.driveFileLink} target="_blank" rel="noreferrer">
+                  <a href={`/api/eois/${eoi.id}/stored-pdf`} target="_blank" rel="noreferrer">
+                    <Download className="h-4 w-4 text-emerald-700" /> Signed Form PDF (saved)
+                  </a>
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground italic px-1">
+                  Signed PDF not yet saved — will be available after first new submission.
+                </p>
+              )}
+
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pt-1">Google Drive</p>
+
+              {/* Drive backup */}
+              {eoi.driveDocLink ? (
+                <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
+                  <a href={eoi.driveDocLink} target="_blank" rel="noreferrer">
                     <HardDrive className="h-4 w-4 text-green-700" /> View in Drive <ExternalLink className="h-3 w-3 ml-auto opacity-50" />
                   </a>
                 </Button>

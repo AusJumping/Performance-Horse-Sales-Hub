@@ -5,6 +5,8 @@ import { eq, desc, count } from "drizzle-orm";
 import { createHmac } from "crypto";
 import PDFDocument from "pdfkit";
 import { sendAcknowledgementEmail, sendInternalAlertEmail } from "../lib/email.js";
+import { ObjectStorageService } from "../lib/objectStorage.js";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
@@ -80,89 +82,16 @@ function drawField(
   doc.y += 8;
 }
 
-// ─── API Routes ───────────────────────────────────────────────────────────────
+// ─── PDF generation ───────────────────────────────────────────────────────────
 
-// POST /api/eois — public EOI submission
-router.post("/", async (req, res) => {
-  try {
-    const {
-      buyerEmail, buyerFirstName, buyerSurname, buyerLocation, buyerPhone,
-      horseName, formData, signatureData, waiverAgreed, declarationAgreed,
-    } = req.body;
+type EoiRow = typeof eoisTable.$inferSelect;
 
-    const coverageType = (formData as Record<string, unknown>)?.coverageType;
-    const horseNameRequired = !coverageType || coverageType === "a specific horse";
-    if (!buyerEmail || !buyerFirstName || !buyerSurname || !buyerLocation || !buyerPhone || (horseNameRequired && !horseName)) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+async function buildEoiPdfBuffer(eoi: EoiRow): Promise<Buffer> {
+  const fd = (eoi.formData ?? {}) as Record<string, unknown>;
+  const buyerName = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
+  const horseName = eoi.horseName || "Any PHS Horse";
 
-    const [eoi] = await db.insert(eoisTable).values({
-      buyerEmail,
-      buyerFirstName,
-      buyerSurname,
-      buyerLocation,
-      buyerPhone,
-      horseName,
-      formData: formData || {},
-      signatureData: signatureData || null,
-      waiverAgreed: waiverAgreed === true,
-      declarationAgreed: declarationAgreed === true,
-      status: "new",
-    }).returning();
-
-    // Send emails (non-blocking)
-    const eoiFirstName = buyerFirstName || "there";
-    setImmediate(() => sendAcknowledgementEmail({
-      to: buyerEmail,
-      firstName: eoiFirstName,
-      formType: "eoi",
-      horseName: horseName ?? undefined,
-    }));
-    setImmediate(() => sendInternalAlertEmail({
-      formType: "eoi",
-      recordId: eoi.id,
-      name: `${buyerFirstName} ${buyerSurname}`.trim(),
-      email: buyerEmail,
-      phone: buyerPhone ?? undefined,
-      horseName: horseName ?? undefined,
-      location: buyerLocation ?? undefined,
-    }));
-
-    res.json(eoi);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to submit EOI" });
-  }
-});
-
-// GET /api/eois — admin: list all EOIs
-router.get("/", async (_req, res) => {
-  try {
-    const eois = await db.select().from(eoisTable).orderBy(desc(eoisTable.createdAt));
-    res.json(eois);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch EOIs" });
-  }
-});
-
-// GET /api/eois/:id/pdf — admin: download EOI summary PDF
-router.get("/:id/pdf", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-
-    const [eoi] = await db.select().from(eoisTable).where(eq(eoisTable.id, id));
-    if (!eoi) return res.status(404).json({ error: "Not found" });
-
-    const fd = (eoi.formData ?? {}) as Record<string, unknown>;
-    const buyerName = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
-    const horseName = eoi.horseName;
-    const safeFilename = `EOI_${sanitiseFilename(buyerName)}_${sanitiseFilename(horseName)}.pdf`;
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
-
+  return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       margin: PAGE_MARGIN,
       size: "A4",
@@ -174,7 +103,11 @@ router.get("/:id/pdf", async (req, res) => {
       },
     });
 
-    doc.pipe(res);
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
     const pageW = doc.page.width - PAGE_MARGIN * 2;
 
     // ── Header bar ─────────────────────────────────────────────────────────────
@@ -345,11 +278,131 @@ router.get("/:id/pdf", async (req, res) => {
     }
 
     doc.end();
+  });
+}
+
+// ─── API Routes ───────────────────────────────────────────────────────────────
+
+// POST /api/eois — public EOI submission
+router.post("/", async (req, res) => {
+  try {
+    const {
+      buyerEmail, buyerFirstName, buyerSurname, buyerLocation, buyerPhone,
+      horseName, formData, signatureData, waiverAgreed, declarationAgreed,
+    } = req.body;
+
+    const coverageType = (formData as Record<string, unknown>)?.coverageType;
+    const horseNameRequired = !coverageType || coverageType === "a specific horse";
+    if (!buyerEmail || !buyerFirstName || !buyerSurname || !buyerLocation || !buyerPhone || (horseNameRequired && !horseName)) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const [eoi] = await db.insert(eoisTable).values({
+      buyerEmail,
+      buyerFirstName,
+      buyerSurname,
+      buyerLocation,
+      buyerPhone,
+      horseName,
+      formData: formData || {},
+      signatureData: signatureData || null,
+      waiverAgreed: waiverAgreed === true,
+      declarationAgreed: declarationAgreed === true,
+      status: "new",
+    }).returning();
+
+    // Send emails (non-blocking)
+    const eoiFirstName = buyerFirstName || "there";
+    setImmediate(() => sendAcknowledgementEmail({
+      to: buyerEmail,
+      firstName: eoiFirstName,
+      formType: "eoi",
+      horseName: horseName ?? undefined,
+    }));
+    setImmediate(() => sendInternalAlertEmail({
+      formType: "eoi",
+      recordId: eoi.id,
+      name: `${buyerFirstName} ${buyerSurname}`.trim(),
+      email: buyerEmail,
+      phone: buyerPhone ?? undefined,
+      horseName: horseName ?? undefined,
+      location: buyerLocation ?? undefined,
+    }));
+
+    // Auto-save signed PDF to object storage (non-blocking)
+    const eoiSnapshot = eoi;
+    setImmediate(async () => {
+      try {
+        const pdf = await buildEoiPdfBuffer(eoiSnapshot);
+        const storage = new ObjectStorageService();
+        const storagePath = await storage.uploadBuffer(`eoi-pdfs/${eoiSnapshot.id}.pdf`, pdf, "application/pdf");
+        await db.update(eoisTable).set({ pdfStoragePath: storagePath }).where(eq(eoisTable.id, eoiSnapshot.id));
+        logger.info({ eoiId: eoiSnapshot.id }, "EOI PDF auto-saved to storage");
+      } catch (err) {
+        logger.warn({ err, eoiId: eoiSnapshot.id }, "Failed to auto-save EOI PDF (non-fatal)");
+      }
+    });
+
+    res.json(eoi);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to submit EOI" });
+  }
+});
+
+// GET /api/eois — admin: list all EOIs
+router.get("/", async (_req, res) => {
+  try {
+    const eois = await db.select().from(eoisTable).orderBy(desc(eoisTable.createdAt));
+    res.json(eois);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch EOIs" });
+  }
+});
+
+// GET /api/eois/:id/pdf — admin: generate and download EOI PDF on demand
+router.get("/:id/pdf", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [eoi] = await db.select().from(eoisTable).where(eq(eoisTable.id, id));
+    if (!eoi) return res.status(404).json({ error: "Not found" });
+
+    const buyerName = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
+    const horseName = eoi.horseName || "Any_PHS_Horse";
+    const safeFilename = `EOI_${sanitiseFilename(buyerName)}_${sanitiseFilename(horseName)}.pdf`;
+
+    const buf = await buildEoiPdfBuffer(eoi);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+    res.end(buf);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
+
+// GET /api/eois/:id/stored-pdf — admin: redirect to the auto-saved PDF (with signature)
+router.get("/:id/stored-pdf", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const [eoi] = await db.select().from(eoisTable).where(eq(eoisTable.id, id));
+    if (!eoi) return res.status(404).json({ error: "Not found" });
+    if (!eoi.pdfStoragePath) return res.status(404).json({ error: "No stored PDF found for this EOI" });
+
+    const storage = new ObjectStorageService();
+    const url = await storage.getObjectEntityDownloadURL(eoi.pdfStoragePath, 600);
+    res.redirect(url);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to retrieve stored PDF" });
+  }
+});
+
 
 // GET /api/eois/:id — admin: get single EOI
 router.get("/:id", async (req, res) => {

@@ -175,6 +175,16 @@ export class ObjectStorageService {
     return `/objects/${entityId}`;
   }
 
+  async uploadBuffer(key: string, buffer: Buffer, contentType: string): Promise<string> {
+    const privateDir = this.getPrivateObjectDir();
+    const dir = privateDir.endsWith("/") ? privateDir : `${privateDir}/`;
+    const fullPath = `${dir}${key}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    await bucket.file(objectName).save(buffer, { contentType, resumable: false });
+    return `/objects/${key}`;
+  }
+
   async deleteObject(objectPath: string): Promise<void> {
     if (!objectPath.startsWith("/objects/")) {
       throw new Error(`Invalid object path: ${objectPath}`);
