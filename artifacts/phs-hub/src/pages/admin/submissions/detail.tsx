@@ -2006,18 +2006,16 @@ export default function SubmissionDetail() {
                             ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Voiding…</>
                             : "Void Contract Link"}
                         </Button>
-                        {contractData.status === "voided" || contractData.status === "submitted" ? (
-                          <Button
-                            onClick={handleGenerateContract}
-                            disabled={contractGenerating}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            {contractGenerating
-                              ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
-                              : <><FileSignature className="h-4 w-4 mr-2" /> Generate New Contract Link</>}
-                          </Button>
-                        ) : null}
+                        <Button
+                          onClick={handleGenerateContract}
+                          disabled={contractGenerating}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          {contractGenerating
+                            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
+                            : <><FileSignature className="h-4 w-4 mr-2" /> {contractData.status === "pending" ? "Regenerate Contract Link" : "Generate New Contract Link"}</>}
+                        </Button>
                       </div>
 
                     </div>
