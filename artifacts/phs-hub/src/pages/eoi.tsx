@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
-const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]*$/, "/api");
+const API_BASE = "/api";
 
 const TOTAL_STEPS = 11;
 
