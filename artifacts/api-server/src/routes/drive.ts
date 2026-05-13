@@ -22,28 +22,170 @@ import { ObjectStorageService } from "../lib/objectStorage.js";
 
 const router: IRouter = Router();
 
+// Temporary in-memory store for OAuth state values (CSRF protection)
+const oauthStates = new Map<string, number>();
+
+function generateState(): string {
+  const state = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  oauthStates.set(state, Date.now());
+  for (const [k, ts] of oauthStates.entries()) {
+    if (Date.now() - ts > 600_000) oauthStates.delete(k);
+  }
+  return state;
+}
+
 async function getSettings() {
   const [settings] = await db.select().from(driveSettingsTable).limit(1);
   return settings ?? null;
 }
 
 // ── GET /api/drive/settings ────────────────────────────────────────────────
-// Returns Drive config — connection is always live via Replit Integrations
+// Returns public Drive status — never exposes tokens
 router.get("/settings", async (req, res) => {
   const settings = await getSettings();
+  if (!settings) {
+    return res.json({ isConnected: false, googleEmail: null, sellerFolderParentId: null });
+  }
   res.json({
-    id: settings?.id ?? null,
-    isConnected: true, // always connected via Replit google-drive connector
-    googleEmail: settings?.googleEmail ?? null,
-    rootFolderId: settings?.rootFolderId ?? null,
-    rootFolderLink: settings?.rootFolderLink ?? null,
-    sellerFolderParentId: settings?.sellerFolderParentId ?? null,
-    sellerFolderLink: settings?.sellerFolderLink ?? null,
-    searchFolderParentId: settings?.searchFolderParentId ?? null,
-    searchFolderLink: settings?.searchFolderLink ?? null,
-    lastTestedAt: settings?.lastTestedAt ?? null,
-    lastTestError: settings?.lastTestError ?? null,
+    id: settings.id,
+    isConnected: settings.isConnected,
+    googleEmail: settings.googleEmail ?? null,
+    rootFolderId: settings.rootFolderId ?? null,
+    rootFolderLink: settings.rootFolderLink ?? null,
+    sellerFolderParentId: settings.sellerFolderParentId ?? null,
+    sellerFolderLink: settings.sellerFolderLink ?? null,
+    searchFolderParentId: settings.searchFolderParentId ?? null,
+    searchFolderLink: settings.searchFolderLink ?? null,
+    lastTestedAt: settings.lastTestedAt ?? null,
+    lastTestError: settings.lastTestError ?? null,
   });
+});
+
+// ── GET /api/drive/auth ───────────────────────────────────────────────────
+// Starts the Google OAuth flow — redirects browser to Google's consent screen
+router.get("/auth", (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  if (!clientId || !redirectUri) {
+    return res.status(500).send("Google Drive credentials are not configured. Please contact the administrator.");
+  }
+
+  const state = generateState();
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
+    access_type: "offline",
+    prompt: "consent",
+    state,
+  });
+
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+});
+
+// ── GET /api/drive/auth/callback ──────────────────────────────────────────
+// Google redirects here after user approves — exchanges code for tokens
+router.get("/auth/callback", async (req, res) => {
+  const { code, state, error } = req.query as Record<string, string>;
+
+  if (error) {
+    req.log.warn({ error }, "Google OAuth was denied");
+    return res.redirect("/admin/drive?error=access_denied");
+  }
+
+  if (!state || !oauthStates.has(state)) {
+    return res.redirect("/admin/drive?error=invalid_state");
+  }
+  oauthStates.delete(state);
+
+  const clientId = process.env.GOOGLE_CLIENT_ID!;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI!;
+
+  try {
+    const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    if (!tokenResp.ok) {
+      const err = await tokenResp.text();
+      throw new Error(`Token exchange failed: ${tokenResp.status} — ${err}`);
+    }
+
+    const tokens = await tokenResp.json() as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+    };
+
+    if (!tokens.refresh_token) {
+      throw new Error("No refresh token returned. Please disconnect and try again.");
+    }
+
+    const userResp = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
+    const userInfo = userResp.ok
+      ? await userResp.json() as { email?: string }
+      : { email: undefined };
+
+    const expiry = new Date(Date.now() + tokens.expires_in * 1000);
+    const existing = await getSettings();
+    const vals = {
+      googleRefreshToken: tokens.refresh_token,
+      googleAccessToken: tokens.access_token,
+      googleTokenExpiry: expiry,
+      googleEmail: userInfo.email ?? null,
+      isConnected: true,
+      lastTestedAt: new Date(),
+      lastTestError: null,
+      updatedAt: new Date(),
+    };
+
+    if (existing) {
+      await db.update(driveSettingsTable).set(vals).where(eq(driveSettingsTable.id, existing.id));
+    } else {
+      await db.insert(driveSettingsTable).values(vals);
+    }
+
+    req.log.info({ email: userInfo.email }, "Google Drive connected successfully");
+    res.redirect("/admin/drive?connected=true");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err }, "Google OAuth callback failed");
+    res.redirect(`/admin/drive?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// ── POST /api/drive/disconnect ────────────────────────────────────────────
+router.post("/disconnect", async (req, res) => {
+  const existing = await getSettings();
+  if (!existing) return res.json({ ok: true });
+
+  await db.update(driveSettingsTable).set({
+    googleRefreshToken: null,
+    googleAccessToken: null,
+    googleTokenExpiry: null,
+    googleEmail: null,
+    isConnected: false,
+    lastTestedAt: null,
+    lastTestError: null,
+    updatedAt: new Date(),
+  }).where(eq(driveSettingsTable.id, existing.id));
+
+  res.json({ ok: true });
 });
 
 // ── POST /api/drive/test ───────────────────────────────────────────────────

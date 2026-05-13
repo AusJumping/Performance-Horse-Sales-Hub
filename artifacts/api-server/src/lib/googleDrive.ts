@@ -1,11 +1,12 @@
 /**
- * Google Drive integration — via Replit Connectors SDK.
- * Uses @replit/connectors-sdk to proxy authenticated requests to Google Drive API.
- * The connector (google-drive) handles OAuth token refresh automatically.
- * Never call getUncachableClient() statically — always create fresh per request.
+ * Google Drive integration — manual OAuth 2.0 web server flow.
+ * Uses Sally's refresh token stored in the drive_settings table.
+ * Credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) are set in Replit Secrets.
+ * GOOGLE_REDIRECT_URI is set as an env var.
  */
-
-import { ReplitConnectors } from "@replit/connectors-sdk";
+import { db } from "@workspace/db";
+import { driveSettingsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 interface DriveFile {
   id: string;
@@ -13,33 +14,90 @@ interface DriveFile {
   webViewLink: string;
 }
 
-/**
- * Returns a fresh ReplitConnectors instance.
- * Must NOT be cached — tokens expire and the SDK handles refresh internally.
- */
-function getConnectors(): ReplitConnectors {
-  return new ReplitConnectors();
+// ── Token management ──────────────────────────────────────────────────────────
+
+async function getSettings() {
+  const [settings] = await db.select().from(driveSettingsTable).limit(1);
+  return settings ?? null;
 }
 
 /**
- * Makes an authenticated request to the Google Drive API via the Replit connector proxy.
- * Path should start with /drive/v3/... or /upload/drive/v3/...
+ * Returns a valid access token, refreshing from Google if expired.
+ * Throws a clear error if Drive is not connected.
  */
-async function driveRequest(path: string, options: RequestInit = {}): Promise<Response> {
-  const connectors = getConnectors();
-  return connectors.proxy("google-drive", path, options) as Promise<Response>;
+export async function getAccessToken(): Promise<string> {
+  const settings = await getSettings();
+  if (!settings?.googleRefreshToken) {
+    throw new Error("Google Drive is not connected. Go to Admin → Google Drive Setup and connect the Google account.");
+  }
+
+  // Use cached token if still valid (with 60s buffer)
+  if (
+    settings.googleAccessToken &&
+    settings.googleTokenExpiry &&
+    new Date(settings.googleTokenExpiry).getTime() > Date.now() + 60_000
+  ) {
+    return settings.googleAccessToken;
+  }
+
+  // Refresh the access token
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: settings.googleRefreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Google token refresh failed: ${resp.status} — ${err}`);
+  }
+
+  const data = await resp.json() as { access_token: string; expires_in: number };
+  const expiry = new Date(Date.now() + data.expires_in * 1000);
+
+  await db
+    .update(driveSettingsTable)
+    .set({
+      googleAccessToken: data.access_token,
+      googleTokenExpiry: expiry,
+      updatedAt: new Date(),
+    })
+    .where(eq(driveSettingsTable.id, settings.id));
+
+  return data.access_token;
+}
+
+/**
+ * Makes an authenticated request to the Google APIs.
+ */
+async function driveRequest(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = await getAccessToken();
+  return fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.headers ?? {}),
+    },
+  });
 }
 
 // ── Drive API helpers ─────────────────────────────────────────────────────────
 
 export async function testDriveConnection(): Promise<{ email: string }> {
-  const resp = await driveRequest("/drive/v3/about?fields=user");
+  const resp = await driveRequest(
+    "https://www.googleapis.com/drive/v3/about?fields=user"
+  );
   if (!resp.ok) {
     const err = await resp.text();
     throw new Error(`Drive connection failed: ${resp.status} — ${err}`);
   }
   const data = await resp.json() as { user: { emailAddress: string } };
-  return { email: data.user?.emailAddress ?? "connected" };
+  return { email: data.user?.emailAddress ?? "unknown" };
 }
 
 export async function createDriveFolder(
@@ -47,7 +105,7 @@ export async function createDriveFolder(
   parentFolderId: string
 ): Promise<DriveFile> {
   const resp = await driveRequest(
-    "/drive/v3/files?fields=id,name,webViewLink",
+    "https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -89,7 +147,7 @@ export async function createGoogleDoc(
   ].join("\r\n");
 
   const resp = await driveRequest(
-    "/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
     {
       method: "POST",
       headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
@@ -119,7 +177,7 @@ export async function uploadFileToDrive(
   const body = Buffer.concat([headerBuf, fileBuffer, footerBuf]);
 
   const resp = await driveRequest(
-    "/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",
     {
       method: "POST",
       headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
@@ -139,7 +197,7 @@ export async function exportDocAsPdf(
   parentFolderId: string
 ): Promise<DriveFile> {
   const exportResp = await driveRequest(
-    `/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=application%2Fpdf`
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(docId)}/export?mimeType=application%2Fpdf`
   );
   if (!exportResp.ok) {
     const err = await exportResp.text();
