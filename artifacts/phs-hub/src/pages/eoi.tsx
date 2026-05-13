@@ -285,9 +285,8 @@ function validateStep(step: number, data: EoiData): string | null {
       if (!data.coverageType) return "Please indicate what this form covers.";
       return null;
     case 3:
-      if (!data.horseName) return "Please enter the horse name(s).";
+      if (data.coverageType === "a specific horse" && !data.horseName) return "Please enter the horse name(s).";
       if (!data.hasResearched) return "Please confirm you have reviewed the listing.";
-      if (data.hasResearched === "no") return "Please complete your research before submitting — access the listing, portfolio, owner response form and videos first.";
       if (!data.budgetStatus) return "Please indicate your purchase readiness.";
       return null;
     case 4:
@@ -507,8 +506,8 @@ export default function EoiPage() {
         {/* ── Step 3: The Horse ────────────────────────────────────────────── */}
         {step === 3 && (
           <div className="space-y-6">
-            <FieldGroup label="Name of the horse/s that I am interested in" required>
-              <TextInput value={data.horseName} onChange={(v) => set("horseName", v)} placeholder="e.g. Buckley's Chance" />
+            <FieldGroup label="Name of the horse/s that I am interested in" required={data.coverageType === "a specific horse"}>
+              <TextInput value={data.horseName} onChange={(v) => set("horseName", v)} placeholder={data.coverageType === "a specific horse" ? "e.g. Buckley's Chance" : "Optional — leave blank if covering all PHS horses"} />
             </FieldGroup>
             <FieldGroup
               label="I have: accessed the PHS website; read the horse's full ad; accessed the horse's portfolio; read the Owner Response Form; and watched the horse's videos."

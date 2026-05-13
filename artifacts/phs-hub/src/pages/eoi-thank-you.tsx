@@ -12,18 +12,18 @@ export default function EoiThankYou() {
         <h1 className="text-2xl font-bold text-[#24384e]">EOI Submitted!</h1>
         <p className="text-stone-600 text-sm leading-relaxed">
           Thank you for your Expression of Interest. PHS will review your submission and share it with the seller. 
-          We aim to respond within <strong>12 hours</strong>.
+          We aim to respond within <strong>24 hours</strong>.
         </p>
         <p className="text-stone-500 text-xs leading-relaxed">
           If you don't hear from us, please contact us on <strong>0428 239 317</strong>.
         </p>
         <div className="pt-2">
-          <Link
-            href="/"
+          <a
+            href="https://www.performancehorsesales.com.au"
             className="inline-block text-sm font-medium text-[#24384e] underline underline-offset-2 hover:opacity-70"
           >
             Return to home
-          </Link>
+          </a>
         </div>
       </div>
     </div>
