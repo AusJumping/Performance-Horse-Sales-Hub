@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +11,8 @@ import {
   FolderOpen,
   ExternalLink,
   Plus,
-  LogIn,
-  LogOut,
   RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 
 interface DriveSettings {
@@ -70,41 +67,10 @@ function StepNumber({ n, done, active }: { n: number; done: boolean; active: boo
 export default function DriveSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [location] = useLocation();
 
   const { data: settings, isLoading } = useQuery<DriveSettings>({
     queryKey: ["/api/drive/settings"],
     queryFn: () => apiFetch("/drive/settings"),
-  });
-
-  // Handle redirect back from Google OAuth
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const connected = params.get("connected");
-    const error = params.get("error");
-
-    if (connected === "true") {
-      queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      toast({ title: "Google Drive connected", description: "Sally's Google account is now linked." });
-      window.history.replaceState({}, "", "/admin/drive");
-    } else if (error) {
-      toast({
-        title: "Google Drive connection failed",
-        description: decodeURIComponent(error),
-        variant: "destructive",
-      });
-      window.history.replaceState({}, "", "/admin/drive");
-    }
-  }, [location]);
-
-  const disconnectMutation = useMutation({
-    mutationFn: () => apiFetch("/drive/disconnect", { method: "POST" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      toast({ title: "Google Drive disconnected", description: "The Google account has been removed from the app." });
-    },
-    onError: (err: Error) =>
-      toast({ title: "Disconnect failed", description: err.message, variant: "destructive" }),
   });
 
   const createRootFolderMutation = useMutation({
@@ -121,17 +87,16 @@ export default function DriveSettings() {
     mutationFn: () => apiFetch("/drive/test", { method: "POST" }),
     onSuccess: (data: { email: string }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      toast({ title: "Connection successful", description: `Connected as ${data.email}` });
+      toast({ title: "Connection confirmed", description: `Connected as ${data.email}` });
     },
     onError: (err: Error) => {
       queryClient.invalidateQueries({ queryKey: ["/api/drive/settings"] });
-      toast({ title: "Connection failed", description: err.message, variant: "destructive" });
+      toast({ title: "Connection test failed", description: err.message, variant: "destructive" });
     },
   });
 
-  const connected = settings?.isConnected ?? false;
   const foldersCreated = !!settings?.rootFolderId;
-  const fullySetUp = connected && foldersCreated;
+  const fullySetUp = foldersCreated;
 
   return (
     <AdminLayout>
@@ -139,41 +104,33 @@ export default function DriveSettings() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Google Drive Setup</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Connect Sally's Google account so the app can automatically create horse folders and file documents.
+            Sally's Google Drive is connected via Replit. Complete the folder setup below to start filing documents automatically.
           </p>
         </div>
 
-        {/* Status banner */}
-        {connected ? (
-          <div className="flex items-start gap-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 text-sm text-green-800">
-              <strong>Google Drive is connected</strong> to{" "}
-              <span className="font-mono">{settings?.googleEmail ?? "unknown account"}</span>.
-              {foldersCreated
-                ? " Horse folders and documents will be saved to this Drive."
-                : " Complete Step 2 below to set up the folder structure."}
-            </div>
+        {/* Connection banner — always connected via Replit */}
+        <div className="flex items-start gap-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+          <ShieldCheck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm text-green-800">
+            <strong>Google Drive is connected</strong> via Replit Integrations.
+            {settings?.googleEmail && (
+              <span> Authenticated as <span className="font-mono">{settings.googleEmail}</span>.</span>
+            )}
+            {foldersCreated
+              ? " Horse folders and documents will be saved to this Drive."
+              : " Complete Step 1 below to set up the folder structure."}
           </div>
-        ) : (
-          <div className="flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
-            <XCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <strong>Google Drive is not connected.</strong> Connect Sally's Google account so the app can create
-              folders and save generated documents.
-            </div>
-          </div>
-        )}
+        </div>
 
-        {/* Step 1 — Connect */}
-        <Card className={!connected ? "ring-2 ring-[#24384e]/20" : ""}>
+        {/* Step 1 — Connection confirmed */}
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <StepNumber n={1} done={connected} active={!connected} />
+              <StepNumber n={1} done={true} active={false} />
               <div>
-                <CardTitle className="text-base">Connect Google Drive</CardTitle>
+                <CardTitle className="text-base">Google Drive Connection</CardTitle>
                 <CardDescription className="mt-0.5">
-                  Sally signs in with her Google account to authorise the app.
+                  Connected via Sally's Replit account — no manual setup needed.
                 </CardDescription>
               </div>
             </div>
@@ -183,66 +140,30 @@ export default function DriveSettings() {
               <div className="flex items-center gap-2 flex-wrap">
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : connected ? (
+                ) : (
                   <>
                     <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Connected via Replit
                     </Badge>
-                    <span className="text-sm text-muted-foreground font-mono">{settings?.googleEmail}</span>
+                    {settings?.googleEmail && (
+                      <span className="text-sm text-muted-foreground font-mono">{settings.googleEmail}</span>
+                    )}
                   </>
-                ) : (
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    <XCircle className="h-3 w-3 mr-1" /> Not connected
-                  </Badge>
                 )}
               </div>
-
-              <div className="flex gap-2">
-                {connected ? (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => testMutation.mutate()}
-                      disabled={testMutation.isPending}
-                    >
-                      {testMutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                      )}
-                      Test
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={() => {
-                        if (confirm("Disconnect Google Drive? The app will stop saving files to Drive until reconnected.")) {
-                          disconnectMutation.mutate();
-                        }
-                      }}
-                      disabled={disconnectMutation.isPending}
-                    >
-                      {disconnectMutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                      ) : (
-                        <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                      )}
-                      Disconnect
-                    </Button>
-                  </>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => testMutation.mutate()}
+                disabled={testMutation.isPending}
+              >
+                {testMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
                 ) : (
-                  <Button
-                    size="sm"
-                    className="bg-[#24384e] hover:bg-[#1a2d3f]"
-                    onClick={() => { window.location.href = "/api/drive/auth"; }}
-                  >
-                    <LogIn className="h-3.5 w-3.5 mr-1.5" />
-                    Connect Google Drive
-                  </Button>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 )}
-              </div>
+                Test Connection
+              </Button>
             </div>
 
             {settings?.lastTestError && (
@@ -254,10 +175,10 @@ export default function DriveSettings() {
         </Card>
 
         {/* Step 2 — Create folders */}
-        <Card className={!connected ? "opacity-50 pointer-events-none" : !foldersCreated ? "ring-2 ring-[#24384e]/20" : ""}>
+        <Card className={!foldersCreated ? "ring-2 ring-[#24384e]/20" : ""}>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <StepNumber n={2} done={foldersCreated} active={connected && !foldersCreated} />
+              <StepNumber n={2} done={foldersCreated} active={!foldersCreated} />
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <FolderOpen className="h-4 w-4" /> Create Folder Structure
@@ -300,7 +221,7 @@ export default function DriveSettings() {
             ) : (
               <Button
                 onClick={() => createRootFolderMutation.mutate()}
-                disabled={createRootFolderMutation.isPending || !connected}
+                disabled={createRootFolderMutation.isPending}
                 className="bg-[#24384e] hover:bg-[#1a2d3f]"
               >
                 {createRootFolderMutation.isPending ? (
