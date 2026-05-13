@@ -54,7 +54,9 @@ function RadioGroup({
 function SignatureCanvas({ onChange }: { onChange: (dataUrl: string | null) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
-  const [hasSignature, setHasSignature] = useState(false);
+  // Use a ref (not state) so endDraw always reads the current value — no stale closure
+  const hasSignatureRef = useRef(false);
+  const [hasSignature, setHasSignature] = useState(false); // for UI only
 
   const getPos = (e: MouseEvent | Touch, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -93,15 +95,22 @@ function SignatureCanvas({ onChange }: { onChange: (dataUrl: string | null) => v
     ctx.strokeStyle = "#1a1a1a";
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
-    setHasSignature(true);
+    if (!hasSignatureRef.current) {
+      hasSignatureRef.current = true;
+      setHasSignature(true);
+    }
   }, []);
 
   const endDraw = useCallback(() => {
+    if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    onChange(hasSignature ? canvas.toDataURL() : null);
-  }, [hasSignature, onChange]);
+    // Read from ref — always current, never stale
+    if (hasSignatureRef.current) {
+      onChange(canvas.toDataURL());
+    }
+  }, [onChange]);
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -109,6 +118,7 @@ function SignatureCanvas({ onChange }: { onChange: (dataUrl: string | null) => v
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignatureRef.current = false;
     setHasSignature(false);
     onChange(null);
   };
@@ -119,7 +129,7 @@ function SignatureCanvas({ onChange }: { onChange: (dataUrl: string | null) => v
         ref={canvasRef}
         width={600}
         height={160}
-        className="border-2 border-stone-300 rounded-lg w-full touch-none bg-white cursor-crosshair"
+        className={`border-2 rounded-lg w-full touch-none bg-white cursor-crosshair ${hasSignature ? "border-green-400" : "border-stone-300"}`}
         onMouseDown={startDraw}
         onMouseMove={draw}
         onMouseUp={endDraw}
@@ -128,13 +138,20 @@ function SignatureCanvas({ onChange }: { onChange: (dataUrl: string | null) => v
         onTouchMove={draw}
         onTouchEnd={endDraw}
       />
-      <button
-        type="button"
-        onClick={clear}
-        className="text-sm text-stone-500 hover:text-stone-700 underline underline-offset-2"
-      >
-        Clear signature
-      </button>
+      {hasSignature ? (
+        <p className="text-xs text-green-600 font-medium">✓ Signature captured</p>
+      ) : (
+        <p className="text-xs text-stone-400">Sign above using your mouse or finger</p>
+      )}
+      {hasSignature && (
+        <button
+          type="button"
+          onClick={clear}
+          className="text-sm text-stone-500 hover:text-stone-700 underline underline-offset-2"
+        >
+          Clear and re-sign
+        </button>
+      )}
     </div>
   );
 }
@@ -351,7 +368,7 @@ export default function EoiPage() {
 
   const submit = async () => {
     const err = validateStep(11, data);
-    if (err) { setError(err); return; }
+    if (err) { setError(err); scrollTop(); return; }
     setError(null);
     setSubmitting(true);
 
