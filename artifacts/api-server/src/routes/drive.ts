@@ -80,7 +80,7 @@ router.get("/auth", (req, res) => {
       "https://www.googleapis.com/auth/userinfo.email",
     ].join(" "),
     access_type: "offline",
-    prompt: "consent",
+    prompt: "select_account consent",
     state,
   });
 
