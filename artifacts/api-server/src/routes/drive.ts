@@ -188,6 +188,26 @@ router.post("/disconnect", async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── POST /api/drive/settings/reset-folders ────────────────────────────────
+// Clears all stale folder IDs so a fresh folder structure can be created.
+router.post("/settings/reset-folders", async (req, res) => {
+  const existing = await getSettings();
+  if (!existing) return res.json({ ok: true });
+
+  await db.update(driveSettingsTable).set({
+    rootFolderId: null,
+    rootFolderLink: null,
+    sellerFolderParentId: null,
+    sellerFolderLink: null,
+    searchFolderParentId: null,
+    searchFolderLink: null,
+    updatedAt: new Date(),
+  }).where(eq(driveSettingsTable.id, existing.id));
+
+  req.log.info("Drive folder IDs reset");
+  res.json({ ok: true });
+});
+
 // ── POST /api/drive/test ───────────────────────────────────────────────────
 router.post("/test", async (req, res) => {
   try {
