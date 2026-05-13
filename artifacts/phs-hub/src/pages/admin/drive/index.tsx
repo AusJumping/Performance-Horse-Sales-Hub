@@ -104,7 +104,7 @@ export default function DriveSettings() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Google Drive Setup</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sally's Google Drive is connected via Replit. Complete the folder setup below to start filing documents automatically.
+            Google Drive is connected via Replit Integrations. Complete the folder setup below to start filing documents automatically.
           </p>
         </div>
 
@@ -130,7 +130,7 @@ export default function DriveSettings() {
               <div>
                 <CardTitle className="text-base">Google Drive Connection</CardTitle>
                 <CardDescription className="mt-0.5">
-                  Connected via Sally's Replit account — no manual setup needed.
+                  Connected via Replit Integrations — managed by the app, no manual sign-in needed.
                 </CardDescription>
               </div>
             </div>
