@@ -90,7 +90,9 @@ router.post("/", async (req, res) => {
       horseName, formData, signatureData, waiverAgreed, declarationAgreed,
     } = req.body;
 
-    if (!buyerEmail || !buyerFirstName || !buyerSurname || !buyerLocation || !buyerPhone || !horseName) {
+    const coverageType = (formData as Record<string, unknown>)?.coverageType;
+    const horseNameRequired = !coverageType || coverageType === "a specific horse";
+    if (!buyerEmail || !buyerFirstName || !buyerSurname || !buyerLocation || !buyerPhone || (horseNameRequired && !horseName)) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 

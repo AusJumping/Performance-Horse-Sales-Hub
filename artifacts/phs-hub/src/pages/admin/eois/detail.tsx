@@ -144,6 +144,119 @@ function Field({ label, value }: { label: string; value?: string | string[] | bo
 function str(v: unknown): string { return typeof v === "string" ? v : ""; }
 function arr(v: unknown): string[] { return Array.isArray(v) ? (v as string[]) : []; }
 
+// ─── Buyer Brief ───────────────────────────────────────────────────────────────
+
+interface BriefItem { label: string; value: string | string[] }
+interface BriefSection { title: string; items: BriefItem[] }
+
+function BuyerBrief({ eoi, fd }: { eoi: Eoi; fd: Record<string, unknown> }) {
+  const hasVal = (v: string | string[]) =>
+    Array.isArray(v) ? v.length > 0 : v.trim() !== "";
+
+  const budgetStr = [str(fd.budgetStatus), str(fd.budgetAmount)].filter(Boolean).join(" — ");
+
+  const sections: BriefSection[] = [
+    {
+      title: "Their Request",
+      items: [
+        { label: "Requesting", value: arr(fd.requestTypes).join(", ") },
+        { label: "Preferred viewing date", value: str(fd.preferredViewingDate) },
+        { label: "Information requested", value: str(fd.requestedInfo) },
+        { label: "Coach / agent", value: str(fd.coachName) },
+      ],
+    },
+    {
+      title: "The Horse",
+      items: [
+        { label: "Horse", value: eoi.horseName || "Any horse listed with PHS" },
+        { label: "Coverage", value: str(fd.coverageType) },
+        { label: "Budget", value: budgetStr },
+      ],
+    },
+    {
+      title: "Disciplines & Activities",
+      items: [
+        { label: "Disciplines", value: arr(fd.disciplines) },
+        { label: "Activities", value: arr(fd.activities) },
+      ],
+    },
+    {
+      title: "Horse Sought",
+      items: [
+        { label: "Description", value: str(fd.horseDescription) },
+        { label: "Type attributes", value: arr(fd.horseTypeAttributes) },
+        { label: "Non-negotiables", value: arr(fd.nonNegotiables) },
+      ],
+    },
+    {
+      title: "Rider Profile",
+      items: [
+        { label: "Goals", value: str(fd.riderGoals) },
+        { label: "Competence", value: str(fd.riderCompetenceLevel) },
+        { label: "Confidence", value: str(fd.riderConfidence) },
+        { label: "Age", value: str(fd.riderAge) },
+        { label: "Circumstances", value: str(fd.riderCircumstances) },
+        { label: "Additional info", value: str(fd.riderInfo) },
+      ],
+    },
+    {
+      title: "Purchase & Vetting",
+      items: [
+        { label: "Purchase factors", value: arr(fd.purchaseFactors) },
+        { label: "Other non-negotiables", value: str(fd.otherNonNegotiables) },
+        { label: "Vetting level", value: str(fd.vettingLevel) },
+        { label: "Vet expectations", value: str(fd.vetExpectations) },
+      ],
+    },
+    {
+      title: "Management",
+      items: [
+        { label: "Conditions", value: arr(fd.managementConditions) },
+        { label: "Agistment location", value: str(fd.agistmentLocation) },
+        { label: "Experience & support", value: str(fd.experienceLevel) },
+        { label: "Settling expectations", value: str(fd.settlingExpectations) },
+        { label: "Other", value: str(fd.otherManagementFactors) },
+      ],
+    },
+  ]
+    .map((sec) => ({ ...sec, items: sec.items.filter((i) => hasVal(i.value)) }))
+    .filter((sec) => sec.items.length > 0);
+
+  return (
+    <Card className="border-[#24384e]/20 bg-[#24384e]/[0.025]">
+      <CardHeader className="pb-3 border-b border-[#24384e]/10">
+        <CardTitle className="text-base text-[#24384e]">Buyer Brief</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          At-a-glance summary of what this buyer is looking for
+        </p>
+      </CardHeader>
+      <CardContent className="pt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
+          {sections.map((sec) => (
+            <div key={sec.title}>
+              <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#24384e] mb-2.5 border-b border-[#24384e]/10 pb-1">
+                {sec.title}
+              </h4>
+              <div className="space-y-1.5">
+                {sec.items.map((item) => (
+                  <div key={item.label} className="text-sm leading-snug">
+                    <span className="text-muted-foreground text-xs">{item.label}: </span>
+                    {Array.isArray(item.value) ? (
+                      <span className="text-stone-800">{item.value.join(", ")}</span>
+                    ) : (
+                      <span className="text-stone-800">{item.value}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function EoiDetail() {
   const [, params] = useRoute("/admin/eois/:id");
   const id = params?.id;
@@ -271,6 +384,8 @@ export default function EoiDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left: Form Data */}
         <div className="space-y-6">
+          <BuyerBrief eoi={eoi} fd={fd} />
+
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
