@@ -24,6 +24,22 @@ function proseToHtml(text: string): string {
     .join("\n");
 }
 
+function isHeadingLine(line: string): boolean {
+  // Numbered: "1. HORSE DETAILS"
+  if (/^\d+\.\s+[A-Z]/.test(line)) return true;
+  // All-caps short line (heading): "OVERVIEW", "KEY FEATURES", "HIGHLIGHTS"
+  if (/^[A-Z][A-Z\s&\/\-:]{2,40}$/.test(line.trim())) return true;
+  // Short line ending with colon: "Key Features:", "About this horse:"
+  if (/^[A-Za-z][^.\n]{2,50}:$/.test(line.trim())) return true;
+  // Markdown bold heading: "**HEADING**" or "**Heading**"
+  if (/^\*\*[^*]+\*\*$/.test(line.trim())) return true;
+  return false;
+}
+
+function stripMarkdown(str: string): string {
+  return str.replace(/\*\*/g, "").replace(/\*/g, "").replace(/:$/, "").trim();
+}
+
 function orcToHtml(text: string): string {
   const lines = text.split("\n");
   let html = "";
@@ -31,9 +47,8 @@ function orcToHtml(text: string): string {
     const line = raw.trimEnd();
     if (!line.trim()) continue;
     const trimmed = line.trimStart();
-    // Numbered section headings like "1. HORSE DETAILS"
-    if (/^\d+\.\s+[A-Z]/.test(trimmed)) {
-      html += `<h3 class="orc-section-title">${escapeHtml(trimmed)}</h3>`;
+    if (isHeadingLine(trimmed)) {
+      html += `<h3 class="orc-section-title">${escapeHtml(stripMarkdown(trimmed).toUpperCase())}</h3>`;
     } else if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
       html += `<div class="orc-bullet"><span class="bullet-dot">•</span><span>${escapeHtml(trimmed.slice(2))}</span></div>`;
     } else {
@@ -375,8 +390,8 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
       Thank you for submitting ${escapeHtml(data.horseName)} to Performance Horse Sales. We have reviewed the information you provided and prepared this approval pack for your review.
     </div>
     <ul class="intro-checklist">
-      <li>Review the Listing Description — this is what buyers will see</li>
       <li>Review the Owner Response Certificate — confirm the facts are correct</li>
+      <li>Review the Listing Description — this is what buyers will see</li>
       <li>Reply with your approval or any requested changes</li>
     </ul>
   </div>
@@ -384,22 +399,22 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
   <div class="pack-section">
     <div class="section-heading-row">
       <span class="section-num">1</span>
-      <span class="section-heading">Listing Description</span>
+      <span class="section-heading">Owner Response Certificate</span>
     </div>
-    <div class="section-sub">This is the full marketing listing that will appear on your public advertisement. Please review all sections and let us know if you'd like any adjustments.</div>
-    <div class="hd-body">
-      ${orcToHtml(data.masterListing)}
+    <div class="section-sub">A structured summary of the details you provided. Please confirm everything is accurate before we proceed.</div>
+    <div class="orc-body">
+      ${orcToHtml(data.orcText)}
     </div>
   </div>
 
   <div class="pack-section">
     <div class="section-heading-row">
       <span class="section-num">2</span>
-      <span class="section-heading">Owner Response Certificate</span>
+      <span class="section-heading">Listing Description</span>
     </div>
-    <div class="section-sub">A structured summary of the details you provided. Please confirm everything is accurate before we proceed.</div>
-    <div class="orc-body">
-      ${orcToHtml(data.orcText)}
+    <div class="section-sub">This is the full marketing listing that will appear on your public advertisement. Please review all sections and let us know if you'd like any adjustments.</div>
+    <div class="hd-body">
+      ${orcToHtml(data.masterListing)}
     </div>
   </div>
 
