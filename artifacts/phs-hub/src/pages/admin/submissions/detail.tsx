@@ -678,12 +678,11 @@ export default function SubmissionDetail() {
 
   // ── Horse Description ────────────────────────────────────────────────────
   const [hdDraft, setHdDraft] = useState<string>("");
-  const [hdGenerating, setHdGenerating] = useState(false);
   const [hdSaving, setHdSaving] = useState(false);
 
   useEffect(() => {
-    const hd = (aiOutput as any)?.horseDescription;
-    if (hd && !hdDraft) setHdDraft(String(hd));
+    const ml = (aiOutput as any)?.masterListing;
+    if (ml && !hdDraft) setHdDraft(String(ml));
   }, [aiOutput]);
 
   // Master listing used in the approval pack (comes from main AI generation)
@@ -717,7 +716,7 @@ export default function SubmissionDetail() {
         orcText: orcDraft,
       }));
     }
-    // Portfolio: Horse Description
+    // Portfolio: Horse Description (now shows master listing)
     if (hdDraft && currentHdStatus !== "not_generated") {
       saveDocToDrive("horse_description", `Horse Description — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml({
         horseName: sub.horseName ?? "Horse",
@@ -726,7 +725,7 @@ export default function SubmissionDetail() {
         askingPrice: sub.askingPrice,
         submissionId,
         orcText: orcDraft,
-        horseDescription: hdDraft,
+        masterListing: hdDraft,
       }));
     }
     // Portfolio: photos & videos
@@ -766,49 +765,19 @@ export default function SubmissionDetail() {
     }
   }, [sub?.driveDocumentsFolderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleGenerateHd = async () => {
-    setHdGenerating(true);
-    try {
-      const res = await fetch(`/api/submissions/${submissionId}/generate-horse-description`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      setHdDraft(data.horseDescription ?? "");
-      refetchAiOutput();
-      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
-      toast({ title: "Horse description generated" });
-    } catch (err: any) {
-      toast({ title: err.message ?? "Generation failed", variant: "destructive" });
-    } finally {
-      setHdGenerating(false);
-    }
-  };
-
   const handleSaveHd = async (newStatus?: string) => {
     setHdSaving(true);
     try {
-      const currentHdStatus = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
-      const status = newStatus ?? (currentHdStatus === "generated" ? "edited" : currentHdStatus);
-      const res = await fetch(`/api/submissions/${submissionId}/horse-description`, {
+      const token = localStorage.getItem("admin_token");
+      const res = await fetch(`/api/submissions/${submissionId}/ai-output`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ horseDescription: hdDraft, horseDescriptionStatus: status }),
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ masterListing: hdDraft }),
       });
       if (!res.ok) throw new Error("Save failed");
       refetchAiOutput();
       queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
-      toast({ title: newStatus === "ready_to_use" ? "Marked as ready to use" : "Horse description saved" });
-      if (newStatus === "ready_to_use" && hdDraft) {
-        // Portfolio: Horse Description doc
-        saveDocToDrive("horse_description", `Horse Description — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
-          horseName: sub?.horseName ?? "Horse",
-          breed: sub?.breed,
-          sellerName: sub?.sellerName,
-          askingPrice: sub?.askingPrice,
-          submissionId,
-          orcText: orcDraft,
-          masterListing: masterListingForPack,
-        }));
-      }
+      toast({ title: "Master listing saved" });
     } catch {
       toast({ title: "Save failed", variant: "destructive" });
     } finally {
@@ -816,7 +785,7 @@ export default function SubmissionDetail() {
     }
   };
 
-  const hdStatus = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
+  const hdStatus = (aiOutput as any)?.masterListing ? "generated" : "not_generated";
   const hdStatusLabel: Record<string, { label: string; className: string }> = {
     not_generated: { label: "Not Generated", className: "bg-stone-100 text-stone-600 border-stone-300" },
     generated:     { label: "Generated",     className: "bg-sky-50 text-sky-700 border-sky-400" },
@@ -1423,46 +1392,30 @@ export default function SubmissionDetail() {
                         <Sparkles className="h-5 w-5 text-amber-500" /> Horse Description
                       </CardTitle>
                       <CardDescription className="mt-1">
-                        Polished marketing copy written from the Owner Response Certificate. Flows as prose — no bullet points. Ready for listing pages and approval packs.
-                        {(aiOutput as any)?.horseDescriptionUpdatedAt && (
-                          <span className="block mt-1 text-xs">
-                            Last updated: {format(new Date((aiOutput as any).horseDescriptionUpdatedAt), 'MMM d, yyyy h:mm a')}
-                          </span>
-                        )}
+                        The master listing generated by AI — structured and ready for listing pages, approval packs, and Drive. Generated as part of AI Content.
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                       {hdStatus === "not_generated" ? (
                         <Button
-                          onClick={handleGenerateHd}
-                          disabled={hdGenerating || orcStatus === "not_generated"}
+                          onClick={handleGenerateAi}
+                          disabled={generateAi.isPending}
                           className="bg-[#24384e] hover:bg-[#1a2d3f]"
-                          title={orcStatus === "not_generated" ? "Generate the ORC first" : undefined}
                           data-testid="button-generateHd"
                         >
-                          {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                          {hdGenerating ? "Generating…" : "Generate Horse Description"}
+                          {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          {generateAi.isPending ? "Generating…" : "Generate AI Content"}
                         </Button>
                       ) : (
                         <>
-                          <Button variant="outline" onClick={handleGenerateHd} disabled={hdGenerating} data-testid="button-regenerateHd">
-                            {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          <Button variant="outline" onClick={handleGenerateAi} disabled={generateAi.isPending} data-testid="button-regenerateHd">
+                            {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
                             Regenerate
                           </Button>
                           <Button variant="outline" onClick={() => handleSaveHd()} disabled={hdSaving} data-testid="button-saveHd">
                             {hdSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                             Save
                           </Button>
-                          {hdStatus !== "ready_to_use" && (
-                            <Button onClick={() => handleSaveHd("ready_to_use")} disabled={hdSaving} className="bg-emerald-700 hover:bg-emerald-800" data-testid="button-hdReadyToUse">
-                              <CheckCircle className="h-4 w-4 mr-2" /> Mark Ready to Use
-                            </Button>
-                          )}
-                          {hdStatus === "ready_to_use" && (
-                            <Button variant="outline" onClick={() => handleSaveHd("edited")} disabled={hdSaving}>
-                              Reopen for Editing
-                            </Button>
-                          )}
                         </>
                       )}
                     </div>
@@ -1495,39 +1448,32 @@ export default function SubmissionDetail() {
                         <Sparkles className="h-8 w-8 text-amber-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-stone-700">No horse description yet</p>
+                        <p className="font-medium text-stone-700">No master listing yet</p>
                         <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                          {orcStatus === "not_generated"
-                            ? "Generate the Owner Response Certificate first — the horse description is written from it."
-                            : "Generate flowing marketing prose from the ORC. Ready for listings and the seller approval pack."}
+                          Generate AI Content to produce the master listing — it will appear here automatically.
                         </p>
                       </div>
                       <Button
-                        onClick={handleGenerateHd}
-                        disabled={hdGenerating || orcStatus === "not_generated"}
+                        onClick={handleGenerateAi}
+                        disabled={generateAi.isPending}
                         className="bg-[#24384e] hover:bg-[#1a2d3f] mt-2"
-                        title={orcStatus === "not_generated" ? "Generate the ORC first" : undefined}
                       >
-                        {hdGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                        {hdGenerating ? "Generating…" : orcStatus === "not_generated" ? "Generate ORC First" : "Generate Horse Description"}
+                        {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                        {generateAi.isPending ? "Generating…" : "Generate AI Content"}
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       <p className="text-xs text-muted-foreground">
-                        Edit the description below. Changes are not saved automatically — use the Save button above.
-                        {hdStatus === "ready_to_use" && (
-                          <span className="ml-2 font-semibold text-emerald-700">This description is marked as ready to use.</span>
-                        )}
+                        Edit the master listing below. Changes are not saved automatically — use the Save button above.
                       </p>
                       <Textarea
                         value={hdDraft}
                         onChange={(e) => setHdDraft(e.target.value)}
-                        rows={18}
+                        rows={22}
                         className="text-sm leading-relaxed bg-white resize-y font-sans"
-                        placeholder="Horse description will appear here after generation…"
+                        placeholder="Master listing will appear here after AI Content is generated…"
                         data-testid="textarea-horseDescription"
-                        readOnly={hdStatus === "ready_to_use"}
                       />
                     </div>
                   )}
