@@ -2210,27 +2210,6 @@ export default function SubmissionDetail() {
                     </div>
                   )}
 
-                  {/* After voided: allow regeneration */}
-                  {contractData?.status === "voided" && (
-                    <div className="space-y-4 pt-2 border-t">
-                      <p className="text-sm text-stone-500">This contract has been voided. You can generate a new link below.</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm">Sale Price</Label>
-                          <Input value={contractSalesPrice} onChange={(e) => setContractSalesPrice(e.target.value)} placeholder="e.g. $15,000" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm">Holding Deposit <span className="text-stone-400 font-normal">(optional)</span></Label>
-                          <Input value={contractHoldingDeposit} onChange={(e) => setContractHoldingDeposit(e.target.value)} placeholder="e.g. $1,500" />
-                        </div>
-                      </div>
-                      <Button onClick={handleGenerateContract} disabled={contractGenerating} className="w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white">
-                        {contractGenerating
-                          ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
-                          : <><FileSignature className="h-4 w-4 mr-2" /> Generate New Contract Link</>}
-                      </Button>
-                    </div>
-                  )}
 
                 </CardContent>
               </Card>
