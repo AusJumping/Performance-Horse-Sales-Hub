@@ -47,6 +47,7 @@ import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
 import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
 import { openContractPrintWindow } from "@/lib/contract-pdf";
+import { openHorseDescriptionPrintWindow } from "@/lib/horse-description-pdf";
 import { StatusBadge } from "@/components/status-badge";
 
 // ── Submission Email Templates ─────────────────────────────────────────────
@@ -1462,6 +1463,17 @@ export default function SubmissionDetail() {
                           <Button variant="outline" onClick={() => handleSaveHd()} disabled={hdSaving} data-testid="button-saveHd">
                             {hdSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                             Save
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => openHorseDescriptionPrintWindow(
+                              sub.horseName ?? "Horse",
+                              hdDraft,
+                              (aiOutput as any)?.updatedAt ?? null,
+                            )}
+                          >
+                            <FileDown className="h-4 w-4 mr-2" />
+                            Download PDF
                           </Button>
                         </>
                       )}
