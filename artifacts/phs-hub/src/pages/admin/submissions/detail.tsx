@@ -691,33 +691,40 @@ export default function SubmissionDetail() {
   const masterListingForPack = (aiOutput as any)?.masterListing ?? "";
 
   // ── Auto-save existing docs & media when Drive folder is first created ─────
-  const prevDocsFolderRef = useRef<string | null>(null);
+  // prevDocsFolderRef starts as undefined (= "sub hasn't loaded yet").
+  // When sub first loads we record the initial folder ID without triggering a sync.
+  // We only auto-sync when the folder ID transitions null → value AFTER that first load,
+  // i.e. when Sally just created a new Drive folder in the current session.
+  const prevDocsFolderRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    const folderId = sub?.driveDocumentsFolderId ?? null;
-    const wasNull = prevDocsFolderRef.current === null;
+    if (!sub) return; // sub not loaded yet — don't record anything
+    const folderId = sub.driveDocumentsFolderId ?? null;
+    const prev = prevDocsFolderRef.current;
     prevDocsFolderRef.current = folderId;
-    // Only fire once when the folder transitions from null → a real value
-    if (!wasNull || !folderId) return;
+    // First time sub loads: just record the initial state, never auto-sync on page load
+    if (prev === undefined) return;
+    // Only fire when the folder transitions null → a real value (newly created this session)
+    if (prev !== null || !folderId) return;
     const currentOrcStatus = (aiOutput as any)?.orcStatus ?? "not_generated";
     const currentHdStatus  = (aiOutput as any)?.horseDescriptionStatus ?? "not_generated";
     // Portfolio: ORC
     if (orcDraft && currentOrcStatus !== "not_generated") {
-      saveDocToDrive("orc", `ORC — ${sub?.horseName ?? "Horse"}`, generateOrcDriveHtml({
-        horseName: sub?.horseName ?? "Horse",
-        breed: sub?.breed,
-        sellerName: sub?.sellerName,
-        askingPrice: sub?.askingPrice,
+      saveDocToDrive("orc", `ORC — ${sub.horseName ?? "Horse"}`, generateOrcDriveHtml({
+        horseName: sub.horseName ?? "Horse",
+        breed: sub.breed,
+        sellerName: sub.sellerName,
+        askingPrice: sub.askingPrice,
         submissionId,
         orcText: orcDraft,
       }));
     }
     // Portfolio: Horse Description
     if (hdDraft && currentHdStatus !== "not_generated") {
-      saveDocToDrive("horse_description", `Horse Description — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
-        horseName: sub?.horseName ?? "Horse",
-        breed: sub?.breed,
-        sellerName: sub?.sellerName,
-        askingPrice: sub?.askingPrice,
+      saveDocToDrive("horse_description", `Horse Description — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml({
+        horseName: sub.horseName ?? "Horse",
+        breed: sub.breed,
+        sellerName: sub.sellerName,
+        askingPrice: sub.askingPrice,
         submissionId,
         orcText: orcDraft,
         horseDescription: hdDraft,
@@ -727,11 +734,11 @@ export default function SubmissionDetail() {
     syncMediaToDrive();
     // Documents: Approval Pack (ORC + Master Listing combined)
     if (orcDraft && masterListingForPack) {
-      saveDocToDrive("approval_pack", `Approval Pack — ${sub?.horseName ?? "Horse"}`, generateApprovalPackHtml({
-        horseName: sub?.horseName ?? "Horse",
-        breed: sub?.breed,
-        sellerName: sub?.sellerName,
-        askingPrice: sub?.askingPrice,
+      saveDocToDrive("approval_pack", `Approval Pack — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml({
+        horseName: sub.horseName ?? "Horse",
+        breed: sub.breed,
+        sellerName: sub.sellerName,
+        askingPrice: sub.askingPrice,
         submissionId,
         orcText: orcDraft,
         masterListing: masterListingForPack,
@@ -739,17 +746,17 @@ export default function SubmissionDetail() {
     }
     // Documents: Listing Agreement
     if (laCommissionRate) {
-      saveDocToDrive("listing_agreement", `Listing Agreement — ${sub?.horseName ?? "Horse"}`, generateListingAgreementHtml({
-        horseName: sub?.horseName ?? "Horse",
-        breed: sub?.breed,
-        colour: sub?.colour ?? sub?.workingRecord?.colour,
-        age: sub?.age ?? sub?.workingRecord?.age,
-        sex: sub?.sex ?? sub?.workingRecord?.sex,
-        height: sub?.workingRecord?.height ?? sub?.height,
-        askingPrice: sub?.askingPrice,
-        sellerName: sub?.sellerName,
-        sellerEmail: sub?.sellerEmail,
-        sellerPhone: sub?.sellerPhone,
+      saveDocToDrive("listing_agreement", `Listing Agreement — ${sub.horseName ?? "Horse"}`, generateListingAgreementHtml({
+        horseName: sub.horseName ?? "Horse",
+        breed: sub.breed,
+        colour: sub.colour ?? (sub.workingRecord as any)?.colour,
+        age: sub.age ?? (sub.workingRecord as any)?.age,
+        sex: sub.sex ?? (sub.workingRecord as any)?.sex,
+        height: (sub.workingRecord as any)?.height ?? sub.height,
+        askingPrice: sub.askingPrice,
+        sellerName: sub.sellerName,
+        sellerEmail: sub.sellerEmail,
+        sellerPhone: sub.sellerPhone,
         submissionId,
         commissionRate: laCommissionRate,
         minimumFee: laMinimumFee || undefined,
@@ -758,7 +765,7 @@ export default function SubmissionDetail() {
         listingTermsNotes: laTermsNotes || undefined,
       }));
     }
-  }, [sub?.driveDocumentsFolderId]);
+  }, [sub?.driveDocumentsFolderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerateHd = async () => {
     setHdGenerating(true);

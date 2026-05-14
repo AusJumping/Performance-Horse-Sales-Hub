@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { db } from "@workspace/db";
 import { contractsTable, submissionsTable, aiOutputsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
@@ -16,7 +16,7 @@ router.get("/submissions/:id/contract", async (req, res) => {
     .select()
     .from(contractsTable)
     .where(eq(contractsTable.submissionId, id))
-    .orderBy(contractsTable.createdAt)
+    .orderBy(desc(contractsTable.createdAt))
     .limit(1);
 
   if (!contract) return res.status(404).json({ error: "No contract found" });
