@@ -365,14 +365,12 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
     <div class="cover-doc-type">Seller Approval Pack</div>
     <div class="cover-horse-name">${escapeHtml(data.horseName)}</div>
     <div class="cover-meta">
-      ${data.breed ? `<span>${escapeHtml(data.breed)}</span><span class="cover-meta-sep">|</span>` : ""}
-      ${data.sellerName ? `<span>Seller: ${escapeHtml(data.sellerName)}</span><span class="cover-meta-sep">|</span>` : ""}
-      ${data.askingPrice ? `<span>Asking: ${escapeHtml(data.askingPrice)}</span>` : ""}
+      ${data.breed ? `<span>${escapeHtml(data.breed)}</span>` : ""}
     </div>
   </div>
 
   <div class="intro-box">
-    <div class="intro-greeting">Dear ${escapeHtml(data.sellerName ?? "Valued Seller")},</div>
+    <div class="intro-greeting">Dear Valued Seller,</div>
     <div class="intro-body">
       Thank you for submitting ${escapeHtml(data.horseName)} to Performance Horse Sales. We have reviewed the information you provided and prepared this approval pack for your review.
     </div>
