@@ -440,13 +440,13 @@ export default function FindAHorse() {
                   {
                     value: "level1",
                     label: "'Horse Finder' Standard Search",
-                    price: "$500 upfront PLUS $500 completion fee",
+                    price: "$500 upfront PLUS $500 Consultancy Fee",
                     desc: "Perfect if you are struggling to find horses but are confident about managing the assessment and buying process yourself. Includes creation of search criteria and ads, placement across online and social media, professional and private contacts, and a database of up to 30 horses.",
                   },
                   {
                     value: "level2",
                     label: "Premium 'Concierge' Search",
-                    price: "$1,000 upfront PLUS 5% completion fee (min $1,000, capped at $2,000)",
+                    price: "$1,000 upfront PLUS 5% Consultancy Fee (min $1,000, capped at $2,000)",
                     desc: "Perfect if you don't have the time or skills to find and successfully secure the horse of your dreams. Includes all Standard inclusions PLUS managing all initial enquiries, negotiation, booking viewings, vet check guidance, transport contacts, and a Bill of Sale after completion.",
                   },
                 ].map(opt => (

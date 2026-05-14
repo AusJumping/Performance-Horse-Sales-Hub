@@ -750,7 +750,7 @@ export default function Home() {
               <p className="font-bold text-[#24384e]">Listing Service</p>
               <p>Cost: $0 upfront</p>
               <p>
-                Then 5% commission/completion fee - minimum $500/capped at $2000.
+                Then 5% commission/Consultancy Fee - minimum $500/capped at $2000.
               </p>
               <p>We offer a 10% discount off commission, when paid upfront.</p>
               <p className="text-xs italic text-stone-500">
@@ -765,8 +765,8 @@ export default function Home() {
                 value={s("listingServiceType")}
                 onChange={setField("listingServiceType")}
                 options={[
-                  "1. Listing Service - commission/ completion fee due later (see terms)",
-                  "2. Listing Service - commission paid upfront for 10% off completion fee",
+                  "1. Listing Service - commission/ Consultancy Fee due later (see terms)",
+                  "2. Listing Service - commission paid upfront for 10% off Consultancy Fee",
                 ]}
               />
               <FieldError message={errors.listingServiceType} />
@@ -1878,7 +1878,7 @@ export default function Home() {
               <p>I agree to pay costs owed to PHS, in full, when they are due.</p>
               <p className="mt-3 text-xs text-stone-500">
                 I have READ and AGREED to the following terms and conditions — full Listing Terms
-                and Conditions, which include payment of commission/completion fee, are available
+                and Conditions, which include payment of commission/Consultancy Fee, are available
                 via this link:{" "}
                 <a
                   href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions"
