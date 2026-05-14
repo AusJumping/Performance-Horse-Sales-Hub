@@ -93,6 +93,7 @@ router.patch("/submissions/:id/contract", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const {
+    salesPrice, holdingDepositAmount,
     sellerName, sellerEmail, sellerAddress, sellerPhone,
     sellerBankAccountName, sellerBankBsb, sellerBankAccount,
     buyerName, buyerEmail, buyerAddress, buyerPhone,
@@ -101,6 +102,8 @@ router.patch("/submissions/:id/contract", async (req, res) => {
   const [updated] = await db
     .update(contractsTable)
     .set({
+      ...(salesPrice !== undefined ? { salesPrice: salesPrice || null } : {}),
+      ...(holdingDepositAmount !== undefined ? { holdingDepositAmount: holdingDepositAmount || null } : {}),
       sellerName: sellerName ?? undefined,
       sellerEmail: sellerEmail ?? undefined,
       sellerAddress: sellerAddress ?? undefined,

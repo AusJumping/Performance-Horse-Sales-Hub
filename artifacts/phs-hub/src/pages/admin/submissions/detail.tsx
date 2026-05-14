@@ -873,6 +873,8 @@ export default function SubmissionDetail() {
   // Populate party form when contract loads
   useEffect(() => {
     if (contractData) {
+      if (contractData.salesPrice) setContractSalesPrice(contractData.salesPrice);
+      if (contractData.holdingDepositAmount) setContractHoldingDeposit(contractData.holdingDepositAmount);
       setContractParties({
         sellerName: contractData.sellerName ?? "",
         sellerEmail: contractData.sellerEmail ?? "",
@@ -895,11 +897,15 @@ export default function SubmissionDetail() {
       const res = await fetch(`/api/submissions/${submissionId}/contract`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contractParties),
+        body: JSON.stringify({
+          salesPrice: contractSalesPrice,
+          holdingDepositAmount: contractHoldingDeposit,
+          ...contractParties,
+        }),
       });
       if (!res.ok) throw new Error("Failed to save");
       refetchContract();
-      toast({ title: "Party details saved" });
+      toast({ title: "Contract details saved" });
     } catch (err: any) {
       toast({ title: err.message ?? "Failed to save", variant: "destructive" });
     } finally {
@@ -1986,20 +1992,24 @@ export default function SubmissionDetail() {
                   {contractData && contractData.status !== "voided" && (
                     <div className="space-y-5">
 
-                      {/* Contract details */}
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        {contractData.salesPrice && (
-                          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
-                            <p className="text-xs text-stone-500 mb-0.5">Sale Price</p>
-                            <p className="font-semibold text-stone-800">{contractData.salesPrice}</p>
-                          </div>
-                        )}
-                        {contractData.holdingDepositAmount && (
-                          <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
-                            <p className="text-xs text-stone-500 mb-0.5">Holding Deposit</p>
-                            <p className="font-semibold text-stone-800">{contractData.holdingDepositAmount}</p>
-                          </div>
-                        )}
+                      {/* Editable price fields */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Sale Price</Label>
+                          <Input
+                            value={contractSalesPrice}
+                            onChange={(e) => setContractSalesPrice(e.target.value)}
+                            placeholder="e.g. $15,000"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Holding Deposit <span className="text-stone-400 font-normal text-xs">(optional)</span></Label>
+                          <Input
+                            value={contractHoldingDeposit}
+                            onChange={(e) => setContractHoldingDeposit(e.target.value)}
+                            placeholder="e.g. $1,500"
+                          />
+                        </div>
                       </div>
 
                       {/* Link */}
