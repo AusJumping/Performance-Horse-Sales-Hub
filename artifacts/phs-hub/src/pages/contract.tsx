@@ -533,46 +533,9 @@ export default function ContractPage() {
             </AgreementBox>
           </div>
 
-          {/* ── Section 5: Seller Details & Declaration ── */}
+          {/* ── Seller Declaration & Signature ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading num="5" title="Seller's Details & Declaration" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Seller's full name <span className="text-red-500">*</span></label>
-                <input type="text" value={sellerName} onChange={(e) => setSellerName(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="Full legal name" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Seller's email</label>
-                <input type="email" value={sellerEmail} onChange={(e) => setSellerEmail(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="seller@email.com" />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-sm font-medium text-stone-700">Seller's address</label>
-                <input type="text" value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="Street, suburb, state, postcode" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Seller's phone number</label>
-                <input type="tel" value={sellerPhone} onChange={(e) => setSellerPhone(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="04xx xxx xxx" />
-              </div>
-            </div>
-
-            {/* Seller bank details — read-only reference */}
-            {(contract.sellerBankAccountName || contract.sellerBankBsb || contract.sellerBankAccount) && (
-              <div className="bg-[#24384e]/5 border border-[#24384e]/20 rounded-lg p-4 space-y-1">
-                <p className="text-xs font-semibold text-[#24384e] uppercase tracking-wider mb-2">Seller's Bank Details — Payment to be made to:</p>
-                {contract.sellerBankAccountName && <p className="text-sm text-stone-700"><span className="font-medium">Account name:</span> {contract.sellerBankAccountName}</p>}
-                {contract.sellerBankBsb && <p className="text-sm text-stone-700"><span className="font-medium">BSB:</span> {contract.sellerBankBsb}</p>}
-                {contract.sellerBankAccount && <p className="text-sm text-stone-700"><span className="font-medium">Account number:</span> {contract.sellerBankAccount}</p>}
-              </div>
-            )}
-
+            <SectionHeading title="Seller's Declaration & Signature" />
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
               <span className="font-semibold text-stone-800">Seller's Declaration: </span>
               I declare that I am over the age of 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds for this sale. I declare that I transfer the ownership of this horse to the buyer listed, once funds have cleared.
@@ -583,35 +546,9 @@ export default function ContractPage() {
             <SignatureCanvas label="Seller's Signature" onChange={setSellerSignature} />
           </div>
 
-          {/* ── Section 6: Buyer Details & Declaration ── */}
+          {/* ── Buyer Declaration & Signature ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading num="6" title="Buyer's Details & Declaration" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Buyer's full name <span className="text-red-500">*</span></label>
-                <input type="text" value={buyerName} onChange={(e) => setBuyerName(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="Full legal name" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Buyer's email</label>
-                <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="buyer@email.com" />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-sm font-medium text-stone-700">Buyer's address</label>
-                <input type="text" value={buyerAddress} onChange={(e) => setBuyerAddress(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="Street, suburb, state, postcode" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-stone-700">Buyer's phone number</label>
-                <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)}
-                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                  placeholder="04xx xxx xxx" />
-              </div>
-            </div>
+            <SectionHeading title="Buyer's Declaration & Signature" />
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
               <span className="font-semibold text-stone-800">Buyer's Declaration: </span>
               I declare that I am over the age of 18 and I am legally responsible for the decisions regarding the assessment and purchase of this horse. I declare that I am able to complete this sale financially and have the ability and funds to look after this horse whilst under my ownership.
