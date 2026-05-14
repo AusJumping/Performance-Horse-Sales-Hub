@@ -839,7 +839,8 @@ STRICT RULES:
 - If a section has no data, write "Not provided" — do not skip the section
 - Use plain, factual language throughout
 - Format as a structured document with clear section headings
-- DO NOT include: asking price, preferred sale price, listing service type, marketing options, seller contact details, seller email, seller phone, or seller address — these are private and must not appear in this document
+- DO NOT include: asking price, preferred sale price, listing service type, marketing options, additional marketing selections, seller contact details, seller email, seller phone, or seller address — these are private and must not appear in this document
+- DO NOT include: feeding notes or feeding details, photos/video commitment or delivery method, listing service selection or fee details — these are internal admin only and must not appear in this document
 - For horse location, include SUBURB AND STATE ONLY (e.g. "Bowral, NSW") — never include a street address or full property address
 
 REQUIRED SECTIONS (include all, even if data is sparse):
@@ -856,12 +857,16 @@ REQUIRED SECTIONS (include all, even if data is sparse):
 
 4. TRAINING AND EDUCATION
    - Current training schedule, trainers, education background
+   - Behaviour in and out of work (e.g. whether the horse needs regular riding to stay reliable, whether it is safe to ride after a spell)
+   - Gear and tack requirements (e.g. snaffle, specific bit, specific saddle — or no specific tack needed)
+   - Additional notes on education and competition history provided by the seller
 
 5. TEMPERAMENT AND HANDLING
    - How the horse behaves on the ground and under saddle
    - Float/transport, farrier, vet behaviour
 
-6. HEALTH AND VETERINARY
+6. MANAGEMENT AND HEALTH
+   - Management preferences (e.g. herd, paddocked alone, stabled — include all options the seller selected)
    - Known health history, medications, injuries
    - Dental, farrier, worming details
    - Previous vet checks
@@ -875,7 +880,7 @@ REQUIRED SECTIONS (include all, even if data is sparse):
    - What kind of home or rider the seller hopes for (if provided)
 
 9. ADDITIONAL INFORMATION
-   - Any other relevant details provided by the seller
+   - Any other relevant details provided by the seller that do not fit the above sections
 
 Format each section with the heading in CAPITALS followed by bullet points or short sentences.
 

@@ -1251,8 +1251,8 @@ export default function Home() {
                 onChange={setField("behaviourInOutOfWork")}
                 options={[
                   "needs regular riding 4 plus times a week to be reliable and safe",
-                  "does not need regular riding to be reliable and safe",
-                  "is safe to hop straight on after a spell",
+                  "does not need regular riding to remain reliable and safe",
+                  "safe to hop straight on after a spell",
                   "needs lunging before riding each day",
                   "needs lunging before riding after a spell",
                   "N/A",
@@ -1558,16 +1558,11 @@ export default function Home() {
                 onChange={setField("management")}
                 options={[
                   "can be kept in a herd situation",
-                  "must be kept in a herd environment",
+                  "can be kept in a paddock on its own",
+                  "can be kept completely on its own (no other horse on the property)",
                   "must have a companion within sight",
-                  "can be kept in a paddock on it's own",
-                  "can be kept completely on their own/ no other horse on the property",
-                  "can be stabled 12 hours a day/ paddocked for 12 hours a day",
-                  "can be happily stabled 24 hours a day i.e. in a busy environment like CPEC",
-                  "management is entirely flexible",
-                  "may be stressed by a change of environment, management or rider and may take time to settle into it's new home",
-                  "will be somewhat stressed by a change of environment, management or rider and will take time to settle into it's new home",
-                  "other",
+                  "can be stabled 12 hours/paddocked 12 hours",
+                  "can be happily stabled 24 hours a day in a busy environment (e.g., CPEC)",
                 ]}
               />
               <FieldError message={errors.management} />
