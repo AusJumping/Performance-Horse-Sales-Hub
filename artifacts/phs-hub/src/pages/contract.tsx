@@ -142,6 +142,17 @@ interface ContractData {
   horseDescription: string | null;
   customClauses: string | null;
   submittedAt: string | null;
+  sellerName: string | null;
+  sellerEmail: string | null;
+  sellerAddress: string | null;
+  sellerPhone: string | null;
+  sellerBankAccountName: string | null;
+  sellerBankBsb: string | null;
+  sellerBankAccount: string | null;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  buyerAddress: string | null;
+  buyerPhone: string | null;
 }
 
 export default function ContractPage() {
@@ -158,10 +169,14 @@ export default function ContractPage() {
   const [fillerName, setFillerName] = useState("");
   const [fillerEmail, setFillerEmail] = useState("");
   const [fillerRole, setFillerRole] = useState<"buyer" | "seller" | "">("");
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerEmail, setBuyerEmail] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [sellerEmail, setSellerEmail] = useState("");
+  const [sellerAddress, setSellerAddress] = useState("");
+  const [sellerPhone, setSellerPhone] = useState("");
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [buyerAddress, setBuyerAddress] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerSignature, setBuyerSignature] = useState<string | null>(null);
   const [sellerSignature, setSellerSignature] = useState<string | null>(null);
   const [agreedSalesPrice, setAgreedSalesPrice] = useState(false);
@@ -183,6 +198,14 @@ export default function ContractPage() {
         const data = await res.json();
         setContract(data);
         if (data.status === "submitted") setSubmitted(true);
+        if (data.sellerName) setSellerName(data.sellerName);
+        if (data.sellerEmail) setSellerEmail(data.sellerEmail);
+        if (data.sellerAddress) setSellerAddress(data.sellerAddress);
+        if (data.sellerPhone) setSellerPhone(data.sellerPhone);
+        if (data.buyerName) setBuyerName(data.buyerName);
+        if (data.buyerEmail) setBuyerEmail(data.buyerEmail);
+        if (data.buyerAddress) setBuyerAddress(data.buyerAddress);
+        if (data.buyerPhone) setBuyerPhone(data.buyerPhone);
       })
       .catch(() => setError("Unable to load the contract. Please check your connection and try again."))
       .finally(() => setLoading(false));
@@ -212,7 +235,8 @@ export default function ContractPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fillerName, fillerEmail, fillerRole,
-          buyerName, buyerEmail, sellerName, sellerEmail,
+          sellerName, sellerEmail, sellerAddress, sellerPhone,
+          buyerName, buyerEmail, buyerAddress, buyerPhone,
           buyerSignature, sellerSignature,
           agreedSalesPrice, agreedHoldingDeposit, agreedDescription,
           agreedSection3, agreedSection4, agreedSellerDeclaration, agreedBuyerDeclaration,
@@ -352,26 +376,24 @@ export default function ContractPage() {
             <SectionHeading title="Holding Deposit Terms" />
             {contract.holdingDepositAmount && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm font-semibold text-amber-800">
-                10% Holding deposit: {contract.holdingDepositAmount}
+                Holding deposit due today: {contract.holdingDepositAmount}
+                <div className="text-xs font-normal mt-0.5 text-amber-700">As per our terms — 10% or minimum $1,000, whichever is higher</div>
               </div>
             )}
             <div className="text-sm text-stone-600 leading-relaxed space-y-3">
-              <p>
-                This holding deposit is to 'hold' the horse for up to two weeks, until transported to the potential buyer's property.
-                Once the horse arrives at the potential buyer's property, it will be subject to a <strong>7 day trial period</strong>.
-              </p>
-              <p>The vet check is to take place within 7 days of the horse being delivered. The decision to keep the horse, based on suitability, must be made within 7 days of arrival. Full payment must also be made within this time frame.</p>
-              <p className="font-medium">The deposit is refundable if the potential buyer chooses not to proceed, provided that:</p>
+              <p className="font-medium">Holding deposits are refundable if:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>The horse must be transported back to the owner within 7 days of the decision being made;</li>
-                <li>At the potential buyer's cost; and</li>
-                <li>The horse is returned in the same condition as when handed to the potential buyer.</li>
+                <li>the horse is found to be 'not fit for the purpose intended'; lame; and/or 'moderate to high risk for the intended purpose' by a vet, and this is recorded in writing on a formal vet check and the vet check and x-rays are forwarded to the seller for confirmation; and/or</li>
+                <li>the horse is not 'as described' in this contract, at the second viewing.</li>
               </ul>
+              <p>
+                Remaining payment{contract.salesPrice ? <> of <strong>{contract.salesPrice}</strong> less holding deposit</> : " of the agreed balance"} due within 24 hours of receiving the vet check report, if the potential buyer chooses to proceed with the sale — or, if vetting is not taking place, within 24 hours of the deposit being paid.
+              </p>
               <p className="font-medium">Please note:</p>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Until the deposit has been paid, other viewings will still take place and the horse will continue to be actively marketed;</li>
-                <li>Once the deposit has been paid, the horse will be 'held' for the buyer; and</li>
-                <li>Once fully paid for, the horse will be marked as sold.</li>
+                <li>until the deposit has been paid, viewings will still take place and the horse will continue to be actively marketed;</li>
+                <li>once the deposit has been paid, the horse will be 'held' for the buyer as per our terms re vetting etc; and</li>
+                <li>once fully paid for, the horse will be marked as sold.</li>
               </ul>
             </div>
             <AgreementBox id="agreedHoldingDeposit" checked={agreedHoldingDeposit} onChange={setAgreedHoldingDeposit}>
@@ -420,8 +442,6 @@ export default function ContractPage() {
               <div><span className="font-semibold text-stone-800">Clause 1:</span> The horse is presented and described by the seller; purchased directly from the seller; and payment is made directly to the seller.</div>
               <div><span className="font-semibold text-stone-800">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. PHS highly recommends that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
               <div><span className="font-semibold text-stone-800">Clause 3:</span> The horse will stay at the seller's property under an 'agistment' arrangement until the buyer can organise transport to their home. Depending on the length of time and individual situation, this arrangement may attract fees at market rates.</div>
-              <div><span className="font-semibold text-stone-800">Clause 4:</span> The seller reserves the right of 'first refusal' if the buyer elects to sell the horse in the future.</div>
-              <div><span className="font-semibold text-stone-800">Clause 5:</span> The seller reserves the right of 'first refusal' if the horse is retired at any stage and the sellers decide they want to rehome it.</div>
               {contract.customClauses && (
                 <div><span className="font-semibold text-stone-800">Additional terms:</span> {contract.customClauses}</div>
               )}
@@ -431,9 +451,9 @@ export default function ContractPage() {
             </AgreementBox>
           </div>
 
-          {/* ── Seller Details & Declaration ── */}
+          {/* ── Section 5: Seller Details & Declaration ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading title="Seller's Details & Declaration" />
+            <SectionHeading num="5" title="Seller's Details & Declaration" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-stone-700">Seller's full name <span className="text-red-500">*</span></label>
@@ -447,7 +467,30 @@ export default function ContractPage() {
                   className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
                   placeholder="seller@email.com" />
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-sm font-medium text-stone-700">Seller's address</label>
+                <input type="text" value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)}
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                  placeholder="Street, suburb, state, postcode" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-stone-700">Seller's phone number</label>
+                <input type="tel" value={sellerPhone} onChange={(e) => setSellerPhone(e.target.value)}
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                  placeholder="04xx xxx xxx" />
+              </div>
             </div>
+
+            {/* Seller bank details — read-only reference */}
+            {(contract.sellerBankAccountName || contract.sellerBankBsb || contract.sellerBankAccount) && (
+              <div className="bg-[#24384e]/5 border border-[#24384e]/20 rounded-lg p-4 space-y-1">
+                <p className="text-xs font-semibold text-[#24384e] uppercase tracking-wider mb-2">Seller's Bank Details — Payment to be made to:</p>
+                {contract.sellerBankAccountName && <p className="text-sm text-stone-700"><span className="font-medium">Account name:</span> {contract.sellerBankAccountName}</p>}
+                {contract.sellerBankBsb && <p className="text-sm text-stone-700"><span className="font-medium">BSB:</span> {contract.sellerBankBsb}</p>}
+                {contract.sellerBankAccount && <p className="text-sm text-stone-700"><span className="font-medium">Account number:</span> {contract.sellerBankAccount}</p>}
+              </div>
+            )}
+
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
               <span className="font-semibold text-stone-800">Seller's Declaration: </span>
               I declare that I am over the age of 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds for this sale. I declare that I transfer the ownership of this horse to the buyer listed, once funds have cleared.
@@ -458,9 +501,9 @@ export default function ContractPage() {
             <SignatureCanvas label="Seller's Signature" onChange={setSellerSignature} />
           </div>
 
-          {/* ── Buyer Details & Declaration ── */}
+          {/* ── Section 6: Buyer Details & Declaration ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading title="Buyer's Details & Declaration" />
+            <SectionHeading num="6" title="Buyer's Details & Declaration" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-stone-700">Buyer's full name <span className="text-red-500">*</span></label>
@@ -473,6 +516,18 @@ export default function ContractPage() {
                 <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)}
                   className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
                   placeholder="buyer@email.com" />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="text-sm font-medium text-stone-700">Buyer's address</label>
+                <input type="text" value={buyerAddress} onChange={(e) => setBuyerAddress(e.target.value)}
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                  placeholder="Street, suburb, state, postcode" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-stone-700">Buyer's phone number</label>
+                <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)}
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                  placeholder="04xx xxx xxx" />
               </div>
             </div>
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
