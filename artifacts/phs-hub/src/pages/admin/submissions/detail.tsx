@@ -45,6 +45,7 @@ import {
 import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
 import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
+import { openContractPrintWindow } from "@/lib/contract-pdf";
 import { StatusBadge } from "@/components/status-badge";
 
 // ── Submission Email Templates ─────────────────────────────────────────────
@@ -2003,6 +2004,32 @@ export default function SubmissionDetail() {
 
                       {/* Actions */}
                       <div className="flex flex-col gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => openContractPrintWindow({
+                            horseName: contractData.horseName,
+                            salesPrice: contractData.salesPrice,
+                            holdingDepositAmount: contractData.holdingDepositAmount,
+                            horseDescription: contractData.horseDescription,
+                            customClauses: contractData.customClauses,
+                            status: contractData.status,
+                            createdAt: contractData.createdAt,
+                            submittedAt: contractData.submittedAt,
+                            fillerName: contractData.fillerName,
+                            fillerEmail: contractData.fillerEmail,
+                            fillerRole: contractData.fillerRole,
+                            buyerName: contractData.buyerName,
+                            buyerEmail: contractData.buyerEmail,
+                            sellerName: contractData.sellerName,
+                            sellerEmail: contractData.sellerEmail,
+                            buyerSignature: contractData.buyerSignature,
+                            sellerSignature: contractData.sellerSignature,
+                          })}
+                        >
+                          <FileDown className="h-4 w-4 mr-2" />
+                          {contractData.status === "submitted" ? "Download PDF (Signed)" : "Preview PDF"}
+                        </Button>
                         <Button
                           variant="outline"
                           className="w-full border-red-200 text-red-700 hover:bg-red-50"
