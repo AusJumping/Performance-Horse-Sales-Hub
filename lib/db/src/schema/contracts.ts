@@ -28,8 +28,15 @@ export const contractsTable = pgTable("contracts", {
 
   buyerName: text("buyer_name"),
   buyerEmail: text("buyer_email"),
+  buyerAddress: text("buyer_address"),
+  buyerPhone: text("buyer_phone"),
   sellerName: text("seller_name"),
   sellerEmail: text("seller_email"),
+  sellerAddress: text("seller_address"),
+  sellerPhone: text("seller_phone"),
+  sellerBankAccountName: text("seller_bank_account_name"),
+  sellerBankBsb: text("seller_bank_bsb"),
+  sellerBankAccount: text("seller_bank_account"),
 
   buyerSignature: text("buyer_signature"),
   sellerSignature: text("seller_signature"),

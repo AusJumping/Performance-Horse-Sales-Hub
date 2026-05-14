@@ -801,12 +801,20 @@ export default function SubmissionDetail() {
   const [contractGenerating, setContractGenerating] = useState(false);
   const [contractVoiding, setContractVoiding] = useState(false);
   const [contractLinkCopied, setContractLinkCopied] = useState(false);
+  const [contractPartiesSaving, setContractPartiesSaving] = useState(false);
+  const [contractParties, setContractParties] = useState({
+    sellerName: "", sellerEmail: "", sellerAddress: "", sellerPhone: "",
+    sellerBankAccountName: "", sellerBankBsb: "", sellerBankAccount: "",
+    buyerName: "", buyerEmail: "", buyerAddress: "", buyerPhone: "",
+  });
 
   const { data: contractData, refetch: refetchContract, isLoading: contractLoading } = useQuery<{
     id: number; token: string; status: string; horseName: string; salesPrice: string | null;
     holdingDepositAmount: string | null; horseDescription: string | null; customClauses: string | null;
     fillerName: string | null; fillerEmail: string | null; fillerRole: string | null;
-    buyerName: string | null; buyerEmail: string | null; sellerName: string | null; sellerEmail: string | null;
+    sellerName: string | null; sellerEmail: string | null; sellerAddress: string | null; sellerPhone: string | null;
+    sellerBankAccountName: string | null; sellerBankBsb: string | null; sellerBankAccount: string | null;
+    buyerName: string | null; buyerEmail: string | null; buyerAddress: string | null; buyerPhone: string | null;
     buyerSignature: string | null; sellerSignature: string | null;
     agreedSalesPrice: boolean; agreedHoldingDeposit: boolean; agreedDescription: boolean;
     agreedSection3: boolean; agreedSection4: boolean; agreedSellerDeclaration: boolean; agreedBuyerDeclaration: boolean;
@@ -832,6 +840,7 @@ export default function SubmissionDetail() {
           salesPrice: contractSalesPrice || undefined,
           holdingDepositAmount: contractHoldingDeposit || undefined,
           customClauses: contractCustomClauses || undefined,
+          ...contractParties,
         }),
       });
       const data = await res.json();
@@ -857,6 +866,43 @@ export default function SubmissionDetail() {
       toast({ title: err.message ?? "Failed to void", variant: "destructive" });
     } finally {
       setContractVoiding(false);
+    }
+  };
+
+  // Populate party form when contract loads
+  useEffect(() => {
+    if (contractData) {
+      setContractParties({
+        sellerName: contractData.sellerName ?? "",
+        sellerEmail: contractData.sellerEmail ?? "",
+        sellerAddress: contractData.sellerAddress ?? "",
+        sellerPhone: contractData.sellerPhone ?? "",
+        sellerBankAccountName: contractData.sellerBankAccountName ?? "",
+        sellerBankBsb: contractData.sellerBankBsb ?? "",
+        sellerBankAccount: contractData.sellerBankAccount ?? "",
+        buyerName: contractData.buyerName ?? "",
+        buyerEmail: contractData.buyerEmail ?? "",
+        buyerAddress: contractData.buyerAddress ?? "",
+        buyerPhone: contractData.buyerPhone ?? "",
+      });
+    }
+  }, [contractData?.id]);
+
+  const handleSaveContractParties = async () => {
+    setContractPartiesSaving(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/contract`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contractParties),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      refetchContract();
+      toast({ title: "Party details saved" });
+    } catch (err: any) {
+      toast({ title: err.message ?? "Failed to save", variant: "destructive" });
+    } finally {
+      setContractPartiesSaving(false);
     }
   };
 
@@ -1854,6 +1900,64 @@ export default function SubmissionDetail() {
                           rows={3}
                         />
                       </div>
+
+                      {/* Party details */}
+                      <div className="space-y-3 pt-2 border-t">
+                        <p className="text-sm font-medium text-stone-700">Seller Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Name</Label>
+                            <Input value={contractParties.sellerName} onChange={e => setContractParties(p => ({ ...p, sellerName: e.target.value }))} placeholder="Full name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Email</Label>
+                            <Input type="email" value={contractParties.sellerEmail} onChange={e => setContractParties(p => ({ ...p, sellerEmail: e.target.value }))} placeholder="email@example.com" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Address</Label>
+                            <Input value={contractParties.sellerAddress} onChange={e => setContractParties(p => ({ ...p, sellerAddress: e.target.value }))} placeholder="Street, suburb, state, postcode" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Phone Number</Label>
+                            <Input value={contractParties.sellerPhone} onChange={e => setContractParties(p => ({ ...p, sellerPhone: e.target.value }))} placeholder="04xx xxx xxx" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-stone-700 pt-1">Seller's Bank Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1.5 sm:col-span-3">
+                            <Label className="text-sm">Account Name</Label>
+                            <Input value={contractParties.sellerBankAccountName} onChange={e => setContractParties(p => ({ ...p, sellerBankAccountName: e.target.value }))} placeholder="Account name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">BSB</Label>
+                            <Input value={contractParties.sellerBankBsb} onChange={e => setContractParties(p => ({ ...p, sellerBankBsb: e.target.value }))} placeholder="000-000" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Account Number</Label>
+                            <Input value={contractParties.sellerBankAccount} onChange={e => setContractParties(p => ({ ...p, sellerBankAccount: e.target.value }))} placeholder="Account number" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-stone-700 pt-1">Buyer Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Name</Label>
+                            <Input value={contractParties.buyerName} onChange={e => setContractParties(p => ({ ...p, buyerName: e.target.value }))} placeholder="Full name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Email</Label>
+                            <Input type="email" value={contractParties.buyerEmail} onChange={e => setContractParties(p => ({ ...p, buyerEmail: e.target.value }))} placeholder="email@example.com" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Address</Label>
+                            <Input value={contractParties.buyerAddress} onChange={e => setContractParties(p => ({ ...p, buyerAddress: e.target.value }))} placeholder="Street, suburb, state, postcode" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Phone Number</Label>
+                            <Input value={contractParties.buyerPhone} onChange={e => setContractParties(p => ({ ...p, buyerPhone: e.target.value }))} placeholder="04xx xxx xxx" />
+                          </div>
+                        </div>
+                      </div>
+
                       <Button
                         onClick={handleGenerateContract}
                         disabled={contractGenerating}
@@ -1968,6 +2072,72 @@ export default function SubmissionDetail() {
                         </div>
                       )}
 
+                      {/* Editable party details on active contract */}
+                      <div className="space-y-3 pt-2 border-t">
+                        <p className="text-sm font-semibold text-stone-700">Seller Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Name</Label>
+                            <Input value={contractParties.sellerName} onChange={e => setContractParties(p => ({ ...p, sellerName: e.target.value }))} placeholder="Full name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Email</Label>
+                            <Input type="email" value={contractParties.sellerEmail} onChange={e => setContractParties(p => ({ ...p, sellerEmail: e.target.value }))} placeholder="email@example.com" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Address</Label>
+                            <Input value={contractParties.sellerAddress} onChange={e => setContractParties(p => ({ ...p, sellerAddress: e.target.value }))} placeholder="Street, suburb, state, postcode" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Phone Number</Label>
+                            <Input value={contractParties.sellerPhone} onChange={e => setContractParties(p => ({ ...p, sellerPhone: e.target.value }))} placeholder="04xx xxx xxx" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-700 pt-1">Seller's Bank Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="space-y-1.5 sm:col-span-3">
+                            <Label className="text-sm">Account Name</Label>
+                            <Input value={contractParties.sellerBankAccountName} onChange={e => setContractParties(p => ({ ...p, sellerBankAccountName: e.target.value }))} placeholder="Account name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">BSB</Label>
+                            <Input value={contractParties.sellerBankBsb} onChange={e => setContractParties(p => ({ ...p, sellerBankBsb: e.target.value }))} placeholder="000-000" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Account Number</Label>
+                            <Input value={contractParties.sellerBankAccount} onChange={e => setContractParties(p => ({ ...p, sellerBankAccount: e.target.value }))} placeholder="Account number" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-semibold text-stone-700 pt-1">Buyer Details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Name</Label>
+                            <Input value={contractParties.buyerName} onChange={e => setContractParties(p => ({ ...p, buyerName: e.target.value }))} placeholder="Full name" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Email</Label>
+                            <Input type="email" value={contractParties.buyerEmail} onChange={e => setContractParties(p => ({ ...p, buyerEmail: e.target.value }))} placeholder="email@example.com" />
+                          </div>
+                          <div className="space-y-1.5 sm:col-span-2">
+                            <Label className="text-sm">Address</Label>
+                            <Input value={contractParties.buyerAddress} onChange={e => setContractParties(p => ({ ...p, buyerAddress: e.target.value }))} placeholder="Street, suburb, state, postcode" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm">Phone Number</Label>
+                            <Input value={contractParties.buyerPhone} onChange={e => setContractParties(p => ({ ...p, buyerPhone: e.target.value }))} placeholder="04xx xxx xxx" />
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handleSaveContractParties}
+                          disabled={contractPartiesSaving}
+                          className="w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white"
+                        >
+                          {contractPartiesSaving
+                            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…</>
+                            : "Save Party Details"}
+                        </Button>
+                      </div>
+
                       {/* Actions */}
                       <div className="flex flex-col gap-2 pt-2 border-t">
                         <Button
@@ -1985,10 +2155,17 @@ export default function SubmissionDetail() {
                             fillerName: contractData.fillerName,
                             fillerEmail: contractData.fillerEmail,
                             fillerRole: contractData.fillerRole,
-                            buyerName: contractData.buyerName,
-                            buyerEmail: contractData.buyerEmail,
-                            sellerName: contractData.sellerName,
-                            sellerEmail: contractData.sellerEmail,
+                            sellerName: contractParties.sellerName || contractData.sellerName,
+                            sellerEmail: contractParties.sellerEmail || contractData.sellerEmail,
+                            sellerAddress: contractParties.sellerAddress || contractData.sellerAddress,
+                            sellerPhone: contractParties.sellerPhone || contractData.sellerPhone,
+                            sellerBankAccountName: contractParties.sellerBankAccountName || contractData.sellerBankAccountName,
+                            sellerBankBsb: contractParties.sellerBankBsb || contractData.sellerBankBsb,
+                            sellerBankAccount: contractParties.sellerBankAccount || contractData.sellerBankAccount,
+                            buyerName: contractParties.buyerName || contractData.buyerName,
+                            buyerEmail: contractParties.buyerEmail || contractData.buyerEmail,
+                            buyerAddress: contractParties.buyerAddress || contractData.buyerAddress,
+                            buyerPhone: contractParties.buyerPhone || contractData.buyerPhone,
                             buyerSignature: contractData.buyerSignature,
                             sellerSignature: contractData.sellerSignature,
                           })}

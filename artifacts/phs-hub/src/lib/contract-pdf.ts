@@ -10,10 +10,17 @@ export interface ContractPdfData {
   fillerName?: string | null;
   fillerEmail?: string | null;
   fillerRole?: string | null;
-  buyerName?: string | null;
-  buyerEmail?: string | null;
   sellerName?: string | null;
   sellerEmail?: string | null;
+  sellerAddress?: string | null;
+  sellerPhone?: string | null;
+  sellerBankAccountName?: string | null;
+  sellerBankBsb?: string | null;
+  sellerBankAccount?: string | null;
+  buyerName?: string | null;
+  buyerEmail?: string | null;
+  buyerAddress?: string | null;
+  buyerPhone?: string | null;
   buyerSignature?: string | null;
   sellerSignature?: string | null;
 }
@@ -196,24 +203,36 @@ export function generateContractHtml(data: ContractPdfData): string {
   const customClauseHtml = data.customClauses
     ? `<div class="clause-item"><span class="clause-label">Additional terms:</span> ${esc(data.customClauses)}</div>` : "";
 
-  const partiesHtml = isSubmitted ? `
+  const hasParties = data.sellerName || data.buyerName || data.sellerAddress || data.buyerAddress;
+  const partiesHtml = hasParties ? `
     <div class="section">
       <div class="section-header">
         <h2 class="section-title">Parties to the Contract</h2>
       </div>
       <div class="parties-grid">
         <div class="party-block">
-          <div class="party-role">Seller</div>
+          <div class="party-role">The Seller</div>
           <div class="party-name">${esc(data.sellerName) || "—"}</div>
           ${data.sellerEmail ? `<div class="party-detail">${esc(data.sellerEmail)}</div>` : ""}
+          ${data.sellerAddress ? `<div class="party-detail" style="margin-top:4px">${esc(data.sellerAddress)}</div>` : ""}
+          ${data.sellerPhone ? `<div class="party-detail">Ph: ${esc(data.sellerPhone)}</div>` : ""}
+          ${(data.sellerBankAccountName || data.sellerBankBsb || data.sellerBankAccount) ? `
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e8e4de">
+              <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#24384e;margin-bottom:6px">Seller's Bank Details</div>
+              ${data.sellerBankAccountName ? `<div class="party-detail">Account name: ${esc(data.sellerBankAccountName)}</div>` : ""}
+              ${data.sellerBankBsb ? `<div class="party-detail">BSB: ${esc(data.sellerBankBsb)}</div>` : ""}
+              ${data.sellerBankAccount ? `<div class="party-detail">Account: ${esc(data.sellerBankAccount)}</div>` : ""}
+            </div>` : ""}
         </div>
         <div class="party-block">
-          <div class="party-role">Buyer</div>
+          <div class="party-role">The Buyer</div>
           <div class="party-name">${esc(data.buyerName) || "—"}</div>
           ${data.buyerEmail ? `<div class="party-detail">${esc(data.buyerEmail)}</div>` : ""}
+          ${data.buyerAddress ? `<div class="party-detail" style="margin-top:4px">${esc(data.buyerAddress)}</div>` : ""}
+          ${data.buyerPhone ? `<div class="party-detail">Ph: ${esc(data.buyerPhone)}</div>` : ""}
         </div>
       </div>
-      ${data.fillerName ? `<p style="margin-top:10px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#888">Submitted by: ${esc(data.fillerName)}${data.fillerRole ? ` (${esc(data.fillerRole)})` : ""}${data.fillerEmail ? ` — ${esc(data.fillerEmail)}` : ""}</p>` : ""}
+      ${isSubmitted && data.fillerName ? `<p style="margin-top:10px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#888">Submitted by: ${esc(data.fillerName)}${data.fillerRole ? ` (${esc(data.fillerRole)})` : ""}${data.fillerEmail ? ` — ${esc(data.fillerEmail)}` : ""}</p>` : ""}
     </div>` : "";
 
   const signaturesHtml = isSubmitted ? `

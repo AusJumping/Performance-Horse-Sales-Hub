@@ -28,10 +28,16 @@ router.post("/submissions/:id/contract", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
-  const { salesPrice, holdingDepositAmount, customClauses } = req.body as {
-    salesPrice?: string;
-    holdingDepositAmount?: string;
-    customClauses?: string;
+  const {
+    salesPrice, holdingDepositAmount, customClauses,
+    sellerName, sellerEmail, sellerAddress, sellerPhone,
+    sellerBankAccountName, sellerBankBsb, sellerBankAccount,
+    buyerName, buyerEmail, buyerAddress, buyerPhone,
+  } = req.body as {
+    salesPrice?: string; holdingDepositAmount?: string; customClauses?: string;
+    sellerName?: string; sellerEmail?: string; sellerAddress?: string; sellerPhone?: string;
+    sellerBankAccountName?: string; sellerBankBsb?: string; sellerBankAccount?: string;
+    buyerName?: string; buyerEmail?: string; buyerAddress?: string; buyerPhone?: string;
   };
 
   const [submission] = await db
@@ -64,10 +70,55 @@ router.post("/submissions/:id/contract", async (req, res) => {
     holdingDepositAmount: holdingDepositAmount || null,
     horseDescription: horseDescription || null,
     customClauses: customClauses || null,
+    sellerName: sellerName || (submission.sellerName ?? null),
+    sellerEmail: sellerEmail || (submission.sellerEmail ?? null),
+    sellerAddress: sellerAddress || null,
+    sellerPhone: sellerPhone || null,
+    sellerBankAccountName: sellerBankAccountName || null,
+    sellerBankBsb: sellerBankBsb || null,
+    sellerBankAccount: sellerBankAccount || null,
+    buyerName: buyerName || null,
+    buyerEmail: buyerEmail || null,
+    buyerAddress: buyerAddress || null,
+    buyerPhone: buyerPhone || null,
   }).returning();
 
   logger.info("Contract generated", { submissionId: id, token });
   return res.status(201).json(contract);
+});
+
+// ── Admin: update party details on existing contract ───────────────────────
+router.patch("/submissions/:id/contract", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const {
+    sellerName, sellerEmail, sellerAddress, sellerPhone,
+    sellerBankAccountName, sellerBankBsb, sellerBankAccount,
+    buyerName, buyerEmail, buyerAddress, buyerPhone,
+  } = req.body as Record<string, string | undefined>;
+
+  const [updated] = await db
+    .update(contractsTable)
+    .set({
+      sellerName: sellerName ?? undefined,
+      sellerEmail: sellerEmail ?? undefined,
+      sellerAddress: sellerAddress ?? undefined,
+      sellerPhone: sellerPhone ?? undefined,
+      sellerBankAccountName: sellerBankAccountName ?? undefined,
+      sellerBankBsb: sellerBankBsb ?? undefined,
+      sellerBankAccount: sellerBankAccount ?? undefined,
+      buyerName: buyerName ?? undefined,
+      buyerEmail: buyerEmail ?? undefined,
+      buyerAddress: buyerAddress ?? undefined,
+      buyerPhone: buyerPhone ?? undefined,
+      updatedAt: new Date(),
+    })
+    .where(eq(contractsTable.submissionId, id))
+    .returning();
+
+  if (!updated) return res.status(404).json({ error: "No contract found" });
+  return res.json(updated);
 });
 
 // ── Admin: void contract ────────────────────────────────────────────────────
