@@ -1563,6 +1563,7 @@ export default function Home() {
                   "must have a companion within sight",
                   "can be stabled 12 hours/paddocked 12 hours",
                   "can be happily stabled 24 hours a day in a busy environment (e.g., CPEC)",
+                  "must be kept on its own",
                 ]}
               />
               <FieldError message={errors.management} />
