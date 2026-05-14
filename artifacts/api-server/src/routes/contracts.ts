@@ -160,6 +160,17 @@ router.get("/contract/:token", async (req, res) => {
     horseDescription: contract.horseDescription,
     customClauses: contract.customClauses,
     submittedAt: contract.submittedAt,
+    sellerName: contract.sellerName,
+    sellerEmail: contract.sellerEmail,
+    sellerAddress: contract.sellerAddress,
+    sellerPhone: contract.sellerPhone,
+    sellerBankAccountName: contract.sellerBankAccountName,
+    sellerBankBsb: contract.sellerBankBsb,
+    sellerBankAccount: contract.sellerBankAccount,
+    buyerName: contract.buyerName,
+    buyerEmail: contract.buyerEmail,
+    buyerAddress: contract.buyerAddress,
+    buyerPhone: contract.buyerPhone,
   });
 });
 
