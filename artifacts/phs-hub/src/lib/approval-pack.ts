@@ -375,7 +375,7 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
       Thank you for submitting ${escapeHtml(data.horseName)} to Performance Horse Sales. We have reviewed the information you provided and prepared this approval pack for your review.
     </div>
     <ul class="intro-checklist">
-      <li>Review the listing description — this is what buyers will see</li>
+      <li>Review the Listing Description — this is what buyers will see</li>
       <li>Review the Owner Response Certificate — confirm the facts are correct</li>
       <li>Reply with your approval or any requested changes</li>
     </ul>
@@ -384,7 +384,7 @@ export function generateApprovalPackHtml(data: ApprovalPackData): string {
   <div class="pack-section">
     <div class="section-heading-row">
       <span class="section-num">1</span>
-      <span class="section-heading">Your Master Listing</span>
+      <span class="section-heading">Listing Description</span>
     </div>
     <div class="section-sub">This is the full marketing listing that will appear on your public advertisement. Please review all sections and let us know if you'd like any adjustments.</div>
     <div class="hd-body">
@@ -439,7 +439,7 @@ Thank you for submitting ${data.horseName} to Performance Horse Sales. We have r
 Please find below two items for your review:
 
 ──────────────────────────────────────
-1. YOUR MASTER LISTING
+1. LISTING DESCRIPTION
 ──────────────────────────────────────
 
 This is the full marketing listing that will appear on your public advertisement. Please read through carefully and let us know if you would like any changes.

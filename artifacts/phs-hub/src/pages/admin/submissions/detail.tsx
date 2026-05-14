@@ -1045,13 +1045,13 @@ export default function SubmissionDetail() {
 
   const TAB_OPTIONS = [
     { value: "working-record",    label: "Working Record" },
-    { value: "orc",               label: orcStatus !== "not_generated" ? `ORC — ${orcStatusLabel[orcStatus]?.label ?? orcStatus}` : "ORC" },
-    { value: "horse-description", label: hdStatus !== "not_generated" ? `Horse Description — ${hdStatusLabel[hdStatus]?.label ?? hdStatus}` : "Horse Description" },
-    { value: "approval-pack",     label: "Approval Pack" },
-    { value: "listing-agreement", label: "Listing Agreement" },
-    { value: "contract-of-sale", label: "Contract of Sale" },
-    { value: "form",              label: "Original Submission" },
+    { value: "form",              label: "Seller Form" },
     { value: "media",             label: "Media & Docs" },
+    { value: "listing-agreement", label: "Seller Costs Agreement" },
+    { value: "orc",               label: orcStatus !== "not_generated" ? `Owner Response Certificate — ${orcStatusLabel[orcStatus]?.label ?? orcStatus}` : "Owner Response Certificate" },
+    { value: "horse-description", label: hdStatus !== "not_generated" ? `Marketing Description — ${hdStatusLabel[hdStatus]?.label ?? hdStatus}` : "Marketing Description" },
+    { value: "approval-pack",     label: "Approval Pack" },
+    { value: "contract-of-sale",  label: "Contract of Sale" },
     { value: "history",           label: "Status History" },
   ];
 
@@ -1520,7 +1520,7 @@ export default function SubmissionDetail() {
                         <AlertCircle className="h-4 w-4 text-stone-400 shrink-0" />
                       )}
                       <span className={masterListingForPack ? "text-emerald-800 font-medium" : "text-stone-400"}>
-                        Master Listing
+                        Listing Description
                         {!masterListingForPack && <span className="ml-1 text-xs font-normal text-muted-foreground">— not yet generated</span>}
                       </span>
                     </div>
@@ -1528,7 +1528,7 @@ export default function SubmissionDetail() {
 
                   {(orcStatus === "not_generated" || !masterListingForPack) && (
                     <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                      Generate the ORC and Master Listing (via Generate AI Content) before downloading the approval pack.
+                      Generate the Owner Response Certificate and Listing Description (via Generate AI Content) before downloading the approval pack.
                     </p>
                   )}
 
