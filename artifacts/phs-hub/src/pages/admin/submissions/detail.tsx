@@ -40,7 +40,8 @@ import {
   ArrowLeft, CheckCircle, Sparkles, MessageSquare, 
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
-  MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink, Mail
+  MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink, Mail,
+  RefreshCw
 } from "lucide-react";
 import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
@@ -1551,6 +1552,27 @@ export default function SubmissionDetail() {
                       data-testid="button-downloadApprovalPack"
                     >
                       <FileDown className="h-4 w-4 mr-2" /> Download Approval Pack PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={!orcDraft || !masterListingForPack}
+                      onClick={() => {
+                        const data = {
+                          horseName: sub.horseName ?? "Horse",
+                          breed: sub.breed,
+                          sellerName: sub.sellerName,
+                          askingPrice: sub.askingPrice,
+                          submissionId: sub.id,
+                          orcText: orcDraft,
+                          masterListing: masterListingForPack,
+                        };
+                        saveDocToDrive("approval_pack", `Approval Pack — ${sub.horseName ?? "Horse"}`, generateApprovalPackHtml(data));
+                        toast({ title: "Approval Pack saved to Drive" });
+                      }}
+                      data-testid="button-regenerateApprovalPack"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" /> Regenerate &amp; Save to Drive
                     </Button>
                     <Button
                       variant="outline"
