@@ -171,8 +171,8 @@ export function generateContractHtml(data: ContractPdfData): string {
   const isSubmitted = data.status === "submitted";
 
   const holdingText = data.holdingDepositAmount
-    ? `10% Holding deposit due today: ${esc(data.holdingDepositAmount)}`
-    : "A holding deposit may be required as agreed between the parties.";
+    ? `Holding deposit due today: ${esc(data.holdingDepositAmount)}`
+    : "A holding deposit is required as per our terms — 10% or minimum $1,000, whichever is higher.";
 
   const statusBarHtml = isSubmitted
     ? `<div class="status-bar submitted"><div class="status-dot"></div><span><strong>Signed &amp; Submitted</strong> — ${fmtDatetime(data.submittedAt)}</span></div>`
@@ -187,7 +187,7 @@ export function generateContractHtml(data: ContractPdfData): string {
     : "";
 
   const depositBoxHtml = data.holdingDepositAmount
-    ? `<div class="deposit-box">10% Holding deposit: ${esc(data.holdingDepositAmount)}</div>` : "";
+    ? `<div class="deposit-box">Holding deposit due today: ${esc(data.holdingDepositAmount)}<br><span style="font-weight:400;font-size:12px">As per our terms — 10% or minimum $1,000, whichever is higher</span></div>` : "";
 
   const horseDescHtml = data.horseDescription
     ? `<div class="horse-desc-box">${esc(data.horseDescription)}</div>`
@@ -303,19 +303,17 @@ export function generateContractHtml(data: ContractPdfData): string {
       </div>
       ${depositBoxHtml}
       <div class="body-text">
-        <p>This holding deposit is to 'hold' the horse for up to two weeks, until transported to the potential buyer's property. Once the horse arrives at the potential buyer's property, it will be subject to a <strong>7 day trial period</strong>.</p>
-        <p style="margin-top:8px">The vet check is to take place within 7 days of the horse being delivered. The decision to keep the horse, based on suitability, must be made within 7 days of arrival. Full payment must also be made within this time frame.</p>
-        <p style="margin-top:8px"><strong>The deposit is refundable if the potential buyer chooses not to proceed, provided that:</strong></p>
+        <p><strong>Holding deposits are refundable if:</strong></p>
         <ul>
-          <li>The horse must be transported back to the owner within 7 days of the decision being made;</li>
-          <li>At the potential buyer's cost; and</li>
-          <li>The horse is returned in the same condition as when handed to the potential buyer.</li>
+          <li>the horse is found to be 'not fit for the purpose intended'; lame; and/or 'moderate to high risk for the intended purpose' by a vet, and this is recorded in writing on a formal vet check and the vet check and x-rays are forwarded to the seller for confirmation; and/or</li>
+          <li>the horse is not 'as described' in this contract, at the second viewing.</li>
         </ul>
-        <p style="margin-top:8px"><strong>Please note:</strong></p>
+        <p style="margin-top:10px">Remaining payment of ${data.salesPrice ? `<strong>${esc(data.salesPrice)}</strong> less holding deposit` : "<strong>the agreed balance</strong>"} due within 24 hours of receiving the vet check report, if the potential buyer chooses to proceed with the sale — or, if vetting is not taking place, within 24 hours of the deposit being paid.</p>
+        <p style="margin-top:10px"><strong>Please note:</strong></p>
         <ul>
-          <li>Until the deposit has been paid, other viewings will still take place and the horse will continue to be actively marketed;</li>
-          <li>Once the deposit has been paid, the horse will be 'held' for the buyer; and</li>
-          <li>Once fully paid for, the horse will be marked as sold.</li>
+          <li>until the deposit has been paid, viewings will still take place and the horse will continue to be actively marketed;</li>
+          <li>once the deposit has been paid, the horse will be 'held' for the buyer as per our terms re vetting etc; and</li>
+          <li>once fully paid for, the horse will be marked as sold.</li>
         </ul>
       </div>
     </div>
@@ -352,9 +350,20 @@ export function generateContractHtml(data: ContractPdfData): string {
       <div class="clause-item"><span class="clause-label">Clause 1:</span> The horse is presented and described by the seller; purchased directly from the seller; and payment is made directly to the seller.</div>
       <div class="clause-item"><span class="clause-label">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. PHS highly recommends that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
       <div class="clause-item"><span class="clause-label">Clause 3:</span> The horse will stay at the seller's property under an 'agistment' arrangement until the buyer can organise transport to their home. Depending on the length of time and individual situation, this arrangement may attract fees at market rates.</div>
-      <div class="clause-item"><span class="clause-label">Clause 4:</span> The seller reserves the right of 'first refusal' if the buyer elects to sell the horse in the future.</div>
-      <div class="clause-item"><span class="clause-label">Clause 5:</span> The seller reserves the right of 'first refusal' if the horse is retired at any stage and the sellers decide they want to rehome it.</div>
       ${customClauseHtml}
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">5</span>
+        <h2 class="section-title">Declarations</h2>
+      </div>
+      <div class="clause-item">
+        <span class="clause-label">Seller's Declaration:</span> I declare that I am over the age of 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds for this sale. I declare that I transfer the ownership of this horse to the buyer listed, once funds have cleared.
+      </div>
+      <div class="clause-item" style="margin-top:10px">
+        <span class="clause-label">Buyer's Declaration:</span> I declare that I am over the age of 18 and I am legally responsible for the decisions regarding the assessment and purchase of this horse. I declare that I am able to complete this sale financially and have the ability and funds to look after this horse whilst under my ownership.
+      </div>
     </div>
 
     ${partiesHtml}
