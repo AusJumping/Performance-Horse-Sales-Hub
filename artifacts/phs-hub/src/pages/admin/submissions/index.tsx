@@ -77,18 +77,16 @@ export default function SubmissionsList() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
-                <SelectItem value="awaiting_review">Awaiting Review</SelectItem>
-                <SelectItem value="awaiting_seller_response">Awaiting Seller</SelectItem>
-                <SelectItem value="needs_more_information">Needs More Info</SelectItem>
-                <SelectItem value="ready_to_list">Ready to List</SelectItem>
-                <SelectItem value="seller_review_sent">Review Sent</SelectItem>
-                <SelectItem value="approved_to_market">Approved to Market</SelectItem>
+                <SelectItem value="costs_agreement_sent">Costs Agreement Sent</SelectItem>
+                <SelectItem value="drafting">Drafting</SelectItem>
+                <SelectItem value="approval_pack_sent">Approval Pack Sent</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="listed">Listed</SelectItem>
                 <SelectItem value="live">Live</SelectItem>
-                <SelectItem value="viewing_pending">Viewing Pending</SelectItem>
-                <SelectItem value="sold_pending">Sold Pending</SelectItem>
-                <SelectItem value="in_vetting">In Vetting</SelectItem>
+                <SelectItem value="contract_signed">Contract Signed</SelectItem>
+                <SelectItem value="deposit_paid">Deposit Paid</SelectItem>
+                <SelectItem value="vetted">Vetted</SelectItem>
                 <SelectItem value="sold">Sold</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>

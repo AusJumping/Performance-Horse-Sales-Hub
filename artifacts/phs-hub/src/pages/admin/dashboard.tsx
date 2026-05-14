@@ -76,10 +76,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/admin/submissions?status=awaiting_review">
+            <Link href="/admin/submissions?status=new">
               <Card className="cursor-pointer transition-all hover:shadow-md hover:border-accent/40 border-l-4 border-l-accent">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Awaiting Review</CardTitle>
+                  <CardTitle className="text-sm font-medium">New</CardTitle>
                   <Clock className="h-4 w-4 text-accent" />
                 </CardHeader>
                 <CardContent>
@@ -88,10 +88,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/admin/submissions?status=published">
+            <Link href="/admin/submissions?status=live">
               <Card className="cursor-pointer transition-all hover:shadow-md hover:border-foreground/20 border-l-4 border-l-transparent">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Published</CardTitle>
+                  <CardTitle className="text-sm font-medium">Live</CardTitle>
                   <CheckCircle className="h-4 w-4 text-[#24384e]" />
                 </CardHeader>
                 <CardContent>

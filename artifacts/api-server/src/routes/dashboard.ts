@@ -32,8 +32,9 @@ router.get("/stats", async (_req, res) => {
     total: totalResult[0]?.count ?? 0,
     byStatus,
     recentCount: recentResult[0]?.count ?? 0,
-    awaitingReview: byStatus["awaiting_review"] ?? 0,
-    published: byStatus["published"] ?? 0,
+    // New statuses
+    awaitingReview: byStatus["new"] ?? 0,
+    published: (byStatus["live"] ?? 0) + (byStatus["listed"] ?? 0),
   });
 });
 

@@ -13,21 +13,28 @@ import { z } from "zod/v4";
 // Full set of statuses used across the workflow
 export const SUBMISSION_STATUSES = [
   "new",                    // just received, not yet looked at
-  "awaiting_review",        // submitted, pending Sally's review
-  "awaiting_seller_response", // Sally has questions, waiting on seller
-  "needs_more_information", // more info needed before proceeding
-  "ready_to_list",          // ready to move forward
-  "seller_review_sent",     // approval pack sent to seller
-  "approved_to_market",     // seller approved, ready for Google Drive etc.
-  "live",                   // listing is live
-  "viewing_pending",        // a viewing is scheduled
-  "sold_pending",           // sale agreed, not yet settled
-  "in_vetting",             // horse undergoing vet check
+  "costs_agreement_sent",   // costs agreement has been sent to seller
+  "drafting",               // Sally is drafting the listing content
+  "approval_pack_sent",     // approval pack sent to seller for review
+  "approved",               // seller has approved the listing
+  "listed",                 // listed and ready to market
+  "live",                   // listing is live / actively marketed
+  "contract_signed",        // contract of sale has been signed
+  "deposit_paid",           // holding deposit has been received
+  "vetted",                 // horse has passed vet check
   "sold",                   // completed sale
-  "archived",               // no longer active
-  // Legacy statuses kept for backward compatibility
+  // Legacy statuses kept for backward compatibility with existing records
+  "awaiting_review",
+  "awaiting_seller_response",
+  "needs_more_information",
+  "ready_to_list",
+  "seller_review_sent",
+  "approved_to_market",
+  "viewing_pending",
+  "sold_pending",
+  "in_vetting",
+  "archived",
   "processing",
-  "approved",
   "published",
 ] as const;
 

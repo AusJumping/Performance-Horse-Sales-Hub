@@ -260,19 +260,17 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
 }
 
 const ALL_STATUSES = [
-  { value: "new", label: "New" },
-  { value: "awaiting_review", label: "Awaiting Review" },
-  { value: "awaiting_seller_response", label: "Awaiting Seller Response" },
-  { value: "needs_more_information", label: "Needs More Information" },
-  { value: "ready_to_list", label: "Ready to List" },
-  { value: "seller_review_sent", label: "Seller Review Sent" },
-  { value: "approved_to_market", label: "Approved to Market" },
-  { value: "live", label: "Live" },
-  { value: "viewing_pending", label: "Viewing Pending" },
-  { value: "sold_pending", label: "Sold Pending" },
-  { value: "in_vetting", label: "In Vetting" },
-  { value: "sold", label: "Sold" },
-  { value: "archived", label: "Archived" },
+  { value: "new",                  label: "New" },
+  { value: "costs_agreement_sent", label: "Costs Agreement Sent" },
+  { value: "drafting",             label: "Drafting" },
+  { value: "approval_pack_sent",   label: "Approval Pack Sent" },
+  { value: "approved",             label: "Approved" },
+  { value: "listed",               label: "Listed" },
+  { value: "live",                 label: "Live" },
+  { value: "contract_signed",      label: "Contract Signed" },
+  { value: "deposit_paid",         label: "Deposit Paid" },
+  { value: "vetted",               label: "Vetted" },
+  { value: "sold",                 label: "Sold" },
 ] as const;
 
 export default function SubmissionDetail() {

@@ -362,7 +362,7 @@ components:
 
     SubmissionStatus:
       type: string
-      enum: [new, processing, awaiting_review, needs_edit, approved, published, archived]
+      enum: [new, costs_agreement_sent, drafting, approval_pack_sent, approved, listed, live, contract_signed, deposit_paid, vetted, sold]
 
     Submission:
       type: object
