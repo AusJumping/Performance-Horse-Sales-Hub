@@ -1,0 +1,115 @@
+PHS: Standard Bill of Sale
+This form acknowledges describes the horse, the terms under which it is sold and, once
+payment has cleared, transfers ownership to the buyer.
+The form will be filled in and signed electronically, by both the buyer and seller. A PDF
+copy will then be forwarded to both parties.
+The seller:
+Address:
+Phone number:
+Seller's bank details:
+Account name:
+BSB:
+Acc:
+The buyer:
+Address:
+Phone number:
+
+* Indicates required question
+
+Name of person filling in this form: *
+
+3.
+Mark only one oval.
+Buyer
+Seller
+
+4.
+
+Check all that apply.
+I agree.
+
+5.
+
+Check all that apply.
+I agree.
+Person filling in the from is the: *
+
+SECTION 1a- SALES PRICE: $ xxxxx
+IN CONSIDERATION OF the following sum, once paid and 'cleared' into the
+seller's bank account, (the 'Seller'), hereby SELLS to (the 'Purchaser'), the animal
+described in section 2:
+
+*
+
+Holding deposit due today: $xxxx
+As per our terms -10% or minimum $1000 whichever is higher.
+Holding deposits are refundable if:
+- the horse is found to be 'not fit for the purpose intended'; lame; and/ or
+'moderate to high risk for the intended purpose' by a vet and this is recorded in
+writing on a formal vet check and the vet check and xrays are forwarded to the
+seller for confirmation of this and/ or
+- if the horse is not 'as described' in this contract, at the second viewing.
+Remaining payment of $XXXX due within 24 hours of receiving vet check report,
+if potential buyer chooses to proceed with the sale or, if vetting is not taking
+place, within 24 hours of deposit being paid.
+Please note:
+- until the deposit has been paid, viewings will still take place and the horse will
+continue to be actively marketed
+- once the deposit has been paid, the horse will be 'held' for the 'buyer' as per our
+terms re vetting etc
+- once fully paid for, the horse will be marked as sold
+
+*
+
+6.
+
+Check all that apply.
+I declare that this description accurately represents the horse that is being sold/
+purchased.
+
+7.
+
+Check all that apply.
+I agree.
+SECTION 2 - HORSE DESCRIPTION as per portfolio/ ad:
+Horses name will be entered here:
+Horse's ad/ description will be inserted here:
+
+*
+
+SECTION 3:
+The Seller warrants that (1) the Seller is the legal owner of the Animal; (2) the
+Animal is free from all liens and encumbrances; (3) the Seller has full right and
+authority to sell and transfer the Animal; and (4) the Seller will warrant and
+defend the title of the Animal against any and all claims and demands of all
+persons.
+The Animal is being sold in an 'as is' condition and the Seller expressly disclaims
+all warranties, whether expressed or implied. Further, the Seller disclaims any
+warranty as to the condition of the Animal. The Seller does not assume, or
+authorise any other person to assume on the behalf of the Seller, any liability in
+connection with the sale of the Animal.
+The Purchaser has been given the opportunity to have a pre-purchase
+examination performed by a veterinarian of the Purchaser's choice at the
+Purchaser's expense prior to the execution of this Bill of Sale.
+
+In the event that the Purchaser elects not to have a veterinarian perform a pre-
+purchase examination of the Animal, the Purchaser waives any and all rights,
+
+claims or causes of action against the Seller for any patent or latent defects
+pertaining to the Animal.
+The Purchaser has been given the opportunity to inspect the Animal or to have it
+inspected and the Purchaser has accepted the Animal in its existing condition.
+This Bill of Sale will be construed in accordance with and governed by the laws
+of the Commonwealth of Australia.
+
+*
+
+8.
+
+Check all that apply.
+I agree.
+
+9.
+
+Mark only one oval.
+I agree.

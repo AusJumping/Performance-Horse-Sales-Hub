@@ -321,23 +321,105 @@ export default function ContractPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* ── Your Details ── */}
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading title="Your Details" />
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-stone-700">Email address <span className="text-red-500">*</span></label>
-              <input
-                type="email" required value={fillerEmail} onChange={(e) => setFillerEmail(e.target.value)}
-                className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
-                placeholder="your@email.com"
-              />
+          {/* ── Parties ── */}
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <p className="text-sm text-stone-500 leading-relaxed">
+              This form acknowledges the horse description, the terms under which it is sold and, once payment has cleared, transfers ownership to the buyer. The form will be filled in and signed electronically, by both the buyer and seller. A PDF copy will then be forwarded to both parties.
+            </p>
+
+            {/* Seller */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-[#24384e] uppercase tracking-wide border-b border-stone-200 pb-2">The Seller</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Seller's full name <span className="text-red-500">*</span></label>
+                  <input type="text" value={sellerName} onChange={(e) => setSellerName(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="Full legal name" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Seller's email</label>
+                  <input type="email" value={sellerEmail} onChange={(e) => setSellerEmail(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="seller@email.com" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-sm font-medium text-stone-700">Address</label>
+                  <input type="text" value={sellerAddress} onChange={(e) => setSellerAddress(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="Street, suburb, state, postcode" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Phone number</label>
+                  <input type="tel" value={sellerPhone} onChange={(e) => setSellerPhone(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="04xx xxx xxx" />
+                </div>
+              </div>
+              {/* Bank details */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-stone-700">Seller's bank details</p>
+                <div className="bg-[#24384e]/5 border border-[#24384e]/20 rounded-lg p-4 space-y-1.5">
+                  <p className="text-xs text-stone-500 mb-2">Payment to be made to:</p>
+                  {contract.sellerBankAccountName && <p className="text-sm text-stone-700"><span className="font-medium">Account name:</span> {contract.sellerBankAccountName}</p>}
+                  {contract.sellerBankBsb && <p className="text-sm text-stone-700"><span className="font-medium">BSB:</span> {contract.sellerBankBsb}</p>}
+                  {contract.sellerBankAccount && <p className="text-sm text-stone-700"><span className="font-medium">Acc:</span> {contract.sellerBankAccount}</p>}
+                  {!contract.sellerBankAccountName && !contract.sellerBankBsb && !contract.sellerBankAccount && (
+                    <p className="text-sm text-stone-400 italic">Bank details to be confirmed</p>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Buyer */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-[#24384e] uppercase tracking-wide border-b border-stone-200 pb-2">The Buyer</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Buyer's full name <span className="text-red-500">*</span></label>
+                  <input type="text" value={buyerName} onChange={(e) => setBuyerName(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="Full legal name" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Buyer's email</label>
+                  <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="buyer@email.com" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-sm font-medium text-stone-700">Address</label>
+                  <input type="text" value={buyerAddress} onChange={(e) => setBuyerAddress(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="Street, suburb, state, postcode" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-stone-700">Phone number</label>
+                  <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                    placeholder="04xx xxx xxx" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Person filling in this form ── */}
+          <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+            <SectionHeading title="Person Completing This Form" />
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-stone-700">Name of person filling in this form <span className="text-red-500">*</span></label>
               <input
                 type="text" required value={fillerName} onChange={(e) => setFillerName(e.target.value)}
                 className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
                 placeholder="Full name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-stone-700">Email address <span className="text-red-500">*</span></label>
+              <input
+                type="email" required value={fillerEmail} onChange={(e) => setFillerEmail(e.target.value)}
+                className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#24384e]"
+                placeholder="your@email.com"
               />
             </div>
             <div className="space-y-2">
