@@ -183,11 +183,7 @@ export function generateContractHtml(data: ContractPdfData): string {
 
   const statusBarHtml = isSubmitted
     ? `<div class="status-bar submitted"><div class="status-dot"></div><span><strong>Signed &amp; Submitted</strong> — ${fmtDatetime(data.submittedAt)}</span></div>`
-    : `<div class="status-bar pending"><div class="status-dot"></div><span>Contract preview — awaiting signature</span></div>`;
-
-  const horseMeta: string[] = [];
-  if (data.salesPrice) horseMeta.push(`Sale Price: <strong>${esc(data.salesPrice)}</strong>`);
-  if (data.createdAt) horseMeta.push(`Generated: ${fmtDate(data.createdAt)}`);
+    : "";
 
   const priceHtml = data.salesPrice
     ? `<div class="price-box"><div class="price-label">Agreed Sale Price</div><div class="price-value">${esc(data.salesPrice)}</div></div>`
@@ -235,7 +231,7 @@ export function generateContractHtml(data: ContractPdfData): string {
       ${isSubmitted && data.fillerName ? `<p style="margin-top:10px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#888">Submitted by: ${esc(data.fillerName)}${data.fillerRole ? ` (${esc(data.fillerRole)})` : ""}${data.fillerEmail ? ` — ${esc(data.fillerEmail)}` : ""}</p>` : ""}
     </div>` : "";
 
-  const signaturesHtml = isSubmitted ? `
+  const signaturesHtml = `
     <div class="section">
       <div class="section-header">
         <h2 class="section-title">Signatures</h2>
@@ -245,13 +241,13 @@ export function generateContractHtml(data: ContractPdfData): string {
           <div class="sig-label">Seller's Signature</div>
           ${data.sellerSignature
             ? `<img class="sig-img" src="${data.sellerSignature}" alt="Seller signature" /><div class="sig-name">${esc(data.sellerName) || ""}</div>`
-            : `<div class="sig-empty">No signature provided</div>`}
+            : `<div class="sig-empty">Awaiting signature</div>`}
         </div>
         <div class="sig-block">
           <div class="sig-label">Buyer's Signature</div>
           ${data.buyerSignature
             ? `<img class="sig-img" src="${data.buyerSignature}" alt="Buyer signature" /><div class="sig-name">${esc(data.buyerName) || ""}</div>`
-            : `<div class="sig-empty">No signature provided</div>`}
+            : `<div class="sig-empty">Awaiting signature</div>`}
         </div>
       </div>
       ${isSubmitted ? `
@@ -259,11 +255,8 @@ export function generateContractHtml(data: ContractPdfData): string {
         <svg style="width:18px;height:18px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <span><strong>Contract submitted</strong> on ${fmtDatetime(data.submittedAt)}</span>
       </div>` : ""}
-    </div>` : "";
+    </div>`;
 
-  const titleBandMeta = horseMeta.length
-    ? `<div class="horse-meta">${horseMeta.map(m => `<span class="horse-meta-item" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#666">${m}</span>`).join("")}</div>`
-    : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -300,12 +293,13 @@ export function generateContractHtml(data: ContractPdfData): string {
 
   <div class="title-band">
     <div class="horse-name">${esc(data.horseName) || "Unnamed Horse"}</div>
-    ${titleBandMeta}
   </div>
 
   ${statusBarHtml}
 
   <div class="sections-wrap">
+
+    ${partiesHtml}
 
     <div class="section">
       <div class="section-header">
@@ -385,7 +379,6 @@ export function generateContractHtml(data: ContractPdfData): string {
       </div>
     </div>
 
-    ${partiesHtml}
     ${signaturesHtml}
 
   </div>
