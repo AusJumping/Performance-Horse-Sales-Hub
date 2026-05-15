@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, FolderOpen, FileText, RefreshCw } from "lucide-react";
+import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown } from "lucide-react";
 import { SearchStatusBadge } from "./index";
+import { openHorseSearchPrintWindow } from "@/lib/horse-search-pdf";
 
 const STATUSES = [
   { value: "new", label: "New" },
@@ -217,6 +218,28 @@ export default function HorseSearchDetail() {
 
         {/* Right — admin panel */}
         <div className="space-y-4">
+
+          {/* Download PDF */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => openHorseSearchPrintWindow({
+              id: hs.id,
+              firstName: hs.firstName,
+              surname: hs.surname,
+              email: hs.email,
+              emailOptional: hs.emailOptional,
+              phone: hs.phone,
+              location: hs.location,
+              searchServiceLevel: hs.searchServiceLevel,
+              formData: hs.formData,
+              signatureData: hs.signatureData,
+              createdAt: hs.createdAt,
+            })}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Download PDF
+          </Button>
 
           {/* Status */}
           <div className="bg-white border rounded-xl p-5 shadow-sm">
