@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useRoute } from "wouter";
+import { Link, useRoute, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown } from "lucide-react";
+import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown, Trash2 } from "lucide-react";
 import { SearchStatusBadge } from "./index";
 import { openHorseSearchPrintWindow } from "@/lib/horse-search-pdf";
 
@@ -56,6 +56,8 @@ export default function HorseSearchDetail() {
   const id = params?.id ?? "";
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data: hs, isLoading } = useQuery({
     queryKey: ["horse-search", id],
@@ -94,6 +96,20 @@ export default function HorseSearchDetail() {
       toast({ title: "Drive folder created" });
     },
     onError: (e: Error) => toast({ title: "Drive error", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/horse-searches/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-searches"] });
+      toast({ title: "Search request deleted" });
+      navigate("/admin/horse-searches");
+    },
+    onError: (e: Error) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
 
   if (isLoading) return <AdminLayout><div className="space-y-4"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-[400px] w-full" /></div></AdminLayout>;
@@ -325,6 +341,39 @@ export default function HorseSearchDetail() {
             >
               Save Notes
             </Button>
+          </div>
+
+          {/* Delete */}
+          <div className="bg-white border border-red-100 rounded-xl p-5 shadow-sm">
+            <h3 className="font-semibold text-stone-700 mb-3">Danger Zone</h3>
+            {!confirmDelete ? (
+              <Button
+                variant="outline"
+                className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Search Request
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-red-700">This will permanently delete this search record. Are you sure?</p>
+                <Button
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate()}
+                >
+                  {deleteMutation.isPending ? "Deleting…" : "Yes, Delete Permanently"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

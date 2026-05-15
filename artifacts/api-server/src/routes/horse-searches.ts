@@ -245,6 +245,15 @@ router.patch("/:id", async (req, res) => {
   res.json(updated);
 });
 
+// ── DELETE /api/horse-searches/:id ───────────────────────────────────────
+router.delete("/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const [deleted] = await db.delete(horseSearchesTable).where(eq(horseSearchesTable.id, id)).returning();
+  if (!deleted) return res.status(404).json({ error: "Not found" });
+  res.json({ ok: true });
+});
+
 // ── POST /api/horse-searches/:id/retry-drive ─────────────────────────────
 router.post("/:id/retry-drive", async (req, res) => {
   const id = parseInt(req.params.id);
