@@ -833,12 +833,13 @@ function orcPrompt(
 The ORC is a FACTUAL, STRUCTURED document that will be shared with buyers. It is based on information provided by the seller. It is NOT a sales document and must NOT use marketing language, adjectives, or persuasive tone. It is a clean, organised factual record.
 
 STRICT RULES:
-- Only include information that was explicitly provided by the seller
+- Only include information that was explicitly provided in the submission data
 - Do not invent, infer, or embellish any details
 - Do not use salesy language, superlatives, or adjectives
 - If a section has no data, write "Not provided" — do not skip the section
 - Use plain, factual language throughout
 - Format as a structured document with clear section headings
+- NEVER reference the source of information in the output — do not use phrases like "stated by seller", "as per seller's note", "seller noted", "seller stated", "according to the seller", "as noted", "as described", "owner noted", or any similar attribution. Simply state the facts directly.
 - DO NOT include: asking price, preferred sale price, listing service type, marketing options, additional marketing selections, seller contact details, seller email, seller phone, or seller address — these are private and must not appear in this document
 - DO NOT include: feeding notes or feeding details, photos/video commitment or delivery method, listing service selection or fee details — these are internal admin only and must not appear in this document
 - For horse location, include SUBURB AND STATE ONLY (e.g. "Bowral, NSW") — never include a street address or full property address
@@ -859,28 +860,28 @@ REQUIRED SECTIONS (include all, even if data is sparse):
    - Current training schedule, trainers, education background
    - Behaviour in and out of work (e.g. whether the horse needs regular riding to stay reliable, whether it is safe to ride after a spell)
    - Gear and tack requirements (e.g. snaffle, specific bit, specific saddle — or no specific tack needed)
-   - Additional notes on education and competition history provided by the seller
+   - Additional notes on education and competition history
 
 5. TEMPERAMENT AND HANDLING
    - How the horse behaves on the ground and under saddle
    - Float/transport, farrier, vet behaviour
 
 6. MANAGEMENT AND HEALTH
-   - Management preferences (e.g. herd, paddocked alone, stabled — include all options the seller selected)
+   - Management preferences (e.g. herd, paddocked alone, stabled — include all options provided)
    - Known health history, medications, injuries
    - Dental, farrier, worming details
    - Previous vet checks
 
 7. SUITABILITY
-   - Rider level and type the seller has described
-   - Any restrictions or requirements the seller has noted
+   - Rider level and type described
+   - Any restrictions or requirements noted
 
 8. REASON FOR SALE AND IDEAL HOME
-   - Why the seller is selling (if provided)
-   - What kind of home or rider the seller hopes for (if provided)
+   - Reason for sale (if provided)
+   - Preferred home or rider type (if provided)
 
 9. ADDITIONAL INFORMATION
-   - Any other relevant details provided by the seller that do not fit the above sections
+   - Any other relevant details that do not fit the above sections
 
 Format each section with the heading in CAPITALS followed by bullet points or short sentences.
 
