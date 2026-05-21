@@ -483,24 +483,20 @@ export default function ContractPage() {
             </AgreementBox>
           </div>
 
-          {/* ── Section 2: Owner Response Certificate ── */}
+          {/* ── Section 2: Horse Description ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-            <SectionHeading num="2" title="Owner Response Certificate" />
+            <SectionHeading num="2" title="Horse Description" />
+            <p className="text-sm text-stone-500 italic">As per portfolio / advertisement.</p>
             {contract.horseDescription ? (
-              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 max-h-[500px] overflow-y-auto">
-                {contract.horseDescription.split("\n").map((line, i) => {
-                  const trimmed = line.trim();
-                  if (!trimmed) return <br key={i} />;
-                  const isHeading = /^\d+\.\s+[A-Z]/.test(trimmed) || /^[A-Z][A-Z\s&\/\-:]{2,40}$/.test(trimmed) || /^\*\*[^*]+\*\*$/.test(trimmed);
-                  const isBullet = trimmed.startsWith("- ") || trimmed.startsWith("• ");
-                  if (isHeading) return <p key={i} className="text-xs font-bold tracking-widest uppercase text-[#24384e] mt-3 mb-1">{trimmed.replace(/^\d+\.\s+/, "").replace(/\*\*/g, "")}</p>;
-                  if (isBullet) return <p key={i} className="text-sm text-stone-700 leading-relaxed pl-3">• {trimmed.slice(2)}</p>;
-                  return <p key={i} className="text-sm text-stone-700 leading-relaxed">{trimmed}</p>;
-                })}
+              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+                {contract.horseDescription}
               </div>
             ) : (
-              <p className="text-sm text-stone-400 italic">Owner Response Certificate not available.</p>
+              <p className="text-sm text-stone-400 italic">Please refer to the horse's portfolio for the full description.</p>
             )}
+            <p className="text-sm text-stone-600">
+              Please see the Owner's Response Certificate, in the horse's portfolio, for more detailed information.
+            </p>
             <AgreementBox id="agreedDescription" checked={agreedDescription} onChange={setAgreedDescription}>
               I declare that this description accurately represents the horse that is being sold / purchased.
             </AgreementBox>
