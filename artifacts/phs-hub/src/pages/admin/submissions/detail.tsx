@@ -2169,7 +2169,7 @@ export default function SubmissionDetail() {
                             horseName: contractData.horseName,
                             salesPrice: contractData.salesPrice,
                             holdingDepositAmount: contractData.holdingDepositAmount,
-                            horseDescription: contractData.horseDescription,
+                            orcText: orcDraft || contractData.horseDescription,
                             customClauses: contractData.customClauses,
                             status: contractData.status,
                             createdAt: contractData.createdAt,

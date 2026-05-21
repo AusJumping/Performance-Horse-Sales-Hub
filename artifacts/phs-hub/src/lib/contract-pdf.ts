@@ -2,7 +2,7 @@ export interface ContractPdfData {
   horseName: string;
   salesPrice?: string | null;
   holdingDepositAmount?: string | null;
-  horseDescription?: string | null;
+  orcText?: string | null;
   customClauses?: string | null;
   status?: string;
   createdAt?: string;
@@ -32,6 +32,35 @@ function esc(str: string | null | undefined): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function isOrcHeading(line: string): boolean {
+  if (/^\d+\.\s+[A-Z]/.test(line)) return true;
+  if (/^[A-Z][A-Z\s&\/\-:]{2,40}$/.test(line.trim())) return true;
+  if (/^[A-Za-z][^.\n]{2,50}:$/.test(line.trim())) return true;
+  if (/^\*\*[^*]+\*\*$/.test(line.trim())) return true;
+  return false;
+}
+
+function stripMd(str: string): string {
+  return str.replace(/\*\*/g, "").replace(/\*/g, "").replace(/:$/, "").trim();
+}
+
+function orcToHtml(text: string): string {
+  const lines = text.split("\n");
+  let html = "";
+  for (const raw of lines) {
+    const trimmed = raw.trim();
+    if (!trimmed) { html += "<br>"; continue; }
+    if (isOrcHeading(trimmed)) {
+      html += `<p style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#24384e;margin:14px 0 5px">${esc(stripMd(trimmed))}</p>`;
+    } else if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+      html += `<p style="font-size:13px;line-height:1.6;margin:3px 0;padding-left:14px;color:#333">• ${esc(trimmed.slice(2))}</p>`;
+    } else {
+      html += `<p style="font-size:13px;line-height:1.6;margin:4px 0;color:#333">${esc(trimmed)}</p>`;
+    }
+  }
+  return html;
 }
 
 function fmtDate(iso: string | null | undefined): string {
@@ -192,9 +221,9 @@ export function generateContractHtml(data: ContractPdfData): string {
   const depositBoxHtml = data.holdingDepositAmount
     ? `<div class="deposit-box">Holding deposit due today: ${esc(data.holdingDepositAmount)}<br><span style="font-weight:400;font-size:12px">As per our terms — 10% or minimum $1,000, whichever is higher</span></div>` : "";
 
-  const horseDescHtml = data.horseDescription
-    ? `<div class="horse-desc-box">${esc(data.horseDescription)}</div>`
-    : `<p class="body-text" style="color:#aaa;font-style:italic">Please refer to the horse's portfolio for the full description.</p>`;
+  const orcHtml = data.orcText
+    ? orcToHtml(data.orcText)
+    : `<p class="body-text" style="color:#aaa;font-style:italic">Owner Response Certificate not yet generated.</p>`;
 
   const customClauseHtml = data.customClauses
     ? `<div class="clause-item"><span class="clause-label">Additional terms:</span> ${esc(data.customClauses)}</div>` : "";
@@ -334,11 +363,9 @@ export function generateContractHtml(data: ContractPdfData): string {
     <div class="section">
       <div class="section-header">
         <span class="section-num">2</span>
-        <h2 class="section-title">Horse Description</h2>
+        <h2 class="section-title">Owner Response Certificate</h2>
       </div>
-      <p class="body-text" style="color:#888;font-style:italic;margin-bottom:10px">As per portfolio / advertisement.</p>
-      ${horseDescHtml}
-      <p class="body-text" style="margin-top:8px">Please see the Owner's Response Certificate, in the horse's portfolio, for more detailed information.</p>
+      ${orcHtml}
     </div>
 
     <div class="section">

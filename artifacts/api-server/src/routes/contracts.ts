@@ -51,7 +51,7 @@ router.post("/submissions/:id/contract", async (req, res) => {
     .from(aiOutputsTable)
     .where(eq(aiOutputsTable.submissionId, id));
 
-  const horseDescription = aiOutput?.masterListing ?? null;
+  const horseDescription = aiOutput?.ownerResponseCert ?? null;
 
   const token = randomUUID();
 
