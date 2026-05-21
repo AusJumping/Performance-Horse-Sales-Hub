@@ -292,7 +292,7 @@ export function generateContractHtml(data: ContractPdfData): string {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Contract of Sale — ${esc(data.horseName)} — Performance Horse Sales</title>
+<title>Contract of Sale — ${esc(data.horseName)}</title>
 <style>${SHARED_STYLES}</style>
 </head>
 <body>
@@ -310,10 +310,6 @@ export function generateContractHtml(data: ContractPdfData): string {
 <div class="page-wrap">
 
   <div class="doc-header">
-    <div>
-      <div class="brand-name">Performance Horse Sales</div>
-      <div class="brand-region">Australia &amp; New Zealand</div>
-    </div>
     <div>
       <div class="doc-type">Contract of Sale</div>
       ${data.createdAt ? `<div class="doc-ref">Generated ${fmtDate(data.createdAt)}</div>` : ""}
@@ -388,7 +384,7 @@ export function generateContractHtml(data: ContractPdfData): string {
         <h2 class="section-title">Additional Clauses</h2>
       </div>
       <div class="clause-item"><span class="clause-label">Clause 1:</span> The horse is presented and described by the seller; purchased directly from the seller; and payment is made directly to the seller.</div>
-      <div class="clause-item"><span class="clause-label">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. PHS highly recommends that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
+      <div class="clause-item"><span class="clause-label">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. It is highly recommended that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
       <div class="clause-item"><span class="clause-label">Clause 3:</span> The horse will stay at the seller's property under an 'agistment' arrangement until the buyer can organise transport to their home. Depending on the length of time and individual situation, this arrangement may attract fees at market rates.</div>
       ${customClauseHtml}
     </div>
@@ -411,8 +407,7 @@ export function generateContractHtml(data: ContractPdfData): string {
   </div>
 
   <div class="doc-footer">
-    <span class="footer-brand">Performance Horse Sales</span>
-    <span class="footer-conf">Australia &amp; New Zealand — Confidential</span>
+    <span class="footer-conf">Confidential</span>
   </div>
 
 </div>

@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams } from "wouter";
-const phsLogo = `${import.meta.env.BASE_URL}phs-logo.png`;
 
 const API_BASE = "/api";
 
@@ -265,9 +264,9 @@ export default function ContractPage() {
     return (
       <div className="min-h-screen bg-[#f0ede8] flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow p-8 max-w-md text-center space-y-3">
-          <div className="text-2xl font-bold text-[#24384e]">Performance Horse Sales</div>
+          <div className="text-2xl font-bold text-[#24384e]">Contract of Sale</div>
           <div className="text-red-700 font-medium">{error}</div>
-          <p className="text-sm text-stone-500">If you believe this is an error, please contact us.</p>
+          <p className="text-sm text-stone-500">If you believe this is an error, please contact the agent.</p>
         </div>
       </div>
     );
@@ -279,7 +278,6 @@ export default function ContractPage() {
     return (
       <div className="min-h-screen bg-[#f0ede8] flex items-center justify-center px-4">
         <div className="bg-white rounded-lg shadow-lg p-10 max-w-lg text-center space-y-4">
-          <img src={phsLogo} alt="Performance Horse Sales" className="h-16 mx-auto" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
             <svg className="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
@@ -288,7 +286,7 @@ export default function ContractPage() {
             Thank you — the Contract of Sale for <strong>{contract.horseName}</strong> has been successfully submitted.
           </p>
           <p className="text-sm text-stone-500">
-            Performance Horse Sales will generate a PDF copy and forward it to both parties. Please contact us if you have any questions.
+            Please contact your agent if you have any questions.
           </p>
         </div>
       </div>
@@ -305,8 +303,6 @@ export default function ContractPage() {
       {/* Header */}
       <div className="bg-[#24384e] text-white px-6 py-8">
         <div className="max-w-3xl mx-auto">
-          <img src={phsLogo} alt="Performance Horse Sales" className="h-12 mb-4" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">Performance Horse Sales — Australia & New Zealand</p>
           <h1 className="text-2xl font-bold">Contract of Sale</h1>
           <p className="text-white/70 mt-1 text-sm">
             This form acknowledges the horse description, the terms of sale, and once payment has cleared, transfers ownership to the buyer.
@@ -522,7 +518,7 @@ export default function ContractPage() {
             <SectionHeading num="4" title="Additional Clauses" />
             <div className="space-y-4 text-sm text-stone-600 leading-relaxed">
               <div><span className="font-semibold text-stone-800">Clause 1:</span> The horse is presented and described by the seller; purchased directly from the seller; and payment is made directly to the seller.</div>
-              <div><span className="font-semibold text-stone-800">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. PHS highly recommends that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
+              <div><span className="font-semibold text-stone-800">Clause 2:</span> Once paid for, the horse becomes the responsibility of the buyer. This includes but is not limited to financial responsibility, third party liability, vet and feed bills. It is highly recommended that the buyer insure as soon as possible with International Racehorse Transport Insurance, which can be done and paid for online.</div>
               <div><span className="font-semibold text-stone-800">Clause 3:</span> The horse will stay at the seller's property under an 'agistment' arrangement until the buyer can organise transport to their home. Depending on the length of time and individual situation, this arrangement may attract fees at market rates.</div>
               {contract.customClauses && (
                 <div><span className="font-semibold text-stone-800">Additional terms:</span> {contract.customClauses}</div>
@@ -575,7 +571,7 @@ export default function ContractPage() {
           </button>
 
           <p className="text-center text-xs text-stone-400 pb-8">
-            By submitting this form, both parties agree to the terms and conditions set out above. Performance Horse Sales will generate a PDF copy and forward it to both parties.
+            By submitting this form, both parties agree to the terms and conditions set out above.
           </p>
 
         </form>
