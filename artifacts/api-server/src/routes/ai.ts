@@ -71,12 +71,6 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
 
   if (!submission) return res.status(404).json({ error: "Submission not found" });
 
-  // Update status to processing
-  await db
-    .update(submissionsTable)
-    .set({ status: "processing" })
-    .where(eq(submissionsTable.id, id));
-
   const media = await db
     .select()
     .from(mediaFilesTable)
@@ -88,60 +82,22 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
     ? workingRecord
     : submission.formData as Record<string, unknown>;
 
-  // Build a structured summary of the submission for the AI
   const submissionSummary = buildSubmissionSummary(submission, formData, media);
 
-  try {
-    // Generate all outputs in parallel using different prompts
-    const [
-      masterListing,
-      shortListing,
-      proHorseMatchListing,
-      socialCaption,
-      shortCaptions,
-      hashtags,
-      buyerSummary,
-      keySellingPoints,
-      reelOverlayText,
-      reelBrief,
-      aiTags,
-    ] = await Promise.all([
-      generateContent(masterListingPrompt(submissionSummary)),
-      generateContent(shortListingPrompt(submissionSummary)),
-      generateContent(proHorseMatchPrompt(submissionSummary)),
-      generateContent(socialCaptionPrompt(submissionSummary)),
-      generateContent(shortCaptionsPrompt(submissionSummary)),
-      generateContent(hashtagsPrompt(submissionSummary)),
-      generateContent(buyerSummaryPrompt(submissionSummary)),
-      generateContent(keySellingPointsPrompt(submissionSummary)),
-      generateContent(reelOverlayPrompt(submissionSummary)),
-      generateContent(reelBriefPrompt(submissionSummary)),
-      generateContent(tagExtractionPrompt(submissionSummary)),
-    ]);
+  // Set status to processing
+  await db
+    .update(submissionsTable)
+    .set({ status: "processing" })
+    .where(eq(submissionsTable.id, id));
 
-    // Extract tags from AI response
-    const extractedTags = aiTags
-      .split(/[,\n]/)
-      .map((t) => t.trim().toLowerCase().replace(/^[•\-*]\s*/, ""))
-      .filter((t) => t.length > 0 && t.length < 50);
+  // Return immediately — generation runs in the background to avoid proxy timeouts
+  res.status(202).json({ status: "processing" });
 
-    // Preserve ORC text, status and timestamp before wiping the row
-    const [existingOutput] = await db
-      .select()
-      .from(aiOutputsTable)
-      .where(eq(aiOutputsTable.submissionId, id));
-    const preservedOrc       = existingOutput?.ownerResponseCert ?? null;
-    const preservedOrcStatus = existingOutput?.orcStatus ?? null;
-    const preservedOrcUpdatedAt = existingOutput?.orcUpdatedAt ?? null;
-
-    // Delete existing AI output if any
-    await db.delete(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
-
-    // Store AI output — carry forward the saved ORC so edits and status are never wiped
-    const [output] = await db
-      .insert(aiOutputsTable)
-      .values({
-        submissionId: id,
+  // Fire-and-forget: run generation without blocking the response
+  (async () => {
+    try {
+      // Generate all outputs in parallel using different prompts
+      const [
         masterListing,
         shortListing,
         proHorseMatchListing,
@@ -152,36 +108,81 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
         keySellingPoints,
         reelOverlayText,
         reelBrief,
-        tags: aiTags,
-        generatedAt: new Date(),
-        ...(preservedOrc ? {
-          ownerResponseCert: preservedOrc,
-          orcStatus: preservedOrcStatus,
-          orcUpdatedAt: preservedOrcUpdatedAt,
-        } : {}),
-      })
-      .returning();
+        aiTags,
+      ] = await Promise.all([
+        generateContent(masterListingPrompt(submissionSummary)),
+        generateContent(shortListingPrompt(submissionSummary)),
+        generateContent(proHorseMatchPrompt(submissionSummary)),
+        generateContent(socialCaptionPrompt(submissionSummary)),
+        generateContent(shortCaptionsPrompt(submissionSummary)),
+        generateContent(hashtagsPrompt(submissionSummary)),
+        generateContent(buyerSummaryPrompt(submissionSummary)),
+        generateContent(keySellingPointsPrompt(submissionSummary)),
+        generateContent(reelOverlayPrompt(submissionSummary)),
+        generateContent(reelBriefPrompt(submissionSummary)),
+        generateContent(tagExtractionPrompt(submissionSummary)),
+      ]);
 
-    // Update submission
-    await db
-      .update(submissionsTable)
-      .set({
-        aiGenerated: true,
-        status: "awaiting_review",
-        tags: extractedTags,
-      })
-      .where(eq(submissionsTable.id, id));
+      // Extract tags from AI response
+      const extractedTags = aiTags
+        .split(/[,\n]/)
+        .map((t) => t.trim().toLowerCase().replace(/^[•\-*]\s*/, ""))
+        .filter((t) => t.length > 0 && t.length < 50);
 
-    res.json(output);
-  } catch (err) {
-    req.log.error({ err }, "AI generation failed");
-    // Revert status
-    await db
-      .update(submissionsTable)
-      .set({ status: "new" })
-      .where(eq(submissionsTable.id, id));
-    res.status(500).json({ error: "AI generation failed" });
-  }
+      // Preserve ORC text, status and timestamp before wiping the row
+      const [existingOutput] = await db
+        .select()
+        .from(aiOutputsTable)
+        .where(eq(aiOutputsTable.submissionId, id));
+      const preservedOrc          = existingOutput?.ownerResponseCert ?? null;
+      const preservedOrcStatus    = existingOutput?.orcStatus ?? null;
+      const preservedOrcUpdatedAt = existingOutput?.orcUpdatedAt ?? null;
+
+      // Delete existing AI output then re-insert, carrying the ORC forward
+      await db.delete(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
+
+      await db
+        .insert(aiOutputsTable)
+        .values({
+          submissionId: id,
+          masterListing,
+          shortListing,
+          proHorseMatchListing,
+          socialCaption,
+          shortCaptions,
+          hashtags,
+          buyerSummary,
+          keySellingPoints,
+          reelOverlayText,
+          reelBrief,
+          tags: aiTags,
+          generatedAt: new Date(),
+          ...(preservedOrc ? {
+            ownerResponseCert: preservedOrc,
+            orcStatus: preservedOrcStatus,
+            orcUpdatedAt: preservedOrcUpdatedAt,
+          } : {}),
+        });
+
+      // Update submission — signals the frontend that generation is complete
+      await db
+        .update(submissionsTable)
+        .set({
+          aiGenerated: true,
+          status: "awaiting_review",
+          tags: extractedTags,
+        })
+        .where(eq(submissionsTable.id, id));
+
+    } catch (err) {
+      req.log.error({ err }, "Background AI generation failed");
+      // Revert status so the button becomes available again
+      await db
+        .update(submissionsTable)
+        .set({ status: "awaiting_review" })
+        .where(eq(submissionsTable.id, id));
+    }
+  })();
 });
 
 // ── Owner Response Certificate ────────────────────────────────────────────────

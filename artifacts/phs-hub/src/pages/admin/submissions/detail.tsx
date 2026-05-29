@@ -396,9 +396,24 @@ export default function SubmissionDetail() {
     }
   };
 
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
   const { data: sub, isLoading, refetch: refetchSubmission } = useGetSubmission(submissionId, {
-    query: { enabled: !!submissionId, queryKey: getGetSubmissionQueryKey(submissionId) }
+    query: {
+      enabled: !!submissionId,
+      queryKey: getGetSubmissionQueryKey(submissionId),
+      refetchInterval: isAiGenerating ? 3000 : false,
+    }
   });
+
+  // Detect when background generation completes (status moves away from "processing")
+  useEffect(() => {
+    if (isAiGenerating && sub?.status && sub.status !== "processing") {
+      setIsAiGenerating(false);
+      queryClient.invalidateQueries({ queryKey: getGetAiOutputQueryKey(submissionId) });
+      toast({ title: "AI Content Ready", description: "Marketing content has been generated." });
+    }
+  }, [sub?.status, isAiGenerating]);
 
   const { data: notes, isLoading: isLoadingNotes } = useListSubmissionNotes(submissionId, {
     query: { enabled: !!submissionId, queryKey: getListSubmissionNotesQueryKey(submissionId) }
@@ -523,8 +538,12 @@ export default function SubmissionDetail() {
       { id: submissionId },
       {
         onSuccess: () => {
+          setIsAiGenerating(true);
           queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
-          toast({ title: "AI Content Generation Started", description: "This might take a few moments." });
+          toast({ title: "Generating AI Content…", description: "This takes around 30–60 seconds. The page will update automatically when done." });
+        },
+        onError: () => {
+          toast({ title: "Failed to start generation", variant: "destructive" });
         }
       }
     );
@@ -1147,11 +1166,11 @@ export default function SubmissionDetail() {
               variant="default"
               className="bg-accent text-accent-foreground hover:bg-accent/90"
               onClick={handleGenerateAi}
-              disabled={generateAi.isPending}
+              disabled={generateAi.isPending || isAiGenerating}
               data-testid="button-aiContent"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {generateAi.isPending ? "Generating…" : "Generate AI Content"}
+              {(generateAi.isPending || isAiGenerating) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {(generateAi.isPending || isAiGenerating) ? "Generating…" : "Generate AI Content"}
             </Button>
           )}
           <Button
@@ -1453,18 +1472,18 @@ export default function SubmissionDetail() {
                       {hdStatus === "not_generated" ? (
                         <Button
                           onClick={handleGenerateAi}
-                          disabled={generateAi.isPending}
+                          disabled={generateAi.isPending || isAiGenerating}
                           className="bg-[#24384e] hover:bg-[#1a2d3f]"
                           data-testid="button-generateHd"
                         >
-                          {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                          {generateAi.isPending ? "Generating…" : "Generate AI Content"}
+                          {(generateAi.isPending || isAiGenerating) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                          {(generateAi.isPending || isAiGenerating) ? "Generating…" : "Generate AI Content"}
                         </Button>
                       ) : (
                         <>
-                          <Button variant="outline" onClick={handleGenerateAi} disabled={generateAi.isPending} data-testid="button-regenerateHd">
-                            {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                            Regenerate
+                          <Button variant="outline" onClick={handleGenerateAi} disabled={generateAi.isPending || isAiGenerating} data-testid="button-regenerateHd">
+                            {(generateAi.isPending || isAiGenerating) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                            {(generateAi.isPending || isAiGenerating) ? "Generating…" : "Regenerate"}
                           </Button>
                           <Button variant="outline" onClick={() => handleSaveHd()} disabled={hdSaving} data-testid="button-saveHd">
                             {hdSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
@@ -1520,11 +1539,11 @@ export default function SubmissionDetail() {
                       </div>
                       <Button
                         onClick={handleGenerateAi}
-                        disabled={generateAi.isPending}
+                        disabled={generateAi.isPending || isAiGenerating}
                         className="bg-[#24384e] hover:bg-[#1a2d3f] mt-2"
                       >
-                        {generateAi.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                        {generateAi.isPending ? "Generating…" : "Generate AI Content"}
+                        {(generateAi.isPending || isAiGenerating) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                        {(generateAi.isPending || isAiGenerating) ? "Generating…" : "Generate AI Content"}
                       </Button>
                     </div>
                   ) : (
