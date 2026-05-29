@@ -125,17 +125,19 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
       .map((t) => t.trim().toLowerCase().replace(/^[•\-*]\s*/, ""))
       .filter((t) => t.length > 0 && t.length < 50);
 
-    // Preserve any manually edited ORC before wiping the row
+    // Preserve ORC text, status and timestamp before wiping the row
     const [existingOutput] = await db
       .select()
       .from(aiOutputsTable)
       .where(eq(aiOutputsTable.submissionId, id));
-    const preservedOrc = existingOutput?.ownerResponseCert ?? null;
+    const preservedOrc       = existingOutput?.ownerResponseCert ?? null;
+    const preservedOrcStatus = existingOutput?.orcStatus ?? null;
+    const preservedOrcUpdatedAt = existingOutput?.orcUpdatedAt ?? null;
 
     // Delete existing AI output if any
     await db.delete(aiOutputsTable).where(eq(aiOutputsTable.submissionId, id));
 
-    // Store AI output — carry forward the saved ORC so edits are never wiped
+    // Store AI output — carry forward the saved ORC so edits and status are never wiped
     const [output] = await db
       .insert(aiOutputsTable)
       .values({
@@ -152,7 +154,11 @@ router.post("/submissions/:id/generate-ai", async (req, res) => {
         reelBrief,
         tags: aiTags,
         generatedAt: new Date(),
-        ...(preservedOrc ? { ownerResponseCert: preservedOrc } : {}),
+        ...(preservedOrc ? {
+          ownerResponseCert: preservedOrc,
+          orcStatus: preservedOrcStatus,
+          orcUpdatedAt: preservedOrcUpdatedAt,
+        } : {}),
       })
       .returning();
 
