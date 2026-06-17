@@ -438,12 +438,6 @@ export default function FindAHorse() {
               <div className="space-y-4">
                 {[
                   {
-                    value: "level1",
-                    label: "'Horse Finder' Standard Search",
-                    price: "$500 upfront PLUS $500 Consultancy Fee",
-                    desc: "Perfect if you are struggling to find horses but are confident about managing the assessment and buying process yourself. Includes creation of search criteria and ads, placement across online and social media, professional and private contacts, and a database of up to 30 horses.",
-                  },
-                  {
                     value: "level2",
                     label: "Premium 'Concierge' Search",
                     price: "$1,000 upfront PLUS 5% Consultancy Fee (min $1,000, capped at $2,000)",
