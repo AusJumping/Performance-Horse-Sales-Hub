@@ -263,6 +263,9 @@ function DriveCard({ submissionId, sub }: { submissionId: number; sub: any }) {
 
 const ALL_STATUSES = [
   { value: "new",                  label: "New" },
+  { value: "contact_made_by_phs",  label: "Contact Made by PHS" },
+  { value: "declined_by_phs",      label: "Declined by PHS" },
+  { value: "declined_by_client",   label: "Declined by Client" },
   { value: "costs_agreement_sent", label: "Costs Agreement Sent" },
   { value: "drafting",             label: "Drafting" },
   { value: "approval_pack_sent",   label: "Approval Pack Sent" },

@@ -1,6 +1,9 @@
 const MAP: Record<string, string> = {
   // Current statuses
   new:                      "bg-sky-100 text-sky-800 border-sky-200",
+  contact_made_by_phs:      "bg-indigo-100 text-indigo-800 border-indigo-200",
+  declined_by_phs:          "bg-red-100 text-red-700 border-red-200",
+  declined_by_client:       "bg-rose-100 text-rose-700 border-rose-200",
   costs_agreement_sent:     "bg-amber-100 text-amber-800 border-amber-200",
   drafting:                 "bg-violet-100 text-violet-800 border-violet-200",
   approval_pack_sent:       "bg-orange-100 text-orange-800 border-orange-200",

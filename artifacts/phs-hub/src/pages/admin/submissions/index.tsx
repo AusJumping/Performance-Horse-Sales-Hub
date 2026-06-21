@@ -77,6 +77,9 @@ export default function SubmissionsList() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
+                <SelectItem value="contact_made_by_phs">Contact Made by PHS</SelectItem>
+                <SelectItem value="declined_by_phs">Declined by PHS</SelectItem>
+                <SelectItem value="declined_by_client">Declined by Client</SelectItem>
                 <SelectItem value="costs_agreement_sent">Costs Agreement Sent</SelectItem>
                 <SelectItem value="drafting">Drafting</SelectItem>
                 <SelectItem value="approval_pack_sent">Approval Pack Sent</SelectItem>
