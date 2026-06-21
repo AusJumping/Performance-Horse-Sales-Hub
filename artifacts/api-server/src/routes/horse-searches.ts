@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
+import { randomUUID } from "crypto";
 import { db } from "@workspace/db";
-import { horseSearchesTable, driveSettingsTable } from "@workspace/db";
+import { horseSearchesTable, driveSettingsTable, horseSearchAgreementsTable, horseSearchContractsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import {
   createDriveFolder,
@@ -314,6 +315,175 @@ router.post("/:id/retry-drive", async (req, res) => {
       .where(eq(horseSearchesTable.id, id));
     res.status(500).json({ error: msg });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// COSTS AGREEMENT — admin routes (public signing routes are in horse-search-documents.ts)
+// ═══════════════════════════════════════════════════════════════════
+
+router.get("/:id/agreement", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const [agreement] = await db
+    .select().from(horseSearchAgreementsTable)
+    .where(eq(horseSearchAgreementsTable.horseSearchId, id))
+    .orderBy(desc(horseSearchAgreementsTable.createdAt)).limit(1);
+  if (!agreement) return res.status(404).json({ error: "No agreement found" });
+  return res.json(agreement);
+});
+
+router.post("/:id/agreement", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const [hs] = await db.select().from(horseSearchesTable).where(eq(horseSearchesTable.id, id));
+  if (!hs) return res.status(404).json({ error: "Horse search not found" });
+
+  const { upfrontFee, consultancyFee, customTerms } = req.body as Record<string, string | undefined>;
+  const token = randomUUID();
+
+  await db.update(horseSearchAgreementsTable)
+    .set({ status: "voided", updatedAt: new Date() })
+    .where(eq(horseSearchAgreementsTable.horseSearchId, id));
+
+  const [agreement] = await db.insert(horseSearchAgreementsTable).values({
+    horseSearchId: id, token, status: "pending",
+    clientName: `${hs.firstName} ${hs.surname}`,
+    clientEmail: hs.email, clientPhone: hs.phone,
+    serviceLevel: hs.searchServiceLevel,
+    upfrontFee: upfrontFee || "$1,000",
+    consultancyFee: consultancyFee || "5% of the purchase price (min $1,000, capped at $2,000)",
+    customTerms: customTerms || null,
+  }).returning();
+
+  return res.status(201).json(agreement);
+});
+
+router.patch("/:id/agreement", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const { upfrontFee, consultancyFee, customTerms, clientName, clientEmail, clientAddress, clientPhone } = req.body as Record<string, string | undefined>;
+  const [updated] = await db.update(horseSearchAgreementsTable).set({
+    ...(clientName !== undefined ? { clientName } : {}),
+    ...(clientEmail !== undefined ? { clientEmail } : {}),
+    ...(clientAddress !== undefined ? { clientAddress } : {}),
+    ...(clientPhone !== undefined ? { clientPhone } : {}),
+    ...(upfrontFee !== undefined ? { upfrontFee } : {}),
+    ...(consultancyFee !== undefined ? { consultancyFee } : {}),
+    ...(customTerms !== undefined ? { customTerms } : {}),
+    updatedAt: new Date(),
+  }).where(eq(horseSearchAgreementsTable.horseSearchId, id)).returning();
+  if (!updated) return res.status(404).json({ error: "No agreement found" });
+  return res.json(updated);
+});
+
+router.delete("/:id/agreement", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const result = await db.update(horseSearchAgreementsTable)
+    .set({ status: "voided", updatedAt: new Date() })
+    .where(eq(horseSearchAgreementsTable.horseSearchId, id)).returning();
+  if (!result.length) return res.status(404).json({ error: "No agreement found" });
+  return res.json({ ok: true });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// BILL OF SALE — admin routes
+// ═══════════════════════════════════════════════════════════════════
+
+router.get("/:id/search-contract", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const [contract] = await db
+    .select().from(horseSearchContractsTable)
+    .where(eq(horseSearchContractsTable.horseSearchId, id))
+    .orderBy(desc(horseSearchContractsTable.createdAt)).limit(1);
+  if (!contract) return res.status(404).json({ error: "No contract found" });
+  return res.json(contract);
+});
+
+router.post("/:id/search-contract", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const [hs] = await db.select().from(horseSearchesTable).where(eq(horseSearchesTable.id, id));
+  if (!hs) return res.status(404).json({ error: "Horse search not found" });
+
+  const {
+    horseName, salesPrice, holdingDepositAmount, horseDescription, customClauses,
+    sellerName, sellerEmail, sellerAddress, sellerPhone,
+    sellerBankAccountName, sellerBankBsb, sellerBankAccount,
+    buyerName, buyerEmail, buyerAddress, buyerPhone,
+  } = req.body as Record<string, string | undefined>;
+
+  const token = randomUUID();
+
+  await db.update(horseSearchContractsTable)
+    .set({ status: "voided", updatedAt: new Date() })
+    .where(eq(horseSearchContractsTable.horseSearchId, id));
+
+  const [contract] = await db.insert(horseSearchContractsTable).values({
+    horseSearchId: id, token, status: "pending",
+    horseName: horseName || "Horse",
+    salesPrice: salesPrice || null,
+    holdingDepositAmount: holdingDepositAmount || null,
+    horseDescription: horseDescription || null,
+    customClauses: customClauses || null,
+    sellerName: sellerName || null,
+    sellerEmail: sellerEmail || null,
+    sellerAddress: sellerAddress || null,
+    sellerPhone: sellerPhone || null,
+    sellerBankAccountName: sellerBankAccountName || null,
+    sellerBankBsb: sellerBankBsb || null,
+    sellerBankAccount: sellerBankAccount || null,
+    buyerName: buyerName || `${hs.firstName} ${hs.surname}`,
+    buyerEmail: buyerEmail || hs.email,
+    buyerAddress: buyerAddress || null,
+    buyerPhone: buyerPhone || hs.phone,
+  }).returning();
+
+  return res.status(201).json(contract);
+});
+
+router.patch("/:id/search-contract", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const {
+    horseName, salesPrice, holdingDepositAmount, horseDescription, customClauses,
+    sellerName, sellerEmail, sellerAddress, sellerPhone,
+    sellerBankAccountName, sellerBankBsb, sellerBankAccount,
+    buyerName, buyerEmail, buyerAddress, buyerPhone,
+  } = req.body as Record<string, string | undefined>;
+
+  const [updated] = await db.update(horseSearchContractsTable).set({
+    ...(horseName !== undefined ? { horseName } : {}),
+    ...(salesPrice !== undefined ? { salesPrice: salesPrice || null } : {}),
+    ...(holdingDepositAmount !== undefined ? { holdingDepositAmount: holdingDepositAmount || null } : {}),
+    ...(horseDescription !== undefined ? { horseDescription: horseDescription || null } : {}),
+    ...(customClauses !== undefined ? { customClauses: customClauses || null } : {}),
+    ...(sellerName !== undefined ? { sellerName } : {}),
+    ...(sellerEmail !== undefined ? { sellerEmail } : {}),
+    ...(sellerAddress !== undefined ? { sellerAddress } : {}),
+    ...(sellerPhone !== undefined ? { sellerPhone } : {}),
+    ...(sellerBankAccountName !== undefined ? { sellerBankAccountName } : {}),
+    ...(sellerBankBsb !== undefined ? { sellerBankBsb } : {}),
+    ...(sellerBankAccount !== undefined ? { sellerBankAccount } : {}),
+    ...(buyerName !== undefined ? { buyerName } : {}),
+    ...(buyerEmail !== undefined ? { buyerEmail } : {}),
+    ...(buyerAddress !== undefined ? { buyerAddress } : {}),
+    ...(buyerPhone !== undefined ? { buyerPhone } : {}),
+    updatedAt: new Date(),
+  }).where(eq(horseSearchContractsTable.horseSearchId, id)).returning();
+  if (!updated) return res.status(404).json({ error: "No contract found" });
+  return res.json(updated);
+});
+
+router.delete("/:id/search-contract", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  const result = await db.update(horseSearchContractsTable)
+    .set({ status: "voided", updatedAt: new Date() })
+    .where(eq(horseSearchContractsTable.horseSearchId, id)).returning();
+  if (!result.length) return res.status(404).json({ error: "No contract found" });
+  return res.json({ ok: true });
 });
 
 export default router;

@@ -6,11 +6,14 @@ import AdminLayout from "@/components/layout/admin-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown, Trash2 } from "lucide-react";
+import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown, Trash2, Link2, FileSignature, CheckCircle, XCircle, Copy } from "lucide-react";
 import { SearchStatusBadge } from "./index";
 import { openHorseSearchPrintWindow } from "@/lib/horse-search-pdf";
+import { openHorseSearchAgreementPrintWindow } from "@/lib/horse-search-agreement-pdf";
+import { openHorseSearchContractPrintWindow } from "@/lib/horse-search-contract-pdf";
 
 const STATUSES = [
   { value: "new", label: "New" },
@@ -45,11 +48,427 @@ interface HorseSearch {
   createdAt: string;
 }
 
+interface SearchAgreement {
+  id: number; token: string; status: string;
+  clientName?: string; clientEmail?: string; clientAddress?: string; clientPhone?: string;
+  serviceLevel?: string; upfrontFee?: string; consultancyFee?: string; customTerms?: string;
+  clientSignature?: string; agreedTerms?: boolean; agreedFee?: boolean; agreedReady?: boolean;
+  submittedAt?: string; createdAt: string;
+}
+
+interface SearchContract {
+  id: number; token: string; status: string;
+  horseName: string; salesPrice?: string; holdingDepositAmount?: string; horseDescription?: string; customClauses?: string;
+  sellerName?: string; sellerEmail?: string; sellerAddress?: string; sellerPhone?: string;
+  sellerBankAccountName?: string; sellerBankBsb?: string; sellerBankAccount?: string;
+  buyerName?: string; buyerEmail?: string; buyerAddress?: string; buyerPhone?: string;
+  fillerName?: string; fillerEmail?: string; fillerRole?: string;
+  buyerSignature?: string; sellerSignature?: string;
+  agreedSalesPrice?: boolean; agreedHoldingDeposit?: boolean; agreedDescription?: boolean;
+  agreedSection3?: boolean; agreedSection4?: boolean; agreedSellerDeclaration?: boolean; agreedBuyerDeclaration?: boolean;
+  submittedAt?: string; createdAt: string;
+}
+
 async function fetchSearch(id: string): Promise<HorseSearch> {
   const res = await fetch(`/api/horse-searches/${id}`);
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 }
+
+function copyToClipboard(text: string, toast: (t: { title: string }) => void) {
+  navigator.clipboard.writeText(text).then(() => toast({ title: "Link copied!" }));
+}
+
+// ─── Costs Agreement Panel ───────────────────────────────────────────────────
+
+function AgreementPanel({ id, hs }: { id: string; hs: HorseSearch }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [showGenForm, setShowGenForm] = useState(false);
+  const [upfrontFee, setUpfrontFee] = useState("$1,000");
+  const [consultancyFee, setConsultancyFee] = useState("5% of the purchase price (min $1,000, capped at $2,000)");
+  const [customTerms, setCustomTerms] = useState("");
+
+  const { data: agreement, isLoading } = useQuery<SearchAgreement>({
+    queryKey: ["horse-search-agreement", id],
+    queryFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/agreement`);
+      if (r.status === 404) return null as any;
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    retry: false,
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/agreement`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ upfrontFee, consultancyFee, customTerms: customTerms || undefined }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-search-agreement", id] });
+      toast({ title: "Costs Agreement link generated" });
+      setShowGenForm(false);
+    },
+    onError: () => toast({ title: "Error", description: "Could not generate link.", variant: "destructive" } as any),
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/agreement`, { method: "DELETE" });
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-search-agreement", id] });
+      toast({ title: "Agreement voided" });
+    },
+    onError: () => toast({ title: "Error", description: "Could not void.", variant: "destructive" } as any),
+  });
+
+  const signingUrl = agreement ? `${window.location.origin}/horse-search-agreement/${agreement.token}` : "";
+
+  if (isLoading) return <Skeleton className="h-24 w-full" />;
+
+  return (
+    <div className="bg-white border rounded-xl p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <FileSignature className="h-4 w-4 text-[#24384e]" />
+        <h3 className="font-semibold text-stone-700">Costs Agreement</h3>
+        {agreement && (
+          <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+            agreement.status === "submitted" ? "bg-emerald-100 text-emerald-700" :
+            agreement.status === "voided" ? "bg-red-100 text-red-600" :
+            "bg-amber-100 text-amber-700"}`}
+          >
+            {agreement.status === "submitted" ? "Signed" : agreement.status === "voided" ? "Voided" : "Awaiting Signature"}
+          </span>
+        )}
+      </div>
+
+      {!agreement || agreement.status === "voided" ? (
+        <>
+          {!showGenForm ? (
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
+              <Link2 className="h-3.5 w-3.5 mr-1.5" />
+              Generate Signing Link
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Upfront Fee</label>
+                <Input value={upfrontFee} onChange={e => setUpfrontFee(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Consultancy Fee</label>
+                <Input value={consultancyFee} onChange={e => setConsultancyFee(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Custom Terms (optional)</label>
+                <Textarea rows={2} value={customTerms} onChange={e => setCustomTerms(e.target.value)} className="text-sm" placeholder="Any additional terms…" />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 bg-[#24384e] hover:bg-[#1a2d3f]" disabled={generateMutation.isPending} onClick={() => generateMutation.mutate()}>
+                  {generateMutation.isPending ? "Generating…" : "Generate Link"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowGenForm(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-3">
+          {agreement.status === "submitted" ? (
+            <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <CheckCircle className="h-4 w-4 flex-shrink-0" />
+              <span>Signed {agreement.submittedAt ? format(new Date(agreement.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
+            </div>
+          ) : (
+            <div className="bg-stone-50 rounded-lg px-3 py-2">
+              <p className="text-xs text-stone-500 mb-1">Signing link</p>
+              <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
+            </div>
+          )}
+
+          <div className="flex gap-2 flex-wrap">
+            {agreement.status === "pending" && (
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(signingUrl, toast)}>
+                <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="flex-1"
+              onClick={() => openHorseSearchAgreementPrintWindow({
+                id: agreement.id, token: agreement.token, status: agreement.status,
+                clientName: agreement.clientName, clientEmail: agreement.clientEmail,
+                clientAddress: agreement.clientAddress, clientPhone: agreement.clientPhone,
+                serviceLevel: agreement.serviceLevel, upfrontFee: agreement.upfrontFee,
+                consultancyFee: agreement.consultancyFee, customTerms: agreement.customTerms,
+                clientSignature: agreement.clientSignature,
+                submittedAt: agreement.submittedAt, createdAt: agreement.createdAt,
+              })}>
+              <FileDown className="h-3.5 w-3.5 mr-1.5" /> Preview PDF
+            </Button>
+          </div>
+
+          {agreement.status !== "voided" && (
+            <Button size="sm" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50"
+              disabled={voidMutation.isPending} onClick={() => voidMutation.mutate()}>
+              <XCircle className="h-3.5 w-3.5 mr-1.5" />
+              {voidMutation.isPending ? "Voiding…" : "Void Agreement"}
+            </Button>
+          )}
+
+          {(agreement.status === "voided") && (
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
+              <Link2 className="h-3.5 w-3.5 mr-1.5" /> Regenerate Link
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Bill of Sale Panel ──────────────────────────────────────────────────────
+
+function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [showGenForm, setShowGenForm] = useState(false);
+  const [horseName, setHorseName] = useState("");
+  const [salesPrice, setSalesPrice] = useState("");
+  const [holdingDepositAmount, setHoldingDepositAmount] = useState("");
+  const [sellerName, setSellerName] = useState("");
+  const [sellerEmail, setSellerEmail] = useState("");
+  const [sellerBankAccountName, setSellerBankAccountName] = useState("");
+  const [sellerBankBsb, setSellerBankBsb] = useState("");
+  const [sellerBankAccount, setSellerBankAccount] = useState("");
+  const [customClauses, setCustomClauses] = useState("");
+
+  const { data: contract, isLoading } = useQuery<SearchContract>({
+    queryKey: ["horse-search-contract", id],
+    queryFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/search-contract`);
+      if (r.status === 404) return null as any;
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    retry: false,
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/search-contract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          horseName: horseName || "Horse",
+          salesPrice: salesPrice || undefined,
+          holdingDepositAmount: holdingDepositAmount || undefined,
+          sellerName: sellerName || undefined,
+          sellerEmail: sellerEmail || undefined,
+          sellerBankAccountName: sellerBankAccountName || undefined,
+          sellerBankBsb: sellerBankBsb || undefined,
+          sellerBankAccount: sellerBankAccount || undefined,
+          buyerName: `${hs.firstName} ${hs.surname}`,
+          buyerEmail: hs.email,
+          buyerPhone: hs.phone,
+          customClauses: customClauses || undefined,
+        }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-search-contract", id] });
+      toast({ title: "Bill of Sale link generated" });
+      setShowGenForm(false);
+    },
+    onError: () => toast({ title: "Error", description: "Could not generate.", variant: "destructive" } as any),
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/search-contract`, { method: "DELETE" });
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-search-contract", id] });
+      toast({ title: "Contract voided" });
+    },
+    onError: () => toast({ title: "Error", description: "Could not void.", variant: "destructive" } as any),
+  });
+
+  const signingUrl = contract ? `${window.location.origin}/horse-search-contract/${contract.token}` : "";
+
+  if (isLoading) return <Skeleton className="h-24 w-full" />;
+
+  return (
+    <div className="bg-white border rounded-xl p-5 shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <FileText className="h-4 w-4 text-[#24384e]" />
+        <h3 className="font-semibold text-stone-700">Bill of Sale</h3>
+        {contract && (
+          <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
+            contract.status === "submitted" ? "bg-emerald-100 text-emerald-700" :
+            contract.status === "voided" ? "bg-red-100 text-red-600" :
+            "bg-amber-100 text-amber-700"}`}
+          >
+            {contract.status === "submitted" ? "Signed" : contract.status === "voided" ? "Voided" : "Awaiting Signature"}
+          </span>
+        )}
+      </div>
+
+      {!contract || contract.status === "voided" ? (
+        <>
+          {!showGenForm ? (
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
+              <Link2 className="h-3.5 w-3.5 mr-1.5" />
+              Generate Signing Link
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Name</label>
+                  <Input value={horseName} onChange={e => setHorseName(e.target.value)} className="text-sm" placeholder="e.g. Rebel" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Sale Price</label>
+                  <Input value={salesPrice} onChange={e => setSalesPrice(e.target.value)} className="text-sm" placeholder="e.g. $25,000" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Holding Deposit</label>
+                <Input value={holdingDepositAmount} onChange={e => setHoldingDepositAmount(e.target.value)} className="text-sm" placeholder="e.g. $2,500" />
+              </div>
+              <div className="border-t border-stone-100 pt-3">
+                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Seller Details</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-stone-500 block mb-1">Seller name</label>
+                    <Input value={sellerName} onChange={e => setSellerName(e.target.value)} className="text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-stone-500 block mb-1">Seller email</label>
+                    <Input value={sellerEmail} onChange={e => setSellerEmail(e.target.value)} className="text-sm" type="email" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="col-span-1">
+                    <label className="text-xs text-stone-500 block mb-1">BSB</label>
+                    <Input value={sellerBankBsb} onChange={e => setSellerBankBsb(e.target.value)} className="text-sm" placeholder="000-000" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-stone-500 block mb-1">Account #</label>
+                    <Input value={sellerBankAccount} onChange={e => setSellerBankAccount(e.target.value)} className="text-sm" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <label className="text-xs text-stone-500 block mb-1">Account name</label>
+                  <Input value={sellerBankAccountName} onChange={e => setSellerBankAccountName(e.target.value)} className="text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Custom Clause (optional)</label>
+                <Textarea rows={2} value={customClauses} onChange={e => setCustomClauses(e.target.value)} className="text-sm" placeholder="Any additional terms…" />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 bg-[#24384e] hover:bg-[#1a2d3f]" disabled={generateMutation.isPending} onClick={() => generateMutation.mutate()}>
+                  {generateMutation.isPending ? "Generating…" : "Generate Link"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowGenForm(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-3">
+          <div className="text-sm font-semibold text-stone-700">{contract.horseName}</div>
+          {contract.salesPrice && <div className="text-xs text-stone-500">Sale price: <strong>{contract.salesPrice}</strong></div>}
+
+          {contract.status === "submitted" ? (
+            <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <CheckCircle className="h-4 w-4 flex-shrink-0" />
+              <span>Signed {contract.submittedAt ? format(new Date(contract.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
+            </div>
+          ) : (
+            <div className="bg-stone-50 rounded-lg px-3 py-2">
+              <p className="text-xs text-stone-500 mb-1">Signing link</p>
+              <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
+            </div>
+          )}
+
+          {contract.status === "submitted" && (contract.buyerSignature || contract.sellerSignature) && (
+            <div className="grid grid-cols-2 gap-2">
+              {contract.sellerSignature && (
+                <div>
+                  <p className="text-xs text-stone-400 mb-1">Seller sig</p>
+                  <img src={contract.sellerSignature} alt="Seller signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+                </div>
+              )}
+              {contract.buyerSignature && (
+                <div>
+                  <p className="text-xs text-stone-400 mb-1">Buyer sig</p>
+                  <img src={contract.buyerSignature} alt="Buyer signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 flex-wrap">
+            {contract.status === "pending" && (
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(signingUrl, toast)}>
+                <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="flex-1"
+              onClick={() => openHorseSearchContractPrintWindow({
+                id: contract.id, status: contract.status,
+                horseName: contract.horseName, salesPrice: contract.salesPrice,
+                holdingDepositAmount: contract.holdingDepositAmount,
+                horseDescription: contract.horseDescription, customClauses: contract.customClauses,
+                sellerName: contract.sellerName, sellerEmail: contract.sellerEmail,
+                sellerAddress: contract.sellerAddress, sellerPhone: contract.sellerPhone,
+                sellerBankAccountName: contract.sellerBankAccountName,
+                sellerBankBsb: contract.sellerBankBsb, sellerBankAccount: contract.sellerBankAccount,
+                buyerName: contract.buyerName, buyerEmail: contract.buyerEmail,
+                buyerAddress: contract.buyerAddress, buyerPhone: contract.buyerPhone,
+                fillerName: contract.fillerName, fillerEmail: contract.fillerEmail,
+                fillerRole: contract.fillerRole,
+                buyerSignature: contract.buyerSignature, sellerSignature: contract.sellerSignature,
+                submittedAt: contract.submittedAt, createdAt: contract.createdAt,
+              })}>
+              <FileDown className="h-3.5 w-3.5 mr-1.5" /> Preview PDF
+            </Button>
+          </div>
+
+          {contract.status !== "voided" && (
+            <Button size="sm" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50"
+              disabled={voidMutation.isPending} onClick={() => voidMutation.mutate()}>
+              <XCircle className="h-3.5 w-3.5 mr-1.5" />
+              {voidMutation.isPending ? "Voiding…" : "Void Contract"}
+            </Button>
+          )}
+
+          {contract.status === "voided" && (
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
+              <Link2 className="h-3.5 w-3.5 mr-1.5" /> Regenerate Link
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function HorseSearchDetail() {
   const [, params] = useRoute("/admin/horse-searches/:id");
@@ -277,7 +696,7 @@ export default function HorseSearchDetail() {
             })}
           >
             <FileDown className="h-4 w-4 mr-2" />
-            Download PDF
+            Download Search PDF
           </Button>
 
           {/* Status */}
@@ -297,6 +716,12 @@ export default function HorseSearchDetail() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Costs Agreement */}
+          <AgreementPanel id={id} hs={hs} />
+
+          {/* Bill of Sale */}
+          <ContractPanel id={id} hs={hs} />
 
           {/* Drive */}
           <div className="bg-white border rounded-xl p-5 shadow-sm">

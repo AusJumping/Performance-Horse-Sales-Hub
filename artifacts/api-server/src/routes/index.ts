@@ -11,6 +11,7 @@ import eoisRouter from "./eois";
 import driveRouter from "./drive";
 import horseSearchesRouter from "./horse-searches";
 import contractsRouter from "./contracts";
+import horseSearchDocumentsRouter from "./horse-search-documents";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/eois", eoisRouter);
 router.use("/drive", driveRouter);
 router.use("/horse-searches", horseSearchesRouter);
 router.use(contractsRouter);
+router.use(horseSearchDocumentsRouter);
 
 export default router;

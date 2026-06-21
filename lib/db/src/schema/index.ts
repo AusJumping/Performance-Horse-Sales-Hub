@@ -8,3 +8,4 @@ export * from "./eois";
 export * from "./drive";
 export * from "./horse_searches";
 export * from "./contracts";
+export * from "./horse_search_documents";

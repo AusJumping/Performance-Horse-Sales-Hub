@@ -23,6 +23,8 @@ import AiEditor from "./pages/admin/submissions/ai-editor";
 import ReelTemplatesSettings from "./pages/admin/settings/reel-templates";
 import DriveSettings from "./pages/admin/drive/index";
 import ContractPage from "./pages/contract";
+import HorseSearchAgreementPage from "./pages/horse-search-agreement";
+import HorseSearchContractPage from "./pages/horse-search-contract";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/find-a-horse" component={FindAHorse} />
       <Route path="/find-a-horse/thank-you" component={FindAHorseThankYou} />
       <Route path="/contract/:token" component={ContractPage} />
+      <Route path="/horse-search-agreement/:token" component={HorseSearchAgreementPage} />
+      <Route path="/horse-search-contract/:token" component={HorseSearchContractPage} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminGuard>
