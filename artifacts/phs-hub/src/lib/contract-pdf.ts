@@ -367,6 +367,10 @@ export function generateContractHtml(data: ContractPdfData): string {
       </div>
       ${horseNameHtml}
       ${descHtml}
+      <div style="margin-top:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#166534">
+        <span style="font-size:14px;line-height:1;flex-shrink:0">☑</span>
+        <span>I declare that this description accurately represents the horse that is being sold / purchased.</span>
+      </div>
     </div>
 
     <div class="section">

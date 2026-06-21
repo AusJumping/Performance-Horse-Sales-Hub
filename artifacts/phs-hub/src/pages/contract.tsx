@@ -481,7 +481,7 @@ export default function ContractPage() {
 
           {/* ── Section 2: Horse Description ── */}
           <div className="bg-white rounded-lg shadow-sm p-6 space-y-4">
-            <SectionHeading num="2" title="Horse Description" />
+            <SectionHeading num="2" title="Horse Name and Description" />
             <p className="text-sm text-stone-500 italic">As per portfolio / advertisement.</p>
             {contract.horseDescription ? (
               <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">

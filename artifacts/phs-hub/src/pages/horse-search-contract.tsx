@@ -275,15 +275,18 @@ export default function HorseSearchContractPage() {
         </div>
 
         {/* Horse Name & Description */}
-        {(contract?.horseName || contract?.horseDescription) && (
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-            <SectionHeading num="2" title="Horse Name and Description" />
-            <div className="text-xl font-bold text-[#24384e] mb-3">{contract?.horseName}</div>
-            {contract?.horseDescription && (
-              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{contract.horseDescription}</div>
-            )}
-          </div>
-        )}
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
+          <SectionHeading num="2" title="Horse Name and Description" />
+          <div className="text-xl font-bold text-[#24384e] mb-3">{contract?.horseName}</div>
+          {contract?.horseDescription ? (
+            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap mb-4">{contract.horseDescription}</div>
+          ) : (
+            <p className="text-sm text-stone-400 italic mb-4">No description provided — please refer to the horse's portfolio.</p>
+          )}
+          <AgreementBox id="agreedDescription" checked={agreedDescription} onChange={setAgreedDescription}>
+            I declare that this description accurately represents the horse that is being sold / purchased.
+          </AgreementBox>
+        </div>
 
         {/* Warranties */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
@@ -344,9 +347,6 @@ export default function HorseSearchContractPage() {
             </AgreementBox>
             <AgreementBox id="agreedHoldingDeposit" checked={agreedHoldingDeposit} onChange={setAgreedHoldingDeposit}>
               I understand and agree to the holding deposit terms set out in this contract.
-            </AgreementBox>
-            <AgreementBox id="agreedDescription" checked={agreedDescription} onChange={setAgreedDescription}>
-              I confirm the horse description accurately represents the horse being purchased / sold.
             </AgreementBox>
             <AgreementBox id="agreedSection3" checked={agreedSection3} onChange={setAgreedSection3}>
               I have read and agree to the Warranties & Conditions of Sale in Section 3.
