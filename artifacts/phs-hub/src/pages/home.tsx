@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useCreateSubmission } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -336,11 +336,6 @@ export default function Home() {
 
   const [errors, setErrors] = useState<Partial<Record<keyof FD, string>>>({});
   const [fd, setFd] = useState<FD>(SAMPLE);
-  const [submissionId, setSubmissionId] = useState<number | null>(null);
-  const [uploadedMedia, setUploadedMedia] = useState<{ id: number; url: string; name: string; mimeType: string }[]>([]);
-  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; done: boolean }[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const setField =
     <K extends keyof FD>(key: K) =>
@@ -443,74 +438,11 @@ export default function Home() {
           discipline: fd.disciplines.join(", "),
         } as any,
       });
-      setSubmissionId((result as { id: number }).id);
-      setTimeout(() => {
-        document.getElementById("upload-section")?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      setLocation("/seller/thank-you");
     } catch {
       toast({ title: "Submission failed. Please try again.", variant: "destructive" });
     }
   };
-
-  const handleUploadFiles = useCallback(async (files: File[]) => {
-    if (!submissionId || !files.length) return;
-    const entries = files.map(f => ({ name: f.name, done: false }));
-    setUploadingFiles(prev => [...prev, ...entries]);
-
-    await Promise.all(files.map(async (file) => {
-      const mediaType = file.type.startsWith("image/") ? "photo"
-        : file.type.startsWith("video/") ? "video"
-        : "document";
-      try {
-        const urlRes = await fetch("/api/media/upload-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ submissionId, filename: file.name, mimeType: file.type, mediaType }),
-        });
-        if (!urlRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, mediaId, publicUrl } = await urlRes.json();
-
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-        if (!uploadRes.ok) throw new Error("Upload failed");
-
-        await fetch(`/api/media/upload/${mediaId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ size: file.size }),
-        });
-
-        setUploadedMedia(prev => [...prev, { id: mediaId, url: publicUrl, name: file.name, mimeType: file.type }]);
-        setUploadingFiles(prev => prev.map(u => u.name === file.name ? { ...u, done: true } : u));
-      } catch {
-        toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
-        setUploadingFiles(prev => prev.filter(u => u.name !== file.name));
-      }
-    }));
-  }, [submissionId, toast]);
-
-  const handleFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length) handleUploadFiles(files);
-    e.target.value = "";
-  }, [handleUploadFiles]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => setIsDragging(false), []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length) handleUploadFiles(files);
-  }, [handleUploadFiles]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -1014,94 +946,9 @@ export default function Home() {
             <FieldError message={fe("signature")} />
           </div>
 
-          {!submissionId && (
-            <button type="button" onClick={submit} disabled={createSubmission.isPending} data-testid="button-submit" className="w-full py-3 rounded-lg bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-50 transition-colors shadow-sm">
-              {createSubmission.isPending ? "Submitting..." : "Submit Listing"}
-            </button>
-          )}
-
-          {submissionId && (
-            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
-              <span className="text-emerald-600 text-lg">✓</span>
-              <p className="text-sm text-emerald-800 font-medium">Listing submitted! You can now upload photos and videos below.</p>
-            </div>
-          )}
-        </div>
-
-        {/* ── SECTION: Upload Photos & Videos ─── */}
-        <div id="upload-section" className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-5">
-          <SectionHeader title="Upload Photos & Videos" sub="Optional — you can also send via WhatsApp after submitting" />
-
-          {!submissionId ? (
-            <div className="text-center py-8 text-stone-400">
-              <div className="text-3xl mb-3">📷</div>
-              <p className="text-sm">Submit your listing above to unlock file uploads.</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-stone-600">Add photos and videos of your horse to speed up the listing process. High-quality photos and a short video will help us create a standout listing. You can upload multiple files at once.</p>
-
-              <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={() => fileInputRef.current?.click()} className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors select-none ${isDragging ? "border-[#24384e] bg-[#24384e]/5" : "border-stone-300 hover:border-[#24384e] hover:bg-stone-50"}`}>
-                <div className="flex flex-col items-center gap-3">
-                  <div className="text-4xl">📷</div>
-                  <div>
-                    <p className="font-semibold text-stone-700">Drag &amp; drop files here, or click to browse</p>
-                    <p className="text-xs text-stone-500 mt-1">Photos (JPG, PNG, HEIC) and Videos (MP4, MOV) — up to 100 MB each</p>
-                  </div>
-                </div>
-                <input ref={fileInputRef} type="file" multiple accept="image/*,video/*" className="hidden" onChange={handleFilePick} />
-              </div>
-
-              {uploadingFiles.filter(u => !u.done).length > 0 && (
-                <div className="space-y-2">
-                  {uploadingFiles.filter(u => !u.done).map((u) => (
-                    <div key={u.name} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5">
-                      <div className="w-4 h-4 rounded-full border-2 border-[#24384e] border-t-transparent animate-spin shrink-0" />
-                      <span className="text-sm text-stone-600 truncate">{u.name}</span>
-                      <span className="ml-auto text-xs text-stone-400 shrink-0">Uploading…</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {uploadedMedia.filter(m => m.mimeType.startsWith("image/")).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Photos ({uploadedMedia.filter(m => m.mimeType.startsWith("image/")).length})</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {uploadedMedia.filter(m => m.mimeType.startsWith("image/")).map((m) => (
-                      <div key={m.id} className="relative aspect-square rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
-                        <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[10px] px-1.5 py-0.5 truncate">{m.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {uploadedMedia.filter(m => m.mimeType.startsWith("video/")).length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">Videos ({uploadedMedia.filter(m => m.mimeType.startsWith("video/")).length})</p>
-                  <div className="space-y-2">
-                    {uploadedMedia.filter(m => m.mimeType.startsWith("video/")).map((m) => (
-                      <div key={m.id} className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-2.5">
-                        <span className="text-lg">🎬</span>
-                        <span className="text-sm text-stone-700 truncate">{m.name}</span>
-                        <span className="ml-auto text-xs text-green-600 font-medium shrink-0">✓ Uploaded</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {uploadedMedia.length === 0 && uploadingFiles.filter(u => !u.done).length === 0 && (
-                <p className="text-center text-sm text-stone-400 italic">No files uploaded yet — you can also add them later via WhatsApp on 0428239317.</p>
-              )}
-
-              <button type="button" onClick={() => setLocation("/seller/thank-you")} disabled={uploadingFiles.some(u => !u.done)} data-testid="button-finish" className="w-full py-3 rounded-lg bg-[#24384e] text-white text-sm font-semibold hover:bg-[#1a2d3f] disabled:opacity-50 transition-colors shadow-sm">
-                {uploadingFiles.some(u => !u.done) ? "Uploading…" : "Finish Submission"}
-              </button>
-            </>
-          )}
+          <button type="button" onClick={submit} disabled={createSubmission.isPending} data-testid="button-submit" className="w-full py-3 rounded-lg bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-50 transition-colors shadow-sm">
+            {createSubmission.isPending ? "Submitting..." : "Submit Listing"}
+          </button>
         </div>
 
         <p className="text-center text-xs text-stone-400 pb-4">Questions? Call us on{" "}<a href="tel:0428239317" className="text-[#24384e] font-medium">0428239317</a>{" "}— we respond within 12 hours.</p>
