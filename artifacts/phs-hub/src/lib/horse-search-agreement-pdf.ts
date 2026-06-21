@@ -190,36 +190,97 @@ export function generateHorseSearchAgreementHtml(data: HorseSearchAgreementPdfDa
       <div class="fee-box">
         <div class="fee-row"><span class="fee-label">Service</span><span class="fee-value">${esc(serviceLabel(data.serviceLevel))}</span></div>
         <div class="fee-row"><span class="fee-label">Upfront fee (payable upon signing)</span><span class="fee-value">${esc(data.upfrontFee) || "$1,000"}</span></div>
-        <div class="fee-row"><span class="fee-label">Consultancy fee (payable on successful purchase)</span><span class="fee-value">${esc(data.consultancyFee) || "5% (min $1,000, capped at $2,000)"}</span></div>
+        <div class="fee-row"><span class="fee-label">Completion fee (payable when triggered — see terms)</span><span class="fee-value">${esc(data.consultancyFee) || "5% (min $1,000, capped at $2,000)"}</span></div>
       </div>
       <p class="body-text">All fees are quoted exclusive of GST. GST will be added to the amounts above.</p>
-      <p class="body-text" style="margin-top:8px">The upfront fee is payable immediately upon signing this agreement and is non-refundable once the search has commenced. The consultancy fee is payable within 24 hours of the deposit being paid and the purchase being booked.</p>
+      <p class="body-text" style="margin-top:8px">The upfront fee is payable immediately upon signing this agreement and is non-refundable once the search has commenced. The completion fee is payable in full within 24 hours of the invoice being sent, when triggered as per the terms below.</p>
     </div>
 
     <div class="section">
-      <div class="section-title">What We Do</div>
-      <div class="body-text">
-        <p>Performance Horse Sales will:</p>
-        <ul style="padding-left:24px;margin-top:8px">
-          <li style="margin-bottom:4px">Source and compile a database of up to 30 horses that match the client's stated criteria;</li>
-          <li style="margin-bottom:4px">Notify the client each time a new horse is added to their shortlist;</li>
-          <li style="margin-bottom:4px">Provide guidance and expert advice throughout the search process;</li>
-          <li style="margin-bottom:4px">Manage all initial enquiries, negotiation, and booking of viewings (Premium Concierge only);</li>
-          <li style="margin-bottom:4px">Provide vet check guidance and transport contacts (Premium Concierge only); and</li>
-          <li style="margin-bottom:4px">Prepare a Bill of Sale once a horse is found and purchased (Premium Concierge only).</li>
-        </ul>
-      </div>
+      <div class="section-title">Our Service — Premium Concierge Search</div>
+      <p class="body-text">Full management of the buying process. This service can include:</p>
+      <ul style="padding-left:24px;margin-top:8px;font-size:14px;line-height:1.7;color:#2a2a2a">
+        <li style="margin-bottom:3px">Discussion and refinement of the client's search criteria</li>
+        <li style="margin-bottom:3px">Creation and management of the PHS website advertisement and social media posts</li>
+        <li style="margin-bottom:3px">Creation of a shared search database containing potential horses, videos, information and relevant files</li>
+        <li style="margin-bottom:3px">Initial research on up to 30 potential horses matching the search criteria</li>
+        <li style="margin-bottom:3px">Up to 30 potential horses sent to the client for consideration</li>
+        <li style="margin-bottom:3px">Comprehensive research on up to 10 shortlisted horses</li>
+        <li style="margin-bottom:3px">Management of the majority of communication with sellers</li>
+        <li style="margin-bottom:3px">Coordination and management of viewings</li>
+        <li style="margin-bottom:3px">Recommendations for suitable professionals to assess horses on the buyer's behalf</li>
+        <li style="margin-bottom:3px">In-depth support and discussion regarding horse suitability</li>
+        <li style="margin-bottom:3px">Review of viewing videos, with further discussion and suitability advice</li>
+        <li style="margin-bottom:3px">Full support throughout the buying process</li>
+        <li style="margin-bottom:3px">Recommendations regarding vetting</li>
+        <li style="margin-bottom:3px">Assistance with transport quotes</li>
+        <li style="margin-bottom:3px">Support with sale negotiation</li>
+        <li style="margin-bottom:3px">Creation of the sale contract</li>
+        <li style="margin-bottom:3px">Recommendations regarding insurance</li>
+      </ul>
     </div>
 
     <div class="section">
-      <div class="section-title">Client Commitments</div>
-      <div class="clause-item"><span class="clause-label">Clause 1:</span> The client confirms they are over 18 years of age and legally able to enter into this agreement.</div>
-      <div class="clause-item"><span class="clause-label">Clause 2:</span> The client confirms they are ready, willing, and able to view and purchase a horse during the search period. Horses are added as fast or as slow as they are found.</div>
-      <div class="clause-item"><span class="clause-label">Clause 3:</span> The client confirms that all information provided in their search criteria form is accurate and complete. Any misrepresentation may result in the search being suspended.</div>
-      <div class="clause-item"><span class="clause-label">Clause 4:</span> The client understands that no horse will perfectly match every single stated criterion. Horses presented will be those which Performance Horse Sales believes are 'fit for the intended purpose'.</div>
-      <div class="clause-item"><span class="clause-label">Clause 5:</span> The client agrees to pay a holding deposit directly to the seller to secure a horse for second viewings and vet checks, as per standard industry practice.</div>
-      <div class="clause-item"><span class="clause-label">Clause 6:</span> The client agrees to pay all fees and costs in full when they fall due. Late payment may result in suspension of the search service.</div>
-      <div class="clause-item"><span class="clause-label">Clause 7:</span> The client has read and agrees to the full Search Terms and Conditions publicly available on the Performance Horse Sales website.</div>
+      <div class="section-title">Completion Fee — When It Is Due</div>
+      <p class="body-text">The Completion Fee is payable when — whichever occurs first:</p>
+      <ul style="padding-left:24px;margin-top:8px;font-size:14px;line-height:1.7;color:#2a2a2a">
+        <li style="margin-bottom:3px">a deposit is paid;</li>
+        <li style="margin-bottom:3px">vetting is booked;</li>
+        <li style="margin-bottom:3px">the horse is purchased, leased or trialled (regardless of the channel or means by which it was found);</li>
+        <li style="margin-bottom:3px">the client ends the search for any reason;</li>
+        <li style="margin-bottom:3px">the client pauses the search for any reason; or</li>
+        <li style="margin-bottom:3px">30 horses have been sent.</li>
+      </ul>
+      <p class="body-text" style="margin-top:10px">Please note, we continue to work with you to finalise the search and purchase once this fee has been paid. The fee is payable to ensure that our work and time is paid for. The fee is payable in full within 24 hours of the invoice being sent.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Timeliness of Search and Purchase</div>
+      <p class="body-text">To minimise time wasting and prevent lost purchase opportunities, it is expected that you are ready to view and purchase. The process of a sale is completed within 7 days from viewing — with a decision being made within 24 hours of potential buyers receiving the vet report — unless prior arrangements have been made. This is to protect PHS and sellers from long, drawn-out searches/purchases and missed opportunities.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Search Criteria and Readiness to Purchase</div>
+      <p class="body-text">The search criteria submitted on the Search Form is the official criteria of the search. We understand that during a search, clients will become clearer as to their criteria — this is part of the process. Please be mindful that:</p>
+      <ul style="padding-left:24px;margin-top:8px;font-size:14px;line-height:1.7;color:#2a2a2a">
+        <li style="margin-bottom:3px">If major changes occur and budget does not change, the search may no longer be viable.</li>
+        <li style="margin-bottom:3px">If you are not immediately ready to view, horses may be sold by the time you are organised to view them.</li>
+        <li style="margin-bottom:3px">You must be ready to view and purchase — searches are not paused unless there are extraordinary extenuating circumstances.</li>
+        <li style="margin-bottom:3px">The number of horses on the database does not reset. If you are at horse 18, another 12 will be added to reach 30.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Database</div>
+      <p class="body-text">The database will consist of 30 horses that match the search criteria. Once those 30 horses have been added, the search is finalised and the completion fee (if applicable) is due. "Match the criteria" in terms of age, height and price includes those within 10% of the stated figures.</p>
+      <p class="body-text" style="margin-top:8px">Please remember — it is impossible to find any horse which is absolutely perfect, with a completely clean medical history and zero history of any misdemeanour, because they are living beings.</p>
+      <p class="body-text" style="margin-top:8px">Any horse sent to PHS by the client for discussion/research will be included in the official count. Horses will not be removed from the official count simply because they don't appeal to the client or are deemed not suitable after further investigation — this research and fine-tuning is part of the process and what we are paid for.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Advertising</div>
+      <p class="body-text"><strong>During the search:</strong> PHS reserves the right to be the only content creator during the search process. Anyone is welcome and encouraged to share PHS ads and posts. Any previous search/wanted ads are expected to be removed so that the search has a fresh start, marketing-wise.</p>
+      <p class="body-text" style="margin-top:8px"><strong>After the search:</strong> PHS reserves the right to advertise horses listed with PHS as "purchased via Performance Horse Sales search" or similar on social media and the internet, once they have sold.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Assessment of Suitability</div>
+      <p class="body-text">I understand that I am fully and solely responsible for decisions relating to all aspects of the search, viewing and sale and waive PHS of all and any liability. I acknowledge that PHS does not meet or view the search client or horse in person and is relying solely on the information search clients and sellers provide.</p>
+      <p class="body-text" style="margin-top:8px">I, for myself and on behalf of my heirs, assigns, personal representatives and next of kin, hereby release and hold harmless and agree not to sue PHS and its connections, and if applicable, owners, buyers and lessors of horses or premises used, with any respect to all injury, disability, death, or loss or damage to person or property, whether caused by the negligence of these parties or otherwise.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Deposits</div>
+      <p class="body-text">There is no charge or need to pay a deposit for the first viewing, unless a potential buyer wishes to hold a horse and prevent a sale to someone else. A 10% deposit (or $1,000 — whichever is higher) must be paid to hold the horse for a second viewing or vet check. Deposits are paid directly to the horse's current owner.</p>
+      <p class="body-text" style="margin-top:8px">Deposits will usually be refunded if: the horse does not behave as advertised at the viewing; known issues are not disclosed; and/or the vet report/x-rays state the horse is lame, "not fit for purpose", or considered a "moderate" or "high" risk for the advertised purpose.</p>
+      <p class="body-text" style="margin-top:8px"><strong>It is of vital importance that you receive in writing, from the seller, the terms of deposit payment and conditions regarding deposit refunds, prior to paying a deposit.</strong></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Client Agreements</div>
+      <div class="clause-item"><span class="clause-label">Agreed:</span> I am over 18 years old and have read, understand and agree to the terms and conditions above, including the full Search Terms &amp; Conditions available on the Performance Horse Sales website. I confirm all information in my search criteria is accurate. I understand I am fully and solely responsible for decisions relating to all aspects of the search, viewing and sale.</div>
+      <div class="clause-item" style="margin-top:10px"><span class="clause-label">Agreed:</span> I agree to pay the upfront fee of ${esc(data.upfrontFee) || "$1,000"} + GST upon signing, and the completion fee of ${esc(data.consultancyFee) || "5%"} + GST in full, within 24 hours of the invoice being sent, when triggered as per the terms above. I understand that all money (deposit/payment) for the horse is sent straight to the seller by the buyer — PHS simply facilitates the search process.</div>
+      <div class="clause-item" style="margin-top:10px"><span class="clause-label">Agreed:</span> I confirm that I am ready and financially able to purchase a horse. I understand I will need to pay a 10% deposit (minimum $1,000) directly to the seller to hold a horse for second viewings or vetting, and that I will obtain the deposit terms and refund conditions in writing from the seller before paying.</div>
       ${customTermsHtml}
     </div>
 
