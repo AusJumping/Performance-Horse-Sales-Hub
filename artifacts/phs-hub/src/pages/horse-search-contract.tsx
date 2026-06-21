@@ -274,11 +274,14 @@ export default function HorseSearchContractPage() {
           </div>
         </div>
 
-        {/* Horse Description */}
-        {contract?.horseDescription && (
+        {/* Horse Name & Description */}
+        {(contract?.horseName || contract?.horseDescription) && (
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">
-            <SectionHeading num="2" title="Horse Description" />
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{contract.horseDescription}</div>
+            <SectionHeading num="2" title="Horse Name and Description" />
+            <div className="text-xl font-bold text-[#24384e] mb-3">{contract?.horseName}</div>
+            {contract?.horseDescription && (
+              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">{contract.horseDescription}</div>
+            )}
           </div>
         )}
 

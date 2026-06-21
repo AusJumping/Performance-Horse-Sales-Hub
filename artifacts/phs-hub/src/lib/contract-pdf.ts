@@ -221,9 +221,13 @@ export function generateContractHtml(data: ContractPdfData): string {
   const depositBoxHtml = data.holdingDepositAmount
     ? `<div class="deposit-box">Holding deposit due today: ${esc(data.holdingDepositAmount)}<br><span style="font-weight:400;font-size:12px">As per our terms — 10% or minimum $1,000, whichever is higher</span></div>` : "";
 
-  const orcHtml = data.orcText
+  const horseNameHtml = data.horseName
+    ? `<div style="font-size:20px;font-weight:700;color:#24384e;margin-bottom:12px;letter-spacing:-0.01em">${esc(data.horseName)}</div>`
+    : "";
+
+  const descHtml = data.orcText
     ? orcToHtml(data.orcText)
-    : `<p class="body-text" style="color:#aaa;font-style:italic">Owner Response Certificate not yet generated.</p>`;
+    : `<p class="body-text" style="color:#aaa;font-style:italic">No description entered yet.</p>`;
 
   const customClauseHtml = data.customClauses
     ? `<div class="clause-item"><span class="clause-label">Additional terms:</span> ${esc(data.customClauses)}</div>` : "";
@@ -359,9 +363,10 @@ export function generateContractHtml(data: ContractPdfData): string {
     <div class="section">
       <div class="section-header">
         <span class="section-num">2</span>
-        <h2 class="section-title">Owner Response Certificate</h2>
+        <h2 class="section-title">Horse Name and Description</h2>
       </div>
-      ${orcHtml}
+      ${horseNameHtml}
+      ${descHtml}
     </div>
 
     <div class="section">

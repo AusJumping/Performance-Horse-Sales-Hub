@@ -279,6 +279,7 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
   const [sellerBankAccountName, setSellerBankAccountName] = useState("");
   const [sellerBankBsb, setSellerBankBsb] = useState("");
   const [sellerBankAccount, setSellerBankAccount] = useState("");
+  const [horseDescription, setHorseDescription] = useState("");
   const [customClauses, setCustomClauses] = useState("");
 
   const { data: contract, isLoading } = useQuery<SearchContract>({
@@ -298,7 +299,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          horseName: horseName || "Horse",
+          horseName: horseName || undefined,
+          horseDescription: horseDescription || undefined,
           salesPrice: salesPrice || undefined,
           holdingDepositAmount: holdingDepositAmount || undefined,
           sellerName: sellerName || undefined,
@@ -374,6 +376,10 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
                   <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Sale Price</label>
                   <Input value={salesPrice} onChange={e => setSalesPrice(e.target.value)} className="text-sm" placeholder="e.g. $25,000" />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Description (Section 2)</label>
+                <Textarea rows={4} value={horseDescription} onChange={e => setHorseDescription(e.target.value)} className="text-sm" placeholder="Breed, colour, age, height, temperament, competition history, health…" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Holding Deposit</label>
