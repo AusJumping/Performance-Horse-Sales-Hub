@@ -463,33 +463,11 @@ export default function Home() {
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-5">
           <SectionHeader title="Intro & Contact Details" />
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 text-sm text-stone-700 space-y-3">
-            <p>We know that we can find your horse the perfect new home and we thank you for your trust in the process.</p>
-            <p className="font-semibold text-[#24384e]">Please contact us on 0428239317 if you do not receive a response within 12 hours.</p>
-            <p className="font-medium text-stone-800">Our aim is that the listing process:</p>
-            <ul className="list-disc list-inside space-y-0.5 ml-2 text-stone-600">
-              <li>is stress free</li>
-              <li>prevents your time being wasted</li>
-              <li>facilitates full disclosure on the part of buyers and sellers which means everyone is legally protected</li>
-              <li>and everyone is happy with the outcome...</li>
-              <li>you secure a timely sale at a price that you are happy with</li>
-              <li>the buyer, buys the right horse</li>
-              <li>your horse is in the right, long term home</li>
-            </ul>
-            <p className="font-medium text-stone-800">What happens next:</p>
-            <ol className="list-decimal list-inside space-y-0.5 ml-2 text-stone-600">
-              <li>PHS will contact the seller to answer any questions and confirm the listing.</li>
-              <li>PHS drafts the horses ad and portfolio.</li>
-            </ol>
-            <p className="text-xs italic text-stone-500">Please note - from time of form filled in, to ads going live, is usually under 12 hours, depending on how fast the seller signs forms, sends photos and videos and approves text.</p>
-            <ol className="list-decimal list-inside space-y-0.5 ml-2 text-stone-600" start={2}>
-              <li>PHS markets the horse privately, directly as well as via social media and website ads/posts.</li>
-              <li>PHS sends all viewing application forms to the seller and/or provides feedback re the sale.</li>
-              <li>If seller wishes to proceed with a potential viewer/buyer, PHS facilitates contact regarding phone call, viewing or purchase.</li>
-              <li>PHS provides advice, if required, and manages the marketing, administration, and supports the seller and buyer through the sale process.</li>
-            </ol>
-            <p className="text-xs text-stone-500">Please note that the seller is the one who makes all decisions relating to the sale and all payments are made directly to them.</p>
+            <p>We know that we can help you to find your horse the perfect new home and we thank you for your trust in the process.</p>
+            <p>This form is a contract between you, as the seller, and Performance Horse Sales. Once signed this is legally binding and costs are payable.</p>
+            <p>We are independent and impartial in helping to connect buyers and sellers. PHS does not act in the role of 'agent'. We do not act on, or make decisions on your behalf and we do not handle money - deposit/purchase price is sent directly from buyer to seller.</p>
             <p>The information on this form will not be shared with any other parties, without your consent, and will be stored securely.</p>
-            <p>Please thoroughly read this form and, more importantly, the following{" "}<a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline font-medium">Terms and Conditions of Listing Process, Commission etc</a>{" "}— available via that link and publicly on our website — to assess whether this is the right service for you, prior to signing.</p>
+            <p>Our full Terms and Conditions are available publicly on our website, please read them to assess whether this is the right service for you, prior to signing. <a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline font-medium">View Terms and Conditions</a></p>
           </div>
 
           <div data-has-error={!!fe("email")}>

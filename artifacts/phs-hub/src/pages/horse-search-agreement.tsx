@@ -206,9 +206,21 @@ export default function HorseSearchAgreementPage() {
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
 
         {/* Intro */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-stone-700 leading-relaxed">
-          <p className="font-semibold text-[#24384e] mb-2">Before we begin your search…</p>
-          <p>Please review the costs agreement below carefully. Once you have signed, we'll send you an invoice for the upfront fee and your search will commence.</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-stone-700 leading-relaxed space-y-3">
+          <p>We are confident that we can help you find a wonderful new horse and we thank you for trusting the PHS process.</p>
+          <p>Please note that this form is a contract between you, as the Search Client, and Performance Horse Sales. Once signed, it is legally binding and all applicable costs are payable.</p>
+          <p className="font-medium text-stone-800">Our aim is to make the buying process as clear, supported and stress-free as possible by:</p>
+          <ul className="list-disc list-inside space-y-0.5 ml-2 text-stone-600">
+            <li>reducing wasted time</li>
+            <li>encouraging full and honest disclosure from both buyers and sellers</li>
+            <li>helping ensure all parties are legally protected</li>
+            <li>supporting you to find the right horse</li>
+            <li>helping the horse find the right long-term home</li>
+          </ul>
+          <p>PHS is independent and impartial. We help connect buyers and sellers, but we do not act as an agent. We do not act on your behalf, make decisions for you, or handle money. Any deposit or purchase price is paid directly by the buyer to the seller.</p>
+          <p>We can help find hidden gems, but no horse is perfect. Please remember: you may find a horse that is sound, educated, sane or inexpensive, but it is unlikely that one horse will be all four.</p>
+          <p>The information provided in this form will not be shared with any other parties without your consent and will be stored securely.</p>
+          <p>Our Search Terms and Conditions are available via this link: <a href="https://drive.google.com/file/d/1b7wmPQaoeRc3nIZ9f0AY9jccJIC8m5aX/view?usp=drive_link" target="_blank" rel="noreferrer" className="text-[#24384e] underline font-medium">Search Terms and Conditions</a> and publicly on our website. Please read the document carefully, before signing this agreement, to ensure this is the right service for you.</p>
         </div>
 
         {/* Fee Summary */}
