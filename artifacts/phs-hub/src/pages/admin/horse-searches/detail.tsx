@@ -16,13 +16,19 @@ import { openHorseSearchAgreementPrintWindow } from "@/lib/horse-search-agreemen
 import { openHorseSearchContractPrintWindow } from "@/lib/horse-search-contract-pdf";
 
 const STATUSES = [
-  { value: "new", label: "New" },
-  { value: "under_review", label: "Under Review" },
-  { value: "active_search", label: "Active Search" },
-  { value: "horse_found", label: "Horse Found" },
-  { value: "completed", label: "Completed" },
-  { value: "on_hold", label: "On Hold" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "new",                      label: "New" },
+  { value: "awaiting_review",          label: "Awaiting Review" },
+  { value: "contact_made_by_phs",      label: "Contact Made by PHS" },
+  { value: "contact_email_sent",       label: "Contact Email Sent" },
+  { value: "declined_by_phs",          label: "Declined by PHS" },
+  { value: "declined_by_client",       label: "Declined by Client" },
+  { value: "costs_agreement_signed",   label: "Costs Agreement Signed" },
+  { value: "search_criteria_approved", label: "Search Criteria Approved" },
+  { value: "live",                     label: "Live" },
+  { value: "deposit_paid",             label: "Deposit Paid" },
+  { value: "purchased",                label: "Purchased" },
+  { value: "paused",                   label: "Paused" },
+  { value: "search_completed",         label: "Search Completed" },
 ];
 
 const EMAIL_TEMPLATES = [

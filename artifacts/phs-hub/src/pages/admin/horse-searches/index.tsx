@@ -11,13 +11,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, SlidersHorizontal, FolderOpen } from "lucide-react";
 
 const STATUSES = [
-  { value: "new", label: "New", className: "bg-sky-100 text-sky-800 border-sky-200" },
-  { value: "under_review", label: "Under Review", className: "bg-amber-100 text-amber-800 border-amber-200" },
-  { value: "active_search", label: "Active Search", className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-  { value: "horse_found", label: "Horse Found", className: "bg-violet-100 text-violet-800 border-violet-200" },
-  { value: "completed", label: "Completed", className: "bg-teal-100 text-teal-800 border-teal-200" },
-  { value: "on_hold", label: "On Hold", className: "bg-orange-100 text-orange-800 border-orange-200" },
-  { value: "cancelled", label: "Cancelled", className: "bg-stone-100 text-stone-600 border-stone-200" },
+  { value: "new",                     label: "New",                     className: "bg-sky-100 text-sky-800 border-sky-200" },
+  { value: "awaiting_review",         label: "Awaiting Review",         className: "bg-amber-100 text-amber-800 border-amber-200" },
+  { value: "contact_made_by_phs",     label: "Contact Made by PHS",     className: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  { value: "contact_email_sent",      label: "Contact Email Sent",      className: "bg-blue-100 text-blue-800 border-blue-200" },
+  { value: "declined_by_phs",         label: "Declined by PHS",         className: "bg-red-100 text-red-700 border-red-200" },
+  { value: "declined_by_client",      label: "Declined by Client",      className: "bg-rose-100 text-rose-700 border-rose-200" },
+  { value: "costs_agreement_signed",  label: "Costs Agreement Signed",  className: "bg-violet-100 text-violet-800 border-violet-200" },
+  { value: "search_criteria_approved",label: "Search Criteria Approved",className: "bg-purple-100 text-purple-800 border-purple-200" },
+  { value: "live",                    label: "Live",                    className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  { value: "deposit_paid",            label: "Deposit Paid",            className: "bg-teal-100 text-teal-800 border-teal-200" },
+  { value: "purchased",               label: "Purchased",               className: "bg-green-100 text-green-800 border-green-200" },
+  { value: "paused",                  label: "Paused",                  className: "bg-orange-100 text-orange-800 border-orange-200" },
+  { value: "search_completed",        label: "Search Completed",        className: "bg-cyan-100 text-cyan-800 border-cyan-200" },
 ];
 
 export function SearchStatusBadge({ status }: { status: string }) {
