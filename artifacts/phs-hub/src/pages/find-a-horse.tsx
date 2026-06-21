@@ -544,6 +544,7 @@ export default function FindAHorse() {
             <RadioGroup name="readyToSign" options={[
               "I am ready to sign the Costs Agreement, pay the invoice and to start the search.",
               "I would like to discuss the process further, before proceeding. Please note, we do not discuss the market or our strategy, prior to the client paying the invoice and the search.",
+              "I am not quite ready to start the search but I would like to know more about the process.",
             ]} value={s("readyToSign")} onChange={set("readyToSign")} />
             <FieldError message={errors.readyToSign} />
           </div>
