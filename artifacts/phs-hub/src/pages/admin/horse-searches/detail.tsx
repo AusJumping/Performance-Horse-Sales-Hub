@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown, Trash2, Link2, FileSignature, CheckCircle, XCircle, Copy } from "lucide-react";
+import { ArrowLeft, FolderOpen, FileText, RefreshCw, FileDown, Trash2, Link2, FileSignature, CheckCircle, XCircle, Copy, MessageSquare, ExternalLink } from "lucide-react";
 import { SearchStatusBadge } from "./index";
 import { openHorseSearchPrintWindow } from "@/lib/horse-search-pdf";
 import { openHorseSearchAgreementPrintWindow } from "@/lib/horse-search-agreement-pdf";
@@ -24,6 +24,37 @@ const STATUSES = [
   { value: "on_hold", label: "On Hold" },
   { value: "cancelled", label: "Cancelled" },
 ];
+
+const EMAIL_TEMPLATES = [
+  { id: "search_received",  label: "Search Form Received", group: "To Client" },
+  { id: "search_active",    label: "Search Slot Active",   group: "To Client" },
+] as const;
+
+function generateSearchDraft(
+  templateId: string,
+  hs: HorseSearch,
+): { to: string; subject: string; body: string } {
+  const firstName = hs.firstName;
+  const fullName  = `${hs.firstName} ${hs.surname}`;
+  const sig = "Best wishes,\nSally Empringham\nPerformance Horse Sales";
+
+  switch (templateId) {
+    case "search_received":
+      return {
+        to: hs.email,
+        subject: "Your Horse Search — Next Steps",
+        body: `Hi ${firstName},\n\nThanks for submitting the Search Form for [SEARCH DESCRIPTION]. I am more than happy to help :)\n\nPlease let me know if you have any questions about the process.\n\nAlternatively, if you are ready to proceed, please open and sign the costs agreement and I will send through the initial invoice.\n\nPlease note: Search Slots are limited and are not held until the Costs Agreement is signed and the initial invoice is paid.\n\n${sig}`,
+      };
+    case "search_active":
+      return {
+        to: hs.email,
+        subject: "Your Search Slot is Now Active!",
+        body: `Dear ${fullName},\n\nCongratulations! Your Search slot is booked and active - we are on the way to finding you a wonderful new horse!\n\nHere is the link to ${fullName}'s Search Folder: ${hs.driveFolderLink ?? "[PLEASE ADD DRIVE FOLDER LINK]"}\n\nWithin it are:\n\n- A Client Search database with your draft criteria. This is also where horses will be added.\n- PDF Search Agreements and our Terms and Conditions.\n- Three sub folders containing helpful resources about searching and buying a horse.\n\nPlease have a look at the Search Criteria and let me know if you are happy with it or if you would like to change anything. Once that has been communicated, I will start adding horses to the database.\n\n${sig}`,
+      };
+    default:
+      return { to: "", subject: "", body: "" };
+  }
+}
 
 interface HorseSearch {
   id: number;
@@ -485,6 +516,11 @@ export default function HorseSearchDetail() {
   });
 
   const [notes, setNotes] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("search_received");
+
+  function copyText(text: string, label: string) {
+    navigator.clipboard.writeText(text).then(() => toast({ title: `${label} copied!` }));
+  }
 
   const updateMutation = useMutation({
     mutationFn: async (patch: { status?: string; adminNotes?: string }) => {
@@ -825,6 +861,100 @@ export default function HorseSearchDetail() {
           </div>
         </div>
       </div>
+
+      {/* ── Email Drafts — full-width below ────────────────────────────── */}
+      {(() => {
+        const draft = generateSearchDraft(selectedTemplate, hs);
+        return (
+          <div className="mt-6 bg-white border rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b bg-muted/30 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-[#24384e]" />
+              <h3 className="font-semibold text-stone-800 text-sm">Email Drafts</h3>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+
+                {/* Left: controls */}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Template</label>
+                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EMAIL_TEMPLATES.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">To</label>
+                    <p className="text-sm text-stone-700 break-all">{draft.to}</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Subject</label>
+                    <div className="flex gap-1.5 items-center">
+                      <p className="flex-1 text-sm text-stone-700 leading-snug">{draft.subject}</p>
+                      <Button size="sm" variant="ghost" className="shrink-0 px-2 h-7" onClick={() => copyText(draft.subject, "Subject")}>
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {selectedTemplate === "search_received" && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 leading-relaxed">
+                      Replace <strong>[SEARCH DESCRIPTION]</strong> with the client's search goal before sending — e.g. "your daughter's next dressage horse".
+                    </p>
+                  )}
+                  {selectedTemplate === "search_active" && !hs.driveFolderLink && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 leading-relaxed">
+                      Drive folder not yet created — replace <strong>[PLEASE ADD DRIVE FOLDER LINK]</strong> with the actual folder link before sending.
+                    </p>
+                  )}
+
+                  <div className="pt-2 space-y-2">
+                    <Button
+                      onClick={() => copyText(draft.body, "Email body")}
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      <Copy className="h-4 w-4" /> Copy Email Body
+                    </Button>
+                    <Button
+                      asChild
+                      className="w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white border-0 gap-2"
+                    >
+                      <a href={`mailto:${draft.to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`}>
+                        <ExternalLink className="h-4 w-4" /> Open in Email Client
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Right: body preview */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-stone-600 uppercase tracking-wider">Email Body</label>
+                    <span className="text-xs text-muted-foreground">Read-only preview — edit in your email client</span>
+                  </div>
+                  <textarea
+                    readOnly
+                    value={draft.body}
+                    rows={16}
+                    className="w-full rounded-md border border-input bg-muted/30 px-4 py-3 text-sm text-stone-700 resize-none leading-relaxed font-mono"
+                  />
+                </div>
+
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
     </AdminLayout>
   );
 }
