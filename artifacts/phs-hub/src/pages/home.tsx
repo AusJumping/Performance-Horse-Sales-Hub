@@ -463,11 +463,33 @@ export default function Home() {
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-5">
           <SectionHeader title="Intro & Contact Details" />
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 text-sm text-stone-700 space-y-3">
-            <p>We know that we can help you to find your horse the perfect new home and we thank you for your trust in the process.</p>
-            <p>This form is a contract between you, as the seller, and Performance Horse Sales. Once signed this is legally binding and costs are payable.</p>
-            <p>We are independent and impartial in helping to connect buyers and sellers. PHS does not act in the role of 'agent'. We do not act on, or make decisions on your behalf and we do not handle money - deposit/purchase price is sent directly from buyer to seller.</p>
+            <p>We know that we can find your horse the perfect new home and we thank you for your trust in the process.</p>
+            <p className="font-semibold text-[#24384e]">Please contact us on 0428239317 if you do not receive a response within 12 hours.</p>
+            <p className="font-medium text-stone-800">Our aim is that the listing process:</p>
+            <ul className="list-disc list-inside space-y-0.5 ml-2 text-stone-600">
+              <li>is stress free</li>
+              <li>prevents your time being wasted</li>
+              <li>facilitates full disclosure on the part of buyers and sellers which means everyone is legally protected</li>
+              <li>and everyone is happy with the outcome...</li>
+              <li>you secure a timely sale at a price that you are happy with</li>
+              <li>the buyer, buys the right horse</li>
+              <li>your horse is in the right, long term home</li>
+            </ul>
+            <p className="font-medium text-stone-800">What happens next:</p>
+            <ol className="list-decimal list-inside space-y-0.5 ml-2 text-stone-600">
+              <li>PHS will contact the seller to answer any questions and confirm the listing.</li>
+              <li>PHS drafts the horses ad and portfolio.</li>
+            </ol>
+            <p className="text-xs italic text-stone-500">Please note - from time of form filled in, to ads going live, is usually under 12 hours, depending on how fast the seller signs forms, sends photos and videos and approves text.</p>
+            <ol className="list-decimal list-inside space-y-0.5 ml-2 text-stone-600" start={2}>
+              <li>PHS markets the horse privately, directly as well as via social media and website ads/ posts.</li>
+              <li>PHS sends all viewing application forms to the seller and/ or provides feedback re the sale.</li>
+              <li>If seller wishes to proceed with a potential viewer/ buyer, PHS facilitates contact regarding phone call, viewing or purchase.</li>
+              <li>PHS provides advice, if required, and manages the marketing, administration, and supports the seller and buyer through the sale process.</li>
+            </ol>
+            <p className="text-xs text-stone-500">Please note that the seller is the one who makes all decisions relating to the sale and all payments are made directly to them.</p>
             <p>The information on this form will not be shared with any other parties, without your consent, and will be stored securely.</p>
-            <p>Our full Terms and Conditions are available publicly on our website, please read them to assess whether this is the right service for you, prior to signing. <a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline font-medium">View Terms and Conditions</a></p>
+            <p>Please thoroughly read this form and, more importantly, the following{" "}<a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline font-medium">Terms and Conditions of Listing Process, Commission etc</a>{" "}— available via that link and publicly on our website — to assess whether this is the right service for you, prior to signing.</p>
           </div>
 
           <div data-has-error={!!fe("email")}>
@@ -526,14 +548,14 @@ export default function Home() {
             <p className="font-semibold text-[#24384e]">Our Listing Service includes all administration including contract of sale, marketing, communication including negotiation and advice/support for both parties.</p>
             <p className="font-bold text-[#24384e]">Listing Service</p>
             <p>Cost: $0 upfront</p>
-            <p>Then 5% commission/Consultancy Fee - minimum $500/capped at $2000.</p>
+            <p>Then 5% commission/ completion fee - minimum $500/ capped at $2000.</p>
             <p>We offer a 10% discount off commission, when paid upfront.</p>
             <p className="text-xs italic text-stone-500">Please note prices are PLUS GST</p>
           </div>
 
           <div data-has-error={!!fe("listingServiceType")}>
             <FieldLabel label="Listing Service" required />
-            <RadioGroup name="listingServiceType" value={s("listingServiceType")} onChange={setField("listingServiceType")} options={["1. Listing Service - commission/ Consultancy Fee due later (see terms)", "2. Listing Service - commission paid upfront for 10% off Consultancy Fee"]} />
+            <RadioGroup name="listingServiceType" value={s("listingServiceType")} onChange={setField("listingServiceType")} options={["1. Listing Service - commission/ completion fee due later (see terms)", "2. Listing Service - commission paid upfront for 10% off completion fee"]} />
             <FieldError message={fe("listingServiceType")} />
           </div>
 
@@ -901,7 +923,7 @@ export default function Home() {
             <p>I guarantee that all information, provided in this form, is correct and that the horse - while in my care - is exactly as they have described it.</p>
             <p>I agree that a buyer must pay a deposit to hold the horse for second viewings and vet checks.</p>
             <p>I agree to pay costs owed to PHS, in full, when they are due.</p>
-            <p className="mt-3 text-xs text-stone-500">I have READ and AGREED to the following terms and conditions — full Listing Terms and Conditions, which include payment of commission/Consultancy Fee, are available via this link:{" "}<a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline">Listing Terms and Conditions PDF</a></p>
+            <p className="mt-3 text-xs text-stone-500">I have READ and AGREED to the following terms and conditions — full Listing Terms and Conditions, which include payment of commission/ completion fee, are available via this link:{" "}<a href="https://www.performancehorsesales.com.au/phs-services/forms-terms-conditions" target="_blank" rel="noreferrer" className="text-[#24384e] underline">Listing Terms and Conditions PDF</a></p>
           </div>
 
           <div data-has-error={!!fe("generalTermsAgreed")}>

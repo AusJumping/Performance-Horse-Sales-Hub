@@ -522,14 +522,14 @@ export default function FindAHorse() {
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 space-y-5">
           <SectionHeader title="General Search Terms & Signature" />
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-stone-700 space-y-1.5 leading-snug">
-            <p>· I am over 18 years old and have read, understand and agree to the terms below.</p>
-            <p>· I am ready, willing and able to view and purchase — horses are added as fast or slow as they are found.</p>
-            <p>· I guarantee that all information provided in my search form and criteria is correct and that the search is exactly as described.</p>
-            <p>· I understand that no horse will fit every single, exact criteria — the 30 horses added to the database will be horses that PHS believes are potentially 'fit for purpose'.</p>
-            <p>· I understand that the search process is designed to help me work out what I need/want, what is available at my budget, and to help me find the horse.</p>
-            <p>· I agree to pay a deposit to hold the horse for second viewings and vet checks.</p>
-            <p>· I agree to pay costs, in full, when they are due.</p>
-            <p>· I have READ and AGREED to the full Search Terms and Conditions publicly available on our website.</p>
+            <p>- I am over 18 years old and have read, understand and agree to the terms below.</p>
+            <p>- I am ready, willing and able to view and purchase - horses are added as fast or slow as they are found.</p>
+            <p>- I guarantee that all information, provided in my search form and criteria, is correct and that the search is exactly as they have described it.</p>
+            <p>- I understand that no horse will fit every single, exact criteria of my search, the 30 horses added to the database will be horses that PHS believes are potentially 'fit for purpose' based on the initial information in their ads.</p>
+            <p>- I understand that the search process is designed to help me work out what I need/ want, what is available on the current market at my budget and to help me find the horse. The search isn't about sending 30 horses that are all the same or that perfectly fit the criteria.</p>
+            <p>- I agree to pay a deposit to hold the horse for second viewings and vet checks.</p>
+            <p>- I agree to pay costs, in full, when they are due.</p>
+            <p>I have READ and AGREED to the following terms and conditions full Search Terms and Conditions which are available publicly on our website.</p>
           </div>
           <div>
             <label className="flex items-start gap-3 cursor-pointer">
