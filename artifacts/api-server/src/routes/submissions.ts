@@ -11,6 +11,7 @@ import { eq, desc, like, and, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { sendAcknowledgementEmail, sendInternalAlertEmail } from "../lib/email.js";
+import { buildSubmissionPdfBuffer } from "./pdf.js";
 
 const router: IRouter = Router();
 
@@ -117,15 +118,26 @@ router.post("/", async (req, res) => {
       horseName: body.horseName ?? undefined,
     }));
   }
-  setImmediate(() => sendInternalAlertEmail({
-    formType: "seller",
-    recordId: submission.id,
-    name: body.sellerName ?? "Unknown",
-    email: body.sellerEmail ?? "—",
-    phone: body.sellerPhone ?? undefined,
-    horseName: body.horseName ?? undefined,
-    location: body.location ?? undefined,
-  }));
+  const submissionSnap = submission;
+  setImmediate(async () => {
+    let pdfAttachment: { filename: string; content: Buffer } | undefined;
+    try {
+      const buf = await buildSubmissionPdfBuffer(submissionSnap, []);
+      const safeClient = (body.sellerName ?? "Seller").replace(/[^a-zA-Z0-9]/g, "_");
+      const safeHorse  = (body.horseName  ?? "Horse" ).replace(/[^a-zA-Z0-9]/g, "_");
+      pdfAttachment = { filename: `${safeClient}_${safeHorse}_Submission.pdf`, content: buf };
+    } catch (_) { /* PDF failed — send email without attachment */ }
+    await sendInternalAlertEmail({
+      formType: "seller",
+      recordId: submissionSnap.id,
+      name: body.sellerName ?? "Unknown",
+      email: body.sellerEmail ?? "—",
+      phone: body.sellerPhone ?? undefined,
+      horseName: body.horseName ?? undefined,
+      location: body.location ?? undefined,
+      pdfAttachment,
+    });
+  });
 
   // Record initial status
   await db.insert(statusHistoryTable).values({

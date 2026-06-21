@@ -86,7 +86,7 @@ function drawField(
 
 type EoiRow = typeof eoisTable.$inferSelect;
 
-async function buildEoiPdfBuffer(eoi: EoiRow): Promise<Buffer> {
+export async function buildEoiPdfBuffer(eoi: EoiRow): Promise<Buffer> {
   const fd = (eoi.formData ?? {}) as Record<string, unknown>;
   const buyerName = `${eoi.buyerFirstName} ${eoi.buyerSurname}`;
   const horseName = eoi.horseName || "Any PHS Horse";
@@ -319,28 +319,36 @@ router.post("/", async (req, res) => {
       formType: "eoi",
       horseName: horseName ?? undefined,
     }));
-    setImmediate(() => sendInternalAlertEmail({
-      formType: "eoi",
-      recordId: eoi.id,
-      name: `${buyerFirstName} ${buyerSurname}`.trim(),
-      email: buyerEmail,
-      phone: buyerPhone ?? undefined,
-      horseName: horseName ?? undefined,
-      location: buyerLocation ?? undefined,
-    }));
-
-    // Auto-save signed PDF to object storage (non-blocking)
     const eoiSnapshot = eoi;
     setImmediate(async () => {
+      let pdfAttachment: { filename: string; content: Buffer } | undefined;
       try {
-        const pdf = await buildEoiPdfBuffer(eoiSnapshot);
-        const storage = new ObjectStorageService();
-        const storagePath = await storage.uploadBuffer(`eoi-pdfs/${eoiSnapshot.id}.pdf`, pdf, "application/pdf");
-        await db.update(eoisTable).set({ pdfStoragePath: storagePath }).where(eq(eoisTable.id, eoiSnapshot.id));
-        logger.info({ eoiId: eoiSnapshot.id }, "EOI PDF auto-saved to storage");
-      } catch (err) {
-        logger.warn({ err, eoiId: eoiSnapshot.id }, "Failed to auto-save EOI PDF (non-fatal)");
-      }
+        const buf = await buildEoiPdfBuffer(eoiSnapshot);
+        const safeHorse  = (horseName  ?? "All_Horses").replace(/[^a-zA-Z0-9]/g, "_");
+        const safeBuyer  = `${buyerFirstName}_${buyerSurname}`.replace(/[^a-zA-Z0-9]/g, "_");
+        pdfAttachment = { filename: `${safeBuyer}_EOI_${safeHorse}.pdf`, content: buf };
+
+        // Also save to object storage
+        try {
+          const storage = new ObjectStorageService();
+          const storagePath = await storage.uploadBuffer(`eoi-pdfs/${eoiSnapshot.id}.pdf`, buf, "application/pdf");
+          await db.update(eoisTable).set({ pdfStoragePath: storagePath }).where(eq(eoisTable.id, eoiSnapshot.id));
+          logger.info({ eoiId: eoiSnapshot.id }, "EOI PDF auto-saved to storage");
+        } catch (storageErr) {
+          logger.warn({ err: storageErr, eoiId: eoiSnapshot.id }, "Failed to auto-save EOI PDF (non-fatal)");
+        }
+      } catch (_) { /* PDF failed — send email without attachment */ }
+
+      await sendInternalAlertEmail({
+        formType: "eoi",
+        recordId: eoiSnapshot.id,
+        name: `${buyerFirstName} ${buyerSurname}`.trim(),
+        email: buyerEmail,
+        phone: buyerPhone ?? undefined,
+        horseName: horseName ?? undefined,
+        location: buyerLocation ?? undefined,
+        pdfAttachment,
+      });
     });
 
     res.json(eoi);

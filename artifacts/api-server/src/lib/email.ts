@@ -92,6 +92,7 @@ interface AlertEmailOptions {
   phone?: string;
   horseName?: string;
   location?: string;
+  pdfAttachment?: { filename: string; content: Buffer };
 }
 
 function buildAlertHtml(opts: AlertEmailOptions): string {
@@ -231,6 +232,13 @@ export async function sendInternalAlertEmail(opts: AlertEmailOptions): Promise<v
       subject,
       html: buildAlertHtml(opts),
       text: buildAlertText(opts),
+      ...(opts.pdfAttachment ? {
+        attachments: [{
+          filename: opts.pdfAttachment.filename,
+          content: opts.pdfAttachment.content,
+          contentType: "application/pdf",
+        }],
+      } : {}),
     });
     logger.info("Internal alert email sent", { to: alertTo, formType: opts.formType, recordId: opts.recordId });
   } catch (err) {

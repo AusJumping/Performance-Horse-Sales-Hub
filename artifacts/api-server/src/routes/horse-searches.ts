@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
+import PDFDocument from "pdfkit";
 import { db } from "@workspace/db";
 import { horseSearchesTable, driveSettingsTable, horseSearchAgreementsTable, horseSearchContractsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
@@ -13,6 +14,163 @@ import {
 import { sendAcknowledgementEmail, sendInternalAlertEmail } from "../lib/email.js";
 
 const router: IRouter = Router();
+
+// ─── Horse Search PDF builder ─────────────────────────────────────────────────
+
+type HorseSearchRow = typeof horseSearchesTable.$inferSelect;
+
+async function buildHorseSearchPdfBuffer(hs: HorseSearchRow): Promise<Buffer> {
+  const fd = (hs.formData ?? {}) as Record<string, unknown>;
+  const clientName = `${hs.firstName} ${hs.surname}`;
+  const serviceLabel = hs.searchServiceLevel === "level2"
+    ? "Premium Concierge — $1,000 + 5%"
+    : "Standard Search — $500 + $500";
+
+  const NAVY = "#24384e"; const NAVY_LIGHT = "#c5d5e3";
+  const RULE = "#dde3ea"; const TEXT = "#1a1a1a"; const MUTED = "#666666";
+  const PM = 50;
+
+  function fv(v: unknown): string {
+    if (v === null || v === undefined || v === "") return "—";
+    if (Array.isArray(v)) return v.length > 0 ? v.join(", ") : "—";
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    return String(v).trim();
+  }
+
+  function sec(doc: PDFKit.PDFDocument, title: string) {
+    if (doc.y > doc.page.height - 100) doc.addPage();
+    doc.moveDown(0.7);
+    const y = doc.y; const w = doc.page.width - PM * 2;
+    doc.rect(PM, y, w, 20).fill(NAVY);
+    doc.fillColor("white").fontSize(8).font("Helvetica-Bold")
+      .text(title.toUpperCase(), PM + 8, y + 6, { width: w - 16, lineBreak: false });
+    doc.fillColor(TEXT); doc.y = y + 26;
+  }
+
+  function fld(doc: PDFKit.PDFDocument, label: string, value: string, wide = false) {
+    if (!value || value === "—") return;
+    if (doc.y > doc.page.height - 80) doc.addPage();
+    const w = doc.page.width - PM * 2;
+    const lw = wide ? w : 160; const vw = wide ? w : w - lw - 12;
+    const sy = doc.y;
+    if (wide) {
+      doc.fontSize(8).font("Helvetica-Bold").fillColor(NAVY).text(label, PM, sy, { width: lw });
+      doc.fontSize(8).font("Helvetica").fillColor(TEXT).text(value, PM, doc.y, { width: vw });
+    } else {
+      doc.fontSize(8).font("Helvetica-Bold").fillColor(NAVY).text(label, PM, sy, { width: lw });
+      const al = doc.y;
+      doc.fontSize(8).font("Helvetica").fillColor(TEXT).text(value, PM + lw + 12, sy, { width: vw });
+      doc.y = Math.max(al, doc.y);
+    }
+    doc.moveTo(PM, doc.y + 3).lineTo(doc.page.width - PM, doc.y + 3)
+      .strokeColor(RULE).lineWidth(0.5).stroke();
+    doc.y += 8;
+  }
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: PM, size: "A4", autoFirstPage: true, bufferPages: true,
+      info: { Title: `Horse Search — ${clientName}`, Author: "Performance Horse Sales" } });
+    const chunks: Buffer[] = [];
+    doc.on("data", (c: Buffer) => chunks.push(c));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    const pw = doc.page.width - PM * 2;
+
+    // Header
+    doc.rect(0, 0, doc.page.width, 72).fill(NAVY);
+    doc.fillColor("white").fontSize(18).font("Helvetica-Bold")
+      .text("Performance Horse Sales", PM, 18, { align: "center", width: pw });
+    doc.fontSize(9).font("Helvetica").fillColor(NAVY_LIGHT)
+      .text("Horse Search Request", PM, 44, { align: "center", width: pw });
+    doc.y = 90;
+
+    // Title block
+    doc.fillColor(NAVY).fontSize(17).font("Helvetica-Bold")
+      .text(clientName, PM, doc.y, { width: pw });
+    doc.moveDown(0.2);
+    doc.fontSize(10).font("Helvetica").fillColor(TEXT)
+      .text(`${hs.location}  •  ${serviceLabel}`, PM, doc.y, { width: pw });
+    doc.moveDown(0.2);
+    doc.moveTo(PM, doc.y + 4).lineTo(doc.page.width - PM, doc.y + 4)
+      .strokeColor(NAVY).lineWidth(1.5).stroke();
+    doc.y += 12;
+
+    const dateStr = new Date(hs.createdAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+    doc.fontSize(8).font("Helvetica").fillColor(MUTED)
+      .text(`Search #${hs.id}  |  Submitted: ${dateStr}  |  Status: ${hs.status.replace(/_/g, " ").toUpperCase()}`,
+        PM, doc.y, { align: "center", width: pw });
+    doc.moveDown(0.8);
+
+    // Sections
+    sec(doc, "Contact Details");
+    fld(doc, "Full Name", clientName);
+    fld(doc, "Email", hs.email);
+    fld(doc, "Secondary Email", hs.emailOptional ?? "—");
+    fld(doc, "Phone", hs.phone);
+    fld(doc, "Location", hs.location);
+    fld(doc, "Service Level", serviceLabel);
+
+    sec(doc, "About the Search");
+    fld(doc, "Main reason for help", fv(fd.mainReason), true);
+    fld(doc, "Search factors", fv(fd.searchFactors), true);
+    fld(doc, "Preferred location", fv(fd.preferredLocation));
+    fld(doc, "Budget", fv(fd.budget));
+
+    sec(doc, "Horse Criteria");
+    fld(doc, "Preferred age range", fv(fd.horseAgeRange));
+    fld(doc, "Preferred height", fv(fd.horseHeight));
+    fld(doc, "Main discipline", fv(fd.mainDiscipline));
+    fld(doc, "Horse type", fv(fd.horseType));
+    fld(doc, "3 characteristics I like", fv(fd.characteristicsLiked), true);
+    fld(doc, "3 deal breakers", fv(fd.dealBreakers), true);
+    if (Array.isArray(fd.horseStatements) && fd.horseStatements.length > 0) {
+      fld(doc, "Horse must be / have", `• ${(fd.horseStatements as string[]).join("\n• ")}`, true);
+    }
+
+    sec(doc, "Goals & Current Level");
+    fld(doc, "Rider goals", fv(fd.riderGoals), true);
+    fld(doc, "Must compete at level", fv(fd.currentCompetitionLevel));
+    fld(doc, "Future goals", fv(fd.futureGoals), true);
+
+    sec(doc, "Rider Profile");
+    fld(doc, "Rider competence", fv(fd.riderCompetence));
+    fld(doc, "Riding confidence", fv(fd.ridingConfidence), true);
+    fld(doc, "Rider history", fv(fd.riderHistory), true);
+    fld(doc, "Rider age", fv(fd.riderAge));
+
+    // Signature
+    if (hs.signatureData && hs.signatureData.startsWith("data:image")) {
+      sec(doc, "Declaration & Signature");
+      fld(doc, "Terms agreed", hs.termsAgreed ? "Yes" : "No");
+      if (doc.y > doc.page.height - 120) doc.addPage();
+      doc.fontSize(8).font("Helvetica-Bold").fillColor(NAVY).text("Digital Signature", PM, doc.y);
+      doc.moveDown(0.3);
+      const b64 = hs.signatureData.split(",")[1];
+      if (b64) {
+        const imgBuf = Buffer.from(b64, "base64");
+        doc.image(imgBuf, PM, doc.y, { height: 60, fit: [220, 60] });
+        doc.y += 70;
+        doc.moveTo(PM, doc.y).lineTo(doc.page.width - PM, doc.y)
+          .strokeColor(RULE).lineWidth(0.5).stroke();
+        doc.y += 8;
+      }
+    }
+
+    // Footer
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      const fy = doc.page.height - 36;
+      doc.rect(0, fy, doc.page.width, 36).fill(NAVY);
+      doc.fillColor(NAVY_LIGHT).fontSize(7).font("Helvetica")
+        .text(`Performance Horse Sales  |  performancehorsesales.com.au  |  Confidential — Internal Use Only  |  Page ${i + 1} of ${range.count}`,
+          PM, fy + 13, { align: "center", width: pw });
+    }
+
+    doc.end();
+  });
+}
 
 async function getSettings() {
   const [s] = await db.select().from(driveSettingsTable).limit(1);
@@ -155,14 +313,24 @@ router.post("/", async (req, res) => {
     firstName: body.firstName || "there",
     formType: "search",
   }));
-  setImmediate(() => sendInternalAlertEmail({
-    formType: "search",
-    recordId: hs.id,
-    name: `${body.firstName} ${body.surname}`.trim(),
-    email: body.email,
-    phone: body.phone ?? undefined,
-    location: body.location ?? undefined,
-  }));
+  const hsSnap = hs;
+  setImmediate(async () => {
+    let pdfAttachment: { filename: string; content: Buffer } | undefined;
+    try {
+      const buf = await buildHorseSearchPdfBuffer(hsSnap);
+      const safeName = `${body.firstName}_${body.surname}`.replace(/[^a-zA-Z0-9]/g, "_");
+      pdfAttachment = { filename: `${safeName}_Horse_Search.pdf`, content: buf };
+    } catch (_) { /* PDF failed — send email without attachment */ }
+    await sendInternalAlertEmail({
+      formType: "search",
+      recordId: hsSnap.id,
+      name: `${body.firstName} ${body.surname}`.trim(),
+      email: body.email,
+      phone: body.phone ?? undefined,
+      location: body.location ?? undefined,
+      pdfAttachment,
+    });
+  });
 
   // Auto-create Drive folder in background (non-blocking)
   setImmediate(async () => {
