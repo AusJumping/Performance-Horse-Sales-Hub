@@ -193,7 +193,7 @@ export function generateHorseSearchAgreementHtml(data: HorseSearchAgreementPdfDa
         <div class="fee-row"><span class="fee-label">Consultancy fee (payable on successful purchase)</span><span class="fee-value">${esc(data.consultancyFee) || "5% (min $1,000, capped at $2,000)"}</span></div>
       </div>
       <p class="body-text">All fees are quoted exclusive of GST. GST will be added to the amounts above.</p>
-      <p class="body-text" style="margin-top:8px">The upfront fee is payable immediately upon signing this agreement and is non-refundable once the search has commenced. The consultancy fee is payable upon the client's unconditional exchange of contracts or payment for the horse found by Performance Horse Sales.</p>
+      <p class="body-text" style="margin-top:8px">The upfront fee is payable immediately upon signing this agreement and is non-refundable once the search has commenced. The consultancy fee is payable within 24 hours of the deposit being paid and the purchase being booked.</p>
     </div>
 
     <div class="section">

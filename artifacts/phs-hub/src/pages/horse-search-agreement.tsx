@@ -248,7 +248,7 @@ export default function HorseSearchAgreementPage() {
           <div className="prose prose-sm text-stone-700 space-y-3 text-sm leading-relaxed">
             <p><strong>What we will do:</strong> Performance Horse Sales will source and compile a database of up to 30 horses that match your stated criteria, notifying you each time a new match is added. For Premium Concierge clients, we will also manage all initial enquiries, negotiation, viewing bookings, vet check guidance, transport contacts, and prepare a Bill of Sale on completion.</p>
             <p><strong>Upfront fee:</strong> The upfront fee is payable immediately upon signing this agreement and is non-refundable once the search has commenced.</p>
-            <p><strong>Consultancy fee:</strong> The consultancy fee is payable upon unconditional exchange of contracts or payment for the horse found by Performance Horse Sales.</p>
+            <p><strong>Consultancy fee:</strong> The consultancy fee is payable within 24 hours of the deposit being paid and the purchase being booked.</p>
             <p><strong>Client commitments:</strong> By signing, you confirm that you are ready, willing, and able to view and purchase a horse during the search period. You confirm that all information in your search criteria form is accurate. You understand that no horse will perfectly match every criterion, and that horses presented will be those which Performance Horse Sales believes are 'fit for the intended purpose'.</p>
             <p><strong>Full Terms & Conditions</strong> are available on the Performance Horse Sales website.</p>
             {agreement?.customTerms && (
@@ -278,7 +278,7 @@ export default function HorseSearchAgreementPage() {
               I have read and agree to the Search Service Terms & Conditions set out above, including the full Terms & Conditions on the Performance Horse Sales website.
             </AgreementBox>
             <AgreementBox id="agreedFee" checked={agreedFee} onChange={setAgreedFee}>
-              I agree to pay the upfront fee of <strong>{agreement?.upfrontFee || "$1,000"} + GST</strong> upon signing, and the consultancy fee of <strong>{agreement?.consultancyFee || "5%"} + GST</strong> upon successful purchase of a horse found by Performance Horse Sales.
+              I agree to pay the upfront fee of <strong>{agreement?.upfrontFee || "$1,000"} + GST</strong> upon signing, and the consultancy fee of <strong>{agreement?.consultancyFee || "5%"} + GST</strong> within 24 hours of the deposit being paid and the purchase being booked.
             </AgreementBox>
             <AgreementBox id="agreedReady" checked={agreedReady} onChange={setAgreedReady}>
               I confirm that I am over 18 years of age, I am ready and financially able to purchase a horse, and all information I have provided in my search criteria is accurate and complete.
