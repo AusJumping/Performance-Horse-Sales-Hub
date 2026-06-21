@@ -118,12 +118,25 @@ export default function HorseSearchDetail() {
   const currentNotes = notes ?? hs.adminNotes ?? "";
   const f = hs.formData;
   const str = (k: string) => f[k] ? String(f[k]) : "—";
-  const arr = (k: string) => Array.isArray(f[k]) ? (f[k] as string[]).join(", ") : str(k);
+  const arr = (k: string): string[] => Array.isArray(f[k]) ? (f[k] as string[]) : (f[k] ? [String(f[k])] : []);
 
   const Field = ({ label, value }: { label: string; value: string }) => (
     <div className="py-2 border-b border-stone-100 last:border-0 grid grid-cols-[200px_1fr] gap-4">
       <dt className="text-sm font-medium text-stone-500">{label}</dt>
       <dd className="text-sm text-stone-900 whitespace-pre-wrap">{value || "—"}</dd>
+    </div>
+  );
+
+  const ListField = ({ label, values }: { label: string; values: string[] }) => (
+    <div className="py-2 border-b border-stone-100 last:border-0 grid grid-cols-[200px_1fr] gap-4">
+      <dt className="text-sm font-medium text-stone-500">{label}</dt>
+      <dd className="text-sm text-stone-900">
+        {values.length === 0 ? "—" : (
+          <ul className="space-y-0.5">
+            {values.map((v, i) => <li key={i} className="flex gap-1.5"><span className="text-stone-400 shrink-0">·</span><span>{v}</span></li>)}
+          </ul>
+        )}
+      </dd>
     </div>
   );
 
@@ -165,7 +178,7 @@ export default function HorseSearchDetail() {
             <h2 className="font-semibold text-[#24384e] mb-3">About the Search</h2>
             <dl>
               <Field label="Main reason for help" value={str("mainReason")} />
-              <Field label="Search factors" value={arr("searchFactors")} />
+              <ListField label="Search factors" values={arr("searchFactors")} />
               <Field label="Preferred location" value={str("preferredLocation")} />
               <Field label="Budget" value={str("budget")} />
             </dl>
@@ -175,8 +188,8 @@ export default function HorseSearchDetail() {
           <div className="bg-white border rounded-xl p-5 shadow-sm">
             <h2 className="font-semibold text-[#24384e] mb-3">Horse Criteria</h2>
             <dl>
-              <Field label="Preferred age range" value={arr("horseAgeRange")} />
-              <Field label="Preferred height" value={arr("horseHeight")} />
+              <ListField label="Preferred age range" values={arr("horseAgeRange")} />
+              <ListField label="Preferred height" values={arr("horseHeight")} />
               <Field label="3 characteristics I like" value={str("characteristicsLiked")} />
               <Field label="3 deal breakers" value={str("dealBreakers")} />
               <Field label="Main discipline" value={str("mainDiscipline")} />
@@ -199,7 +212,7 @@ export default function HorseSearchDetail() {
             <h2 className="font-semibold text-[#24384e] mb-3">Rider Profile</h2>
             <dl>
               <Field label="Rider competence" value={str("riderCompetence")} />
-              <Field label="How I feel riding" value={str("ridingConfidence")} />
+              <Field label="When riding, I feel…" value={str("ridingConfidence")} />
               <Field label="Rider history" value={str("riderHistory")} />
               <Field label="Rider age / bracket" value={str("riderAge")} />
             </dl>
@@ -209,7 +222,7 @@ export default function HorseSearchDetail() {
           <div className="bg-white border rounded-xl p-5 shadow-sm">
             <h2 className="font-semibold text-[#24384e] mb-3">Horse Requirements</h2>
             <dl>
-              <Field label="Horse statements" value={arr("horseStatements")} />
+              <ListField label="Horse must be / have" values={arr("horseStatements")} />
             </dl>
           </div>
 
@@ -217,9 +230,18 @@ export default function HorseSearchDetail() {
           <div className="bg-white border rounded-xl p-5 shadow-sm">
             <h2 className="font-semibold text-[#24384e] mb-3">Management & Restrictions</h2>
             <dl>
-              <Field label="Management" value={arr("horseManagement")} />
-              <Field label="Restrictions" value={arr("searchRestrictions")} />
+              <ListField label="Management notes" values={arr("horseManagement")} />
+              <ListField label="Search restrictions" values={arr("searchRestrictions")} />
               <Field label="Other information" value={str("otherInfo")} />
+            </dl>
+          </div>
+
+          {/* Terms & Declaration */}
+          <div className="bg-white border rounded-xl p-5 shadow-sm">
+            <h2 className="font-semibold text-[#24384e] mb-3">Terms & Declaration</h2>
+            <dl>
+              <Field label="Terms agreed" value={hs.termsAgreed ? "Yes — agreed" : "No"} />
+              <Field label="Ready to…" value={str("readyToSign")} />
             </dl>
           </div>
 
@@ -251,6 +273,7 @@ export default function HorseSearchDetail() {
               formData: hs.formData,
               signatureData: hs.signatureData,
               createdAt: hs.createdAt,
+              termsAgreed: hs.termsAgreed,
             })}
           >
             <FileDown className="h-4 w-4 mr-2" />

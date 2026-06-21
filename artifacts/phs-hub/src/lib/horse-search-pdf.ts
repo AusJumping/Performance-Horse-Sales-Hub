@@ -10,6 +10,7 @@ export interface HorseSearchPdfData {
   formData: Record<string, unknown>;
   signatureData?: string | null;
   createdAt: string;
+  termsAgreed?: boolean;
 }
 
 function esc(str: string | null | undefined): string {
@@ -41,10 +42,20 @@ function str(formData: Record<string, unknown>, k: string): string {
   return v ? String(v) : "—";
 }
 
-function arr(formData: Record<string, unknown>, k: string): string {
+function arr(formData: Record<string, unknown>, k: string): string[] {
   const v = formData[k];
-  if (Array.isArray(v)) return v.join(", ") || "—";
-  return v ? String(v) : "—";
+  if (Array.isArray(v)) return v as string[];
+  return v ? [String(v)] : [];
+}
+
+function arrStr(formData: Record<string, unknown>, k: string): string {
+  const items = arr(formData, k);
+  return items.length ? items.join(", ") : "—";
+}
+
+function bulletList(items: string[]): string {
+  if (!items.length) return "—";
+  return `<ul style="margin:0;padding:0;list-style:none">${items.map(i => `<li style="padding:1px 0;display:flex;gap:6px"><span style="color:#aaa;flex-shrink:0">·</span><span>${esc(i)}</span></li>`).join("")}</ul>`;
 }
 
 function serviceLabel(level: string): string {
@@ -193,6 +204,15 @@ function row(label: string, value: string): string {
     </tr>`;
 }
 
+function rowHtml(label: string, html: string): string {
+  if (!html || html === "—") return "";
+  return `
+    <tr>
+      <td class="label">${esc(label)}</td>
+      <td class="value">${html}</td>
+    </tr>`;
+}
+
 function section(title: string, rows: string[]): string {
   const body = rows.filter(Boolean).join("");
   if (!body.trim()) return "";
@@ -219,14 +239,14 @@ export function generateHorseSearchHtml(data: HorseSearchPdfData): string {
 
   const aboutSection = section("About the Search", [
     row("Main reason for help", str(f, "mainReason")),
-    row("Search factors", arr(f, "searchFactors")),
+    rowHtml("Search factors", bulletList(arr(f, "searchFactors"))),
     row("Preferred location", str(f, "preferredLocation")),
     row("Budget", str(f, "budget")),
   ]);
 
   const criteriaSection = section("Horse Criteria", [
-    row("Preferred age range", arr(f, "horseAgeRange")),
-    row("Preferred height", arr(f, "horseHeight")),
+    rowHtml("Preferred age range", bulletList(arr(f, "horseAgeRange"))),
+    rowHtml("Preferred height", bulletList(arr(f, "horseHeight"))),
     row("3 characteristics I like", str(f, "characteristicsLiked")),
     row("3 deal breakers", str(f, "dealBreakers")),
     row("Main discipline", str(f, "mainDiscipline")),
@@ -241,19 +261,24 @@ export function generateHorseSearchHtml(data: HorseSearchPdfData): string {
 
   const riderSection = section("Rider Profile", [
     row("Rider competence", str(f, "riderCompetence")),
-    row("How I feel riding", str(f, "ridingConfidence")),
+    row("When riding, I feel…", str(f, "ridingConfidence")),
     row("Rider history", str(f, "riderHistory")),
     row("Rider age / bracket", str(f, "riderAge")),
   ]);
 
   const requirementsSection = section("Horse Requirements", [
-    row("Horse statements", arr(f, "horseStatements")),
+    rowHtml("Horse must be / have", bulletList(arr(f, "horseStatements"))),
   ]);
 
   const managementSection = section("Management & Restrictions", [
-    row("Management", arr(f, "horseManagement")),
-    row("Restrictions", arr(f, "searchRestrictions")),
+    rowHtml("Management notes", bulletList(arr(f, "horseManagement"))),
+    rowHtml("Search restrictions", bulletList(arr(f, "searchRestrictions"))),
     row("Other information", str(f, "otherInfo")),
+  ]);
+
+  const termsSection = section("Terms & Declaration", [
+    row("Terms agreed", data.termsAgreed ? "Yes — agreed" : "Not recorded"),
+    row("Ready to…", str(f, "readyToSign")),
   ]);
 
   const sigHtml = data.signatureData ? `
@@ -298,6 +323,7 @@ export function generateHorseSearchHtml(data: HorseSearchPdfData): string {
     ${riderSection}
     ${requirementsSection}
     ${managementSection}
+    ${termsSection}
     ${sigHtml}
   </div>
 
