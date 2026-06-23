@@ -29,6 +29,7 @@ const STATUSES = [
   { value: "purchased",                label: "Purchased" },
   { value: "paused",                   label: "Paused" },
   { value: "search_completed",         label: "Search Completed" },
+  { value: "archived",                 label: "Archived" },
 ];
 
 const EMAIL_TEMPLATES = [

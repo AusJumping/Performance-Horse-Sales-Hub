@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, SlidersHorizontal, FolderOpen } from "lucide-react";
+import { Search, SlidersHorizontal, FolderOpen, Archive, ArchiveRestore } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const STATUSES = [
   { value: "new",                     label: "New",                     className: "bg-sky-100 text-sky-800 border-sky-200" },
@@ -24,6 +25,7 @@ const STATUSES = [
   { value: "purchased",               label: "Purchased",               className: "bg-green-100 text-green-800 border-green-200" },
   { value: "paused",                  label: "Paused",                  className: "bg-orange-100 text-orange-800 border-orange-200" },
   { value: "search_completed",        label: "Search Completed",        className: "bg-cyan-100 text-cyan-800 border-cyan-200" },
+  { value: "archived",                label: "Archived",                className: "bg-stone-100 text-stone-600 border-stone-200" },
 ];
 
 export function SearchStatusBadge({ status }: { status: string }) {
@@ -57,12 +59,32 @@ async function fetchSearches(): Promise<HorseSearch[]> {
 }
 
 export default function HorseSearchesList() {
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [search, setSearch] = useState("");
+  const { toast } = useToast();
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["horse-searches"], queryFn: fetchSearches });
 
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/horse-searches/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update search");
+    },
+    onSuccess: (_, { status }) => {
+      qc.invalidateQueries({ queryKey: ["horse-searches"] });
+      toast({ title: status === "archived" ? "Search archived" : "Search restored to Active" });
+    },
+    onError: () => toast({ title: "Error", description: "Could not update search.", variant: "destructive" }),
+  });
+
   const filtered = (data ?? []).filter((item) => {
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? item.status !== "archived" : item.status === statusFilter);
     const q = search.toLowerCase();
     const matchesSearch =
       !q ||
@@ -98,14 +120,16 @@ export default function HorseSearchesList() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {STATUSES.map((s) => (
+                <SelectItem value="active">Active (excl. Archived)</SelectItem>
+                <SelectItem value="all">All (incl. Archived)</SelectItem>
+                {STATUSES.filter(s => s.value !== "archived").map((s) => (
                   <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                 ))}
+                <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -117,7 +141,11 @@ export default function HorseSearchesList() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            {data?.length === 0 ? "No search requests yet." : "No searches match your filters."}
+            {statusFilter === "archived"
+              ? "No archived search requests."
+              : data?.length === 0
+              ? "No search requests yet."
+              : "No searches match your filters."}
           </div>
         ) : (
           <Table>
@@ -134,7 +162,7 @@ export default function HorseSearchesList() {
             </TableHeader>
             <TableBody>
               {filtered.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} className={item.status === "archived" ? "opacity-60" : ""}>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {format(new Date(item.createdAt), "d MMM yyyy")}
                   </TableCell>
@@ -161,9 +189,36 @@ export default function HorseSearchesList() {
                   </TableCell>
                   <TableCell><SearchStatusBadge status={item.status} /></TableCell>
                   <TableCell className="text-right">
-                    <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0">
-                      <Link href={`/admin/horse-searches/${item.id}`}>View</Link>
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button asChild size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 border-0">
+                        <Link href={`/admin/horse-searches/${item.id}`}>View</Link>
+                      </Button>
+                      {item.status === "archived" ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-10 w-10 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                          title="Unarchive"
+                          onClick={() => archiveMutation.mutate({ id: item.id, status: "new" })}
+                          disabled={archiveMutation.isPending}
+                        >
+                          <ArchiveRestore className="h-4 w-4" />
+                          <span className="sr-only">Unarchive</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-10 w-10 p-0 text-stone-400 hover:text-stone-600 hover:bg-stone-100"
+                          title="Archive"
+                          onClick={() => archiveMutation.mutate({ id: item.id, status: "archived" })}
+                          disabled={archiveMutation.isPending}
+                        >
+                          <Archive className="h-4 w-4" />
+                          <span className="sr-only">Archive</span>
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
