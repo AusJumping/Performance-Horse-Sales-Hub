@@ -82,8 +82,8 @@ function generateSubmissionDraft(
     case "orc_ready":
       return {
         to,
-        subject: `PHS – ${horse}'s Owner Response Certificate — please review`,
-        body: `Hi ${sellerFirst},\n\nI've prepared the Owner Response Certificate for ${horse} based on the information you provided.\n\nCould you please have a read through and let me know if there are any corrections or changes to be made? It's important that all the details are accurate before we proceed.\n\nOnce you're happy with it, I'll move ahead with putting together the listing.\n\n${sig}`,
+        subject: `PHS – ${horse}'s draft listing — please review`,
+        body: `Dear ${sellerFirst},\n\nThank you for submitting ${horse} to Performance Horse Sales. We have reviewed the information you provided and prepared your draft listing.\n\nPlease find below two items for your review:\n\n[TEXT FOR REVIEW]\n\n──────────────────────────────────────\n3. HORSE'S PORTFOLIO\n──────────────────────────────────────\n\n[Sally to insert link]\n\n──────────────────────────────────────\nNEXT STEPS\n──────────────────────────────────────\n\nPlease reply to this email with one of the following:\n  • "Approved" — if everything looks correct and you're happy for the ads to go live 'as is'\n  • Any changes or corrections you'd like made to the description or certificate\n\nOnce we receive your approval, we will make the ads live and post to social media.\n\nThank you again for choosing Performance Horse Sales. We look forward to finding the right buyer for ${horse}.\n\nKind regards,\nSally Empringham\nPerformance Horse Sales\nAustralia & New Zealand`,
       };
     case "approval_pack_sent":
       return {
