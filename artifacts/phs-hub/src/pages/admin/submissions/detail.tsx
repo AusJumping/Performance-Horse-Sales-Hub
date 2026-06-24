@@ -56,6 +56,7 @@ const SUBMISSION_EMAIL_TEMPLATES = [
   { id: "orc_ready",           label: "ORC Ready to Review",        group: "To Seller" },
   { id: "approval_pack_sent",  label: "Approval Pack Sent",         group: "To Seller" },
   { id: "listing_live",        label: "Listing Now Live",           group: "To Seller" },
+  { id: "ads_live",            label: "Ads Live & Folder Shared",   group: "To Seller" },
   { id: "eoi_update",          label: "EOI Received — Update",      group: "To Seller" },
   { id: "viewing_booked",      label: "Viewing Booked",             group: "To Seller" },
   { id: "offer_received",      label: "Offer Received",             group: "To Seller" },
@@ -95,6 +96,12 @@ function generateSubmissionDraft(
         to,
         subject: `PHS – ${horse} is now live!`,
         body: `Hi ${sellerFirst},\n\nGreat news — ${horse}'s listing is now live on the Performance Horse Sales website.\n\nListing link: https://www.performancehorsesales.com.au/horses-for-sale\n\nI'll also be doing a social media post to get some early exposure. I'll keep you posted as enquiries come in.\n\n${sig}`,
+      };
+    case "ads_live":
+      return {
+        to,
+        subject: `PHS – ${horse}'s ads are now live!`,
+        body: `Dear ${sellerFirst},\n\nCongratulations! ${horse}'s ads are now live and the first social media post has been scheduled!\n\nHere is the link to ${horse}'s Seller Folder: [Sally to add link]\n\nWithin it are two sub folders:\n1. 'Portfolio' — containing the horse's photos, video, description and Owner's Response Certificate — this is linked to ads and available publicly\n2. 'Seller Doc' folder — this is only accessible by PHS and you\n\nWithin the 'Seller Doc' folder is all the paperwork related to the sale as well as:\n- an 'EOI Form Database' — where I will upload any EOI forms before letting you know that there has been an enquiry, and\n- a 'Marketing' doc — which has links to the ads and social media posts.\n\nIf you would like me to update, add or change anything, please let me know.\n\nBest wishes,\nSally\nPerformance Horse Sales`,
       };
     case "eoi_update":
       return {
