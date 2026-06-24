@@ -68,7 +68,7 @@ function generateSubmissionDraft(
   sub: { horseName?: string | null; sellerName?: string | null; sellerEmail?: string | null }
 ): { to: string; subject: string; body: string } {
   const horse = sub.horseName ?? "your horse";
-  const sellerFirst = (sub.sellerName ?? "").split(" ")[0] || "there";
+  const sellerFirst = (sub.sellerName ?? "").split(" ")[0] || "[Seller's name]";
   const to = sub.sellerEmail ?? "";
   const sig = "Best,\nSally Empringham\nPerformance Horse Sales\n0428 239 317";
 
@@ -77,7 +77,7 @@ function generateSubmissionDraft(
       return {
         to,
         subject: `PHS – Submission received for ${horse}`,
-        body: `Hi ${sellerFirst},\n\nThank you for submitting your listing form for ${horse}. I've received all the details and will be in touch shortly once I've had a chance to review everything.\n\nIf I have any questions, I'll reach out.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nThank you for submitting your listing form for ${horse}. I've received all the details and will be in touch shortly once I've had a chance to review everything.\n\nIf I have any questions, I'll reach out.\n\n${sig}`,
       };
     case "orc_ready":
       return {
@@ -89,13 +89,13 @@ function generateSubmissionDraft(
       return {
         to,
         subject: `PHS – ${horse}'s Approval Pack`,
-        body: `Hi ${sellerFirst},\n\nPlease find attached the Approval Pack for ${horse}. This includes:\n- The Owner Response Certificate\n- The horse description that will appear in your listing\n\nCould you please review both documents and let me know if there are any changes needed? Once you give the go-ahead, I'll get the listing live.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nPlease find attached the Approval Pack for ${horse}. This includes:\n- The Owner Response Certificate\n- The horse description that will appear in your listing\n\nCould you please review both documents and let me know if there are any changes needed? Once you give the go-ahead, I'll get the listing live.\n\n${sig}`,
       };
     case "listing_live":
       return {
         to,
         subject: `PHS – ${horse} is now live!`,
-        body: `Hi ${sellerFirst},\n\nGreat news — ${horse}'s listing is now live on the Performance Horse Sales website.\n\nListing link: https://www.performancehorsesales.com.au/horses-for-sale\n\nI'll also be doing a social media post to get some early exposure. I'll keep you posted as enquiries come in.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nGreat news — ${horse}'s listing is now live on the Performance Horse Sales website.\n\nListing link: https://www.performancehorsesales.com.au/horses-for-sale\n\nI'll also be doing a social media post to get some early exposure. I'll keep you posted as enquiries come in.\n\n${sig}`,
       };
     case "ads_live":
       return {
@@ -107,25 +107,25 @@ function generateSubmissionDraft(
       return {
         to,
         subject: `PHS – EOI received for ${horse}`,
-        body: `Hi ${sellerFirst},\n\nWe've received an Expression of Interest for ${horse}.\n\nI'm currently reviewing the buyer's details to assess suitability. I'll be in touch with an update once I've had a chance to go through the form.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nWe've received an Expression of Interest for ${horse}.\n\nI'm currently reviewing the buyer's details to assess suitability. I'll be in touch with an update once I've had a chance to go through the form.\n\n${sig}`,
       };
     case "viewing_booked":
       return {
         to,
         subject: `PHS – Viewing booked for ${horse}`,
-        body: `Hi ${sellerFirst},\n\nA viewing has been booked for ${horse}. I'll be in touch shortly with all the details including the buyer's name and the confirmed date and time.\n\nPlease ensure ${horse} is available and ready for inspection at the agreed time.\n\nIf anything changes on your end, please let me know as soon as possible on 0428 239 317.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nA viewing has been booked for ${horse}. I'll be in touch shortly with all the details including the buyer's name and the confirmed date and time.\n\nPlease ensure ${horse} is available and ready for inspection at the agreed time.\n\nIf anything changes on your end, please let me know as soon as possible on 0428 239 317.\n\n${sig}`,
       };
     case "offer_received":
       return {
         to,
         subject: `PHS – Offer received for ${horse}`,
-        body: `Hi ${sellerFirst},\n\nWe've received an offer for ${horse}. I'd like to give you a call to discuss the details.\n\nPlease let me know a convenient time to chat, or feel free to call me directly on 0428 239 317.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nWe've received an offer for ${horse}. I'd like to give you a call to discuss the details.\n\nPlease let me know a convenient time to chat, or feel free to call me directly on 0428 239 317.\n\n${sig}`,
       };
     case "sale_completed":
       return {
         to,
         subject: `PHS – Sale completed — congratulations!`,
-        body: `Hi ${sellerFirst},\n\nCongratulations — ${horse} has been sold!\n\nThank you for trusting Performance Horse Sales to manage the listing. It has been a pleasure working with you.\n\nIf you have other horses to sell in future, or know anyone looking to list, please don't hesitate to get in touch.\n\nWishing ${horse} all the best in their new home.\n\n${sig}`,
+        body: `Dear ${sellerFirst},\n\nCongratulations — ${horse} has been sold!\n\nThank you for trusting Performance Horse Sales to manage the listing. It has been a pleasure working with you.\n\nIf you have other horses to sell in future, or know anyone looking to list, please don't hesitate to get in touch.\n\nWishing ${horse} all the best in their new home.\n\n${sig}`,
       };
     default:
       return { to, subject: "", body: "" };
