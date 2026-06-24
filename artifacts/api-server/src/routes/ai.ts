@@ -452,32 +452,34 @@ SIGNIFICANT RESULTS
 - [Result 1]
 - [Result 2]
 
-Introduction:
-[One concise, polished prose paragraph introducing the horse and his/her overall appeal. Lead with what makes this horse commercially interesting. Do not repeat the quick facts block. No bullet points.]
+**Introduction:** [One concise, polished prose paragraph introducing the horse and his/her overall appeal. Lead with what makes this horse commercially interesting. Use the horse's name at least once. Do not repeat the quick facts block. No bullet points. Prose starts on the same line as the heading.]
 
-Education, skills and experience:
-[A prose paragraph covering competition experience, training background, disciplines, flatwork or jumping education. Only what was provided. No bullet points.]
+**Education, skills and experience:** [A prose paragraph covering competition experience, training background, disciplines, flatwork or jumping education. Use the horse's name at least once. Only what was provided. No bullet points. Prose starts on the same line as the heading.]
 
-General demeanour under saddle:
-[A prose paragraph describing how the horse feels to ride. Honest but measured. Note any pressure points in calm, professional language — the goal is honest filtering, not alarm. No bullet points.]
+**General demeanour under saddle:** [A prose paragraph describing how the horse feels to ride. Use the horse's name at least once. Honest but measured. Note any pressure points in calm, professional language — the goal is honest filtering, not alarm. No bullet points. Prose starts on the same line as the heading.]
 
-Current workload / fitness:
-[A prose paragraph on current work status and fitness. Only if information was provided. No bullet points.]
+**Current workload / fitness:** [A prose paragraph on current work status and fitness. Use the horse's name at least once. Only if information was provided. No bullet points. Prose starts on the same line as the heading.]
 
-Handling:
-[A prose paragraph on ground manners, loading, travel, farrier, vet, day-to-day behaviour. Only if provided. No bullet points.]
+**Handling:** [A prose paragraph on ground manners, loading, travel, farrier, vet, day-to-day behaviour. Use the horse's name at least once. Only if provided. No bullet points. Prose starts on the same line as the heading.]
 
-Feeding and management:
-[A brief prose paragraph — buyer-relevant management summary only. Omit specific supplement brands unless clearly important. Only if provided. No bullet points.]
+**Feeding and management:** [A prose paragraph — buyer-relevant management summary. Write in full, connected sentences. Explain context where it adds value (e.g. why the horse is managed a certain way). Use the horse's name at least once. Omit specific supplement brands unless clearly important. Only if provided. No bullet points. Prose starts on the same line as the heading.]
 
-Medical history:
-[A brief, factual prose paragraph — buyer-relevant summary only. Do not include exhaustive vet detail here — that belongs in the ORC. Only if provided. No bullet points.]
+**Medical history:** [A brief, factual prose paragraph — buyer-relevant summary only. Use the horse's name at least once. Do not include exhaustive vet detail here — that belongs in the ORC. Only if provided. No bullet points. Prose starts on the same line as the heading.]
 
-Rider Suitability:
-[A clear, commercially useful prose paragraph. Who is the ideal buyer? What experience level, goals and situation does this horse suit? Use honest, measured wording for any limitations. No bullet points.]
+**Rider Suitability:** [A clear, commercially useful prose paragraph. Use the horse's name at least once. Who is the ideal buyer? What experience level, goals and situation does this horse suit? Use honest, measured wording for any limitations. No bullet points. Prose starts on the same line as the heading.]
 
-Reason for sale:
-[A short prose sentence or two. Honest and concise. Only if provided. No bullet points.]
+**Reason for sale:** [A short prose sentence or two. Honest and concise. Only if provided. No bullet points. Prose starts on the same line as the heading.]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WRITING STYLE — APPLY TO EVERY SECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Each section heading is bold, followed immediately by a colon, and the prose content begins on the SAME LINE — never on a new line below.
+- Write in full, connected sentences — not fragments or dot-point summaries.
+- Use the horse's name naturally throughout. Do not rely solely on pronouns ("he", "she", "they"). Vary between the name and pronouns section by section.
+- Where context adds value, include it — e.g. explain WHY the horse is managed a certain way, or WHAT the result of a training approach has been.
+- Every section should feel like informed, polished sales writing: factual but engaging, vivid but credible. A buyer reading this should feel like they are meeting the horse through the words.
+- Avoid flat, mechanical reporting. "He is hard fed" is a data point. "Whitaker is currently on hard feed and hay" with a sentence of context is copy.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CONTENT RULES
