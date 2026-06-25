@@ -426,10 +426,39 @@ export function generateContractHtml(data: ContractPdfData): string {
 }
 
 export function openContractPrintWindow(data: ContractPdfData): void {
-  const html = generateContractHtml(data);
-  const popup = window.open("", "_blank", "width=960,height=800,scrollbars=yes,resizable=yes");
+  const baseHtml = generateContractHtml(data);
+
+  const horseName = (data.horseName ?? "Contract").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const isSubmitted = data.status === "submitted";
+  const barLabel = isSubmitted ? "Download Signed Contract (PDF)" : "Preview / Print Contract (PDF)";
+
+  // Inject a fixed print-bar and auto-print script before </body>
+  const printBar = `
+<style>
+  #phs-print-bar { position:fixed;top:0;left:0;right:0;z-index:9999;background:#24384e;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;gap:12px; }
+  #phs-print-bar button { background:#fff;color:#24384e;border:none;border-radius:4px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap; }
+  #phs-print-bar button:hover { background:#f0f4f8; }
+  @media print { #phs-print-bar { display:none !important; } body { margin-top:0 !important; } }
+</style>
+<div id="phs-print-bar">
+  <span style="font-weight:600">${horseName} — Contract of Sale</span>
+  <button onclick="window.print()">⬇&nbsp; ${barLabel}</button>
+</div>
+<script>
+  // Push content below the fixed bar
+  document.addEventListener("DOMContentLoaded", function() {
+    var body = document.body;
+    body.style.marginTop = "52px";
+  });
+  // Auto-open print dialog for submitted contracts
+  ${isSubmitted ? "window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 400); });" : ""}
+</script>`;
+
+  const html = baseHtml.replace("</body>", printBar + "\n</body>");
+
+  const popup = window.open("", "_blank", "width=960,height=860,scrollbars=yes,resizable=yes");
   if (!popup) {
-    alert("Please allow pop-ups to open the contract document.");
+    alert("Please allow pop-ups for this site to open the contract document.");
     return;
   }
   popup.document.open();
