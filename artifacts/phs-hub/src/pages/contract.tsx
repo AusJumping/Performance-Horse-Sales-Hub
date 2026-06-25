@@ -224,8 +224,8 @@ export default function ContractPage() {
     if (!agreedDescription) return setFormError("Please declare the horse description is accurate in Section 2.");
     if (!agreedSection3) return setFormError("Please agree to the warranties in Section 3.");
     if (!agreedSection4) return setFormError("Please agree to the additional clauses in Section 4.");
-    if (!agreedSellerDeclaration) return setFormError("Please agree to the Seller's Declaration.");
-    if (!agreedBuyerDeclaration) return setFormError("Please agree to the Buyer's Declaration.");
+    if (fillerRole === "seller" && !agreedSellerDeclaration) return setFormError("Please agree to the Seller's Declaration.");
+    if (fillerRole === "buyer" && !agreedBuyerDeclaration) return setFormError("Please agree to the Buyer's Declaration.");
 
     setSubmitting(true);
     try {
@@ -529,31 +529,49 @@ export default function ContractPage() {
             </AgreementBox>
           </div>
 
-          {/* ── Seller Declaration & Signature ── */}
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading title="Seller's Declaration & Signature" />
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
-              <span className="font-semibold text-stone-800">Seller's Declaration: </span>
-              I declare that I am over the age of 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds for this sale. I declare that I transfer the ownership of this horse to the buyer listed, once funds have cleared.
+          {/* ── Seller Declaration & Signature — shown only when filler is seller ── */}
+          {(!fillerRole || fillerRole === "seller") && (
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+              <SectionHeading title="Seller's Declaration & Signature" />
+              {!fillerRole && (
+                <p className="text-xs text-stone-400 italic">This section will apply once you select your role above.</p>
+              )}
+              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
+                <span className="font-semibold text-stone-800">Seller's Declaration: </span>
+                I declare that I am over the age of 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds for this sale. I declare that I transfer the ownership of this horse to the buyer listed, once funds have cleared.
+              </div>
+              {fillerRole === "seller" && (
+                <>
+                  <AgreementBox id="agreedSellerDeclaration" checked={agreedSellerDeclaration} onChange={setAgreedSellerDeclaration}>
+                    I agree to the Seller's Declaration above.
+                  </AgreementBox>
+                  <SignatureCanvas label="Seller's Signature" onChange={setSellerSignature} />
+                </>
+              )}
             </div>
-            <AgreementBox id="agreedSellerDeclaration" checked={agreedSellerDeclaration} onChange={setAgreedSellerDeclaration}>
-              I agree to the Seller's Declaration above.
-            </AgreementBox>
-            <SignatureCanvas label="Seller's Signature" onChange={setSellerSignature} />
-          </div>
+          )}
 
-          {/* ── Buyer Declaration & Signature ── */}
-          <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
-            <SectionHeading title="Buyer's Declaration & Signature" />
-            <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
-              <span className="font-semibold text-stone-800">Buyer's Declaration: </span>
-              I declare that I am over the age of 18 and I am legally responsible for the decisions regarding the assessment and purchase of this horse. I declare that I am able to complete this sale financially and have the ability and funds to look after this horse whilst under my ownership.
+          {/* ── Buyer Declaration & Signature — shown only when filler is buyer ── */}
+          {(!fillerRole || fillerRole === "buyer") && (
+            <div className="bg-white rounded-lg shadow-sm p-6 space-y-5">
+              <SectionHeading title="Buyer's Declaration & Signature" />
+              {!fillerRole && (
+                <p className="text-xs text-stone-400 italic">This section will apply once you select your role above.</p>
+              )}
+              <div className="bg-stone-50 border border-stone-200 rounded-lg p-4 text-sm text-stone-600 leading-relaxed">
+                <span className="font-semibold text-stone-800">Buyer's Declaration: </span>
+                I declare that I am over the age of 18 and I am legally responsible for the decisions regarding the assessment and purchase of this horse. I declare that I am able to complete this sale financially and have the ability and funds to look after this horse whilst under my ownership.
+              </div>
+              {fillerRole === "buyer" && (
+                <>
+                  <AgreementBox id="agreedBuyerDeclaration" checked={agreedBuyerDeclaration} onChange={setAgreedBuyerDeclaration}>
+                    I agree to the Buyer's Declaration above.
+                  </AgreementBox>
+                  <SignatureCanvas label="Buyer's Signature" onChange={setBuyerSignature} />
+                </>
+              )}
             </div>
-            <AgreementBox id="agreedBuyerDeclaration" checked={agreedBuyerDeclaration} onChange={setAgreedBuyerDeclaration}>
-              I agree to the Buyer's Declaration above.
-            </AgreementBox>
-            <SignatureCanvas label="Buyer's Signature" onChange={setBuyerSignature} />
-          </div>
+          )}
 
           {/* ── Submit ── */}
           {formError && (

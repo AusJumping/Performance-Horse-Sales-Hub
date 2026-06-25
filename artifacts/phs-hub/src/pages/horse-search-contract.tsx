@@ -172,7 +172,8 @@ export default function HorseSearchContractPage() {
   }, [token]);
 
   const handleSubmit = async () => {
-    const allAgreed = agreedSalesPrice && agreedHoldingDeposit && agreedDescription && agreedSection3 && agreedSection4 && agreedSellerDeclaration && agreedBuyerDeclaration;
+    const allAgreed = agreedSalesPrice && agreedHoldingDeposit && agreedDescription && agreedSection3 && agreedSection4 &&
+      (fillerRole === "seller" ? agreedSellerDeclaration : fillerRole === "buyer" ? agreedBuyerDeclaration : agreedSellerDeclaration && agreedBuyerDeclaration);
     if (!allAgreed) { setValidationError("Please check all agreement boxes before submitting."); return; }
     if (!buyerSignature && !sellerSignature) { setValidationError("At least one signature is required."); return; }
     if (!fillerName.trim()) { setValidationError("Please enter your full name in the 'I am completing this form' section."); return; }
@@ -354,12 +355,16 @@ export default function HorseSearchContractPage() {
             <AgreementBox id="agreedSection4" checked={agreedSection4} onChange={setAgreedSection4}>
               I have read and agree to the Additional Clauses in Section 4.
             </AgreementBox>
-            <AgreementBox id="agreedSellerDeclaration" checked={agreedSellerDeclaration} onChange={setAgreedSellerDeclaration}>
-              <strong>Seller's Declaration:</strong> I declare that I am over 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds. I transfer ownership once funds have cleared.
-            </AgreementBox>
-            <AgreementBox id="agreedBuyerDeclaration" checked={agreedBuyerDeclaration} onChange={setAgreedBuyerDeclaration}>
-              <strong>Buyer's Declaration:</strong> I declare that I am over 18 and am legally responsible for the assessment and purchase of this horse. I am able to complete this sale financially and look after this horse under my ownership.
-            </AgreementBox>
+            {(!fillerRole || fillerRole === "seller") && (
+              <AgreementBox id="agreedSellerDeclaration" checked={agreedSellerDeclaration} onChange={setAgreedSellerDeclaration}>
+                <strong>Seller's Declaration:</strong> I declare that I am over 18; I am legally responsible for the sale of this horse and am legally entitled to receive the funds. I transfer ownership once funds have cleared.
+              </AgreementBox>
+            )}
+            {(!fillerRole || fillerRole === "buyer") && (
+              <AgreementBox id="agreedBuyerDeclaration" checked={agreedBuyerDeclaration} onChange={setAgreedBuyerDeclaration}>
+                <strong>Buyer's Declaration:</strong> I declare that I am over 18 and am legally responsible for the assessment and purchase of this horse. I am able to complete this sale financially and look after this horse under my ownership.
+              </AgreementBox>
+            )}
           </div>
         </div>
 
