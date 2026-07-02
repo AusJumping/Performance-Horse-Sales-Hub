@@ -274,20 +274,46 @@ function AgreementPanel({ id, hs }: { id: string; hs: HorseSearch }) {
 
 // ─── Bill of Sale Panel ──────────────────────────────────────────────────────
 
+function ContractDetailForm({
+  label, value, onChange, type = "text", placeholder = "",
+}: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  return (
+    <div>
+      <label className="text-xs text-stone-500 block mb-1">{label}</label>
+      <Input type={type} value={value} onChange={e => onChange(e.target.value)} className="text-sm" placeholder={placeholder} />
+    </div>
+  );
+}
+
 function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
   const { toast } = useToast();
   const qc = useQueryClient();
+
+  // ── Generate form state ──
   const [showGenForm, setShowGenForm] = useState(false);
-  const [horseName, setHorseName] = useState("");
-  const [salesPrice, setSalesPrice] = useState("");
-  const [holdingDepositAmount, setHoldingDepositAmount] = useState("");
-  const [sellerName, setSellerName] = useState("");
-  const [sellerEmail, setSellerEmail] = useState("");
-  const [sellerBankAccountName, setSellerBankAccountName] = useState("");
-  const [sellerBankBsb, setSellerBankBsb] = useState("");
-  const [sellerBankAccount, setSellerBankAccount] = useState("");
-  const [horseDescription, setHorseDescription] = useState("");
-  const [customClauses, setCustomClauses] = useState("");
+  const [genHorseName, setGenHorseName] = useState("");
+  const [genSalesPrice, setGenSalesPrice] = useState("");
+  const [genHoldingDeposit, setGenHoldingDeposit] = useState("");
+  const [genSellerName, setGenSellerName] = useState("");
+  const [genSellerEmail, setGenSellerEmail] = useState("");
+  const [genSellerBankName, setGenSellerBankName] = useState("");
+  const [genSellerBsb, setGenSellerBsb] = useState("");
+  const [genSellerAccount, setGenSellerAccount] = useState("");
+  const [genHorseDescription, setGenHorseDescription] = useState("");
+  const [genCustomClauses, setGenCustomClauses] = useState("");
+
+  // ── Edit form state ──
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editHorseName, setEditHorseName] = useState("");
+  const [editSalesPrice, setEditSalesPrice] = useState("");
+  const [editHoldingDeposit, setEditHoldingDeposit] = useState("");
+  const [editSellerName, setEditSellerName] = useState("");
+  const [editSellerEmail, setEditSellerEmail] = useState("");
+  const [editSellerBankName, setEditSellerBankName] = useState("");
+  const [editSellerBsb, setEditSellerBsb] = useState("");
+  const [editSellerAccount, setEditSellerAccount] = useState("");
+  const [editHorseDescription, setEditHorseDescription] = useState("");
+  const [editCustomClauses, setEditCustomClauses] = useState("");
 
   const { data: contract, isLoading } = useQuery<SearchContract>({
     queryKey: ["horse-search-contract", id],
@@ -306,19 +332,19 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          horseName: horseName || undefined,
-          horseDescription: horseDescription || undefined,
-          salesPrice: salesPrice || undefined,
-          holdingDepositAmount: holdingDepositAmount || undefined,
-          sellerName: sellerName || undefined,
-          sellerEmail: sellerEmail || undefined,
-          sellerBankAccountName: sellerBankAccountName || undefined,
-          sellerBankBsb: sellerBankBsb || undefined,
-          sellerBankAccount: sellerBankAccount || undefined,
+          horseName: genHorseName || undefined,
+          horseDescription: genHorseDescription || undefined,
+          salesPrice: genSalesPrice || undefined,
+          holdingDepositAmount: genHoldingDeposit || undefined,
+          sellerName: genSellerName || undefined,
+          sellerEmail: genSellerEmail || undefined,
+          sellerBankAccountName: genSellerBankName || undefined,
+          sellerBankBsb: genSellerBsb || undefined,
+          sellerBankAccount: genSellerAccount || undefined,
           buyerName: `${hs.firstName} ${hs.surname}`,
           buyerEmail: hs.email,
           buyerPhone: hs.phone,
-          customClauses: customClauses || undefined,
+          customClauses: genCustomClauses || undefined,
         }),
       });
       if (!r.ok) throw new Error("Failed");
@@ -330,6 +356,35 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
       setShowGenForm(false);
     },
     onError: () => toast({ title: "Error", description: "Could not generate.", variant: "destructive" } as any),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/horse-searches/${id}/search-contract`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          horseName: editHorseName,
+          salesPrice: editSalesPrice,
+          holdingDepositAmount: editHoldingDeposit,
+          horseDescription: editHorseDescription,
+          customClauses: editCustomClauses,
+          sellerName: editSellerName,
+          sellerEmail: editSellerEmail,
+          sellerBankAccountName: editSellerBankName,
+          sellerBankBsb: editSellerBsb,
+          sellerBankAccount: editSellerAccount,
+        }),
+      });
+      if (!r.ok) throw new Error("Failed");
+      return r.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["horse-search-contract", id] });
+      toast({ title: "Bill of Sale details saved" });
+      setShowEditForm(false);
+    },
+    onError: () => toast({ title: "Error", description: "Could not save.", variant: "destructive" } as any),
   });
 
   const voidMutation = useMutation({
@@ -345,9 +400,105 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
     onError: () => toast({ title: "Error", description: "Could not void.", variant: "destructive" } as any),
   });
 
+  const openEditForm = (c: SearchContract) => {
+    setEditHorseName(c.horseName ?? "");
+    setEditSalesPrice(c.salesPrice ?? "");
+    setEditHoldingDeposit(c.holdingDepositAmount ?? "");
+    setEditHorseDescription(c.horseDescription ?? "");
+    setEditCustomClauses(c.customClauses ?? "");
+    setEditSellerName(c.sellerName ?? "");
+    setEditSellerEmail(c.sellerEmail ?? "");
+    setEditSellerBankName(c.sellerBankAccountName ?? "");
+    setEditSellerBsb(c.sellerBankBsb ?? "");
+    setEditSellerAccount(c.sellerBankAccount ?? "");
+    setShowEditForm(true);
+  };
+
   const signingUrl = contract ? `${window.location.origin}/horse-search-contract/${contract.token}` : "";
 
   if (isLoading) return <Skeleton className="h-24 w-full" />;
+
+  // ── Generate form ──────────────────────────────────────────────────────────
+  const genForm = (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <ContractDetailForm label="Horse Name" value={genHorseName} onChange={setGenHorseName} placeholder="e.g. Rebel" />
+        <ContractDetailForm label="Sale Price" value={genSalesPrice} onChange={setGenSalesPrice} placeholder="e.g. $25,000" />
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Description (Section 2)</label>
+        <Textarea rows={4} value={genHorseDescription} onChange={e => setGenHorseDescription(e.target.value)} className="text-sm" placeholder="Breed, colour, age, height, temperament, competition history, health…" />
+      </div>
+      <ContractDetailForm label="Holding Deposit" value={genHoldingDeposit} onChange={setGenHoldingDeposit} placeholder="e.g. $2,500" />
+      <div className="border-t border-stone-100 pt-3">
+        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Seller Details</p>
+        <div className="grid grid-cols-2 gap-2">
+          <ContractDetailForm label="Seller name" value={genSellerName} onChange={setGenSellerName} />
+          <ContractDetailForm label="Seller email" value={genSellerEmail} onChange={setGenSellerEmail} type="email" />
+        </div>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <ContractDetailForm label="BSB" value={genSellerBsb} onChange={setGenSellerBsb} placeholder="000-000" />
+          <div className="col-span-2">
+            <ContractDetailForm label="Account #" value={genSellerAccount} onChange={setGenSellerAccount} />
+          </div>
+        </div>
+        <div className="mt-2">
+          <ContractDetailForm label="Account name" value={genSellerBankName} onChange={setGenSellerBankName} />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Custom Clause (optional)</label>
+        <Textarea rows={2} value={genCustomClauses} onChange={e => setGenCustomClauses(e.target.value)} className="text-sm" placeholder="Any additional terms…" />
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" className="flex-1 bg-[#24384e] hover:bg-[#1a2d3f]" disabled={generateMutation.isPending} onClick={() => generateMutation.mutate()}>
+          {generateMutation.isPending ? "Generating…" : "Generate Link"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setShowGenForm(false)}>Cancel</Button>
+      </div>
+    </div>
+  );
+
+  // ── Edit form ──────────────────────────────────────────────────────────────
+  const editForm = (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <ContractDetailForm label="Horse Name" value={editHorseName} onChange={setEditHorseName} />
+        <ContractDetailForm label="Sale Price" value={editSalesPrice} onChange={setEditSalesPrice} placeholder="e.g. $25,000" />
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Description (Section 2)</label>
+        <Textarea rows={4} value={editHorseDescription} onChange={e => setEditHorseDescription(e.target.value)} className="text-sm" />
+      </div>
+      <ContractDetailForm label="Holding Deposit" value={editHoldingDeposit} onChange={setEditHoldingDeposit} placeholder="e.g. $2,500" />
+      <div className="border-t border-stone-100 pt-3">
+        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Seller Details</p>
+        <div className="grid grid-cols-2 gap-2">
+          <ContractDetailForm label="Seller name" value={editSellerName} onChange={setEditSellerName} />
+          <ContractDetailForm label="Seller email" value={editSellerEmail} onChange={setEditSellerEmail} type="email" />
+        </div>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <ContractDetailForm label="BSB" value={editSellerBsb} onChange={setEditSellerBsb} placeholder="000-000" />
+          <div className="col-span-2">
+            <ContractDetailForm label="Account #" value={editSellerAccount} onChange={setEditSellerAccount} />
+          </div>
+        </div>
+        <div className="mt-2">
+          <ContractDetailForm label="Account name" value={editSellerBankName} onChange={setEditSellerBankName} />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Custom Clause (optional)</label>
+        <Textarea rows={2} value={editCustomClauses} onChange={e => setEditCustomClauses(e.target.value)} className="text-sm" placeholder="Any additional terms…" />
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" className="flex-1 bg-[#24384e] hover:bg-[#1a2d3f]" disabled={editMutation.isPending} onClick={() => editMutation.mutate()}>
+          {editMutation.isPending ? "Saving…" : "Save Details"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setShowEditForm(false)}>Cancel</Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-white border rounded-xl p-5 shadow-sm">
@@ -365,146 +516,95 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         )}
       </div>
 
-      {!contract || contract.status === "voided" ? (
+      {/* ── No contract / voided ── */}
+      {(!contract || contract.status === "voided") && (
         <>
           {!showGenForm ? (
             <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
               <Link2 className="h-3.5 w-3.5 mr-1.5" />
               Generate Signing Link
             </Button>
-          ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Name</label>
-                  <Input value={horseName} onChange={e => setHorseName(e.target.value)} className="text-sm" placeholder="e.g. Rebel" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Sale Price</label>
-                  <Input value={salesPrice} onChange={e => setSalesPrice(e.target.value)} className="text-sm" placeholder="e.g. $25,000" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Horse Description (Section 2)</label>
-                <Textarea rows={4} value={horseDescription} onChange={e => setHorseDescription(e.target.value)} className="text-sm" placeholder="Breed, colour, age, height, temperament, competition history, health…" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Holding Deposit</label>
-                <Input value={holdingDepositAmount} onChange={e => setHoldingDepositAmount(e.target.value)} className="text-sm" placeholder="e.g. $2,500" />
-              </div>
-              <div className="border-t border-stone-100 pt-3">
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Seller Details</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-stone-500 block mb-1">Seller name</label>
-                    <Input value={sellerName} onChange={e => setSellerName(e.target.value)} className="text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-stone-500 block mb-1">Seller email</label>
-                    <Input value={sellerEmail} onChange={e => setSellerEmail(e.target.value)} className="text-sm" type="email" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="col-span-1">
-                    <label className="text-xs text-stone-500 block mb-1">BSB</label>
-                    <Input value={sellerBankBsb} onChange={e => setSellerBankBsb(e.target.value)} className="text-sm" placeholder="000-000" />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-xs text-stone-500 block mb-1">Account #</label>
-                    <Input value={sellerBankAccount} onChange={e => setSellerBankAccount(e.target.value)} className="text-sm" />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <label className="text-xs text-stone-500 block mb-1">Account name</label>
-                  <Input value={sellerBankAccountName} onChange={e => setSellerBankAccountName(e.target.value)} className="text-sm" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wide block mb-1">Custom Clause (optional)</label>
-                <Textarea rows={2} value={customClauses} onChange={e => setCustomClauses(e.target.value)} className="text-sm" placeholder="Any additional terms…" />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1 bg-[#24384e] hover:bg-[#1a2d3f]" disabled={generateMutation.isPending} onClick={() => generateMutation.mutate()}>
-                  {generateMutation.isPending ? "Generating…" : "Generate Link"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowGenForm(false)}>Cancel</Button>
-              </div>
-            </div>
-          )}
+          ) : genForm}
         </>
-      ) : (
+      )}
+
+      {/* ── Active contract ── */}
+      {contract && contract.status !== "voided" && (
         <div className="space-y-3">
-          <div className="text-sm font-semibold text-stone-700">{contract.horseName}</div>
-          {contract.salesPrice && <div className="text-xs text-stone-500">Sale price: <strong>{contract.salesPrice}</strong></div>}
 
-          {contract.status === "submitted" ? (
-            <div className="flex items-center gap-2 text-sm text-emerald-700">
-              <CheckCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Signed {contract.submittedAt ? format(new Date(contract.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
-            </div>
-          ) : (
-            <div className="bg-stone-50 rounded-lg px-3 py-2">
-              <p className="text-xs text-stone-500 mb-1">Signing link</p>
-              <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
-            </div>
-          )}
+          {showEditForm ? editForm : (
+            <>
+              <div className="text-sm font-semibold text-stone-700">{contract.horseName}</div>
+              {contract.salesPrice && <div className="text-xs text-stone-500">Sale price: <strong>{contract.salesPrice}</strong></div>}
 
-          {contract.status === "submitted" && (contract.buyerSignature || contract.sellerSignature) && (
-            <div className="grid grid-cols-2 gap-2">
-              {contract.sellerSignature && (
-                <div>
-                  <p className="text-xs text-stone-400 mb-1">Seller sig</p>
-                  <img src={contract.sellerSignature} alt="Seller signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+              {contract.status === "submitted" ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>Signed {contract.submittedAt ? format(new Date(contract.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
+                </div>
+              ) : (
+                <div className="bg-stone-50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-stone-500 mb-1">Signing link</p>
+                  <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
                 </div>
               )}
-              {contract.buyerSignature && (
-                <div>
-                  <p className="text-xs text-stone-400 mb-1">Buyer sig</p>
-                  <img src={contract.buyerSignature} alt="Buyer signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+
+              {contract.status === "submitted" && (contract.buyerSignature || contract.sellerSignature) && (
+                <div className="grid grid-cols-2 gap-2">
+                  {contract.sellerSignature && (
+                    <div>
+                      <p className="text-xs text-stone-400 mb-1">Seller sig</p>
+                      <img src={contract.sellerSignature} alt="Seller signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+                    </div>
+                  )}
+                  {contract.buyerSignature && (
+                    <div>
+                      <p className="text-xs text-stone-400 mb-1">Buyer sig</p>
+                      <img src={contract.buyerSignature} alt="Buyer signature" className="border rounded max-h-12 w-full object-contain bg-white" />
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="flex gap-2 flex-wrap">
-            {contract.status === "pending" && (
-              <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(signingUrl, toast)}>
-                <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
+              <div className="flex gap-2 flex-wrap">
+                {contract.status === "pending" && (
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(signingUrl, toast)}>
+                    <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="flex-1"
+                  onClick={() => openHorseSearchContractPrintWindow({
+                    id: contract.id, status: contract.status,
+                    horseName: contract.horseName, salesPrice: contract.salesPrice,
+                    holdingDepositAmount: contract.holdingDepositAmount,
+                    horseDescription: contract.horseDescription, customClauses: contract.customClauses,
+                    sellerName: contract.sellerName, sellerEmail: contract.sellerEmail,
+                    sellerAddress: contract.sellerAddress, sellerPhone: contract.sellerPhone,
+                    sellerBankAccountName: contract.sellerBankAccountName,
+                    sellerBankBsb: contract.sellerBankBsb, sellerBankAccount: contract.sellerBankAccount,
+                    buyerName: contract.buyerName, buyerEmail: contract.buyerEmail,
+                    buyerAddress: contract.buyerAddress, buyerPhone: contract.buyerPhone,
+                    fillerName: contract.fillerName, fillerEmail: contract.fillerEmail,
+                    fillerRole: contract.fillerRole,
+                    buyerSignature: contract.buyerSignature, sellerSignature: contract.sellerSignature,
+                    submittedAt: contract.submittedAt, createdAt: contract.createdAt,
+                  })}>
+                  <FileDown className="h-3.5 w-3.5 mr-1.5" /> {contract.status === "submitted" ? "Download PDF" : "Preview PDF"}
+                </Button>
+              </div>
+
+              {contract.status === "pending" && (
+                <Button size="sm" variant="outline" className="w-full" onClick={() => openEditForm(contract)}>
+                  <FileSignature className="h-3.5 w-3.5 mr-1.5" /> Edit Details
+                </Button>
+              )}
+
+              <Button size="sm" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                disabled={voidMutation.isPending} onClick={() => voidMutation.mutate()}>
+                <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                {voidMutation.isPending ? "Voiding…" : "Void Contract"}
               </Button>
-            )}
-            <Button size="sm" variant="outline" className="flex-1"
-              onClick={() => openHorseSearchContractPrintWindow({
-                id: contract.id, status: contract.status,
-                horseName: contract.horseName, salesPrice: contract.salesPrice,
-                holdingDepositAmount: contract.holdingDepositAmount,
-                horseDescription: contract.horseDescription, customClauses: contract.customClauses,
-                sellerName: contract.sellerName, sellerEmail: contract.sellerEmail,
-                sellerAddress: contract.sellerAddress, sellerPhone: contract.sellerPhone,
-                sellerBankAccountName: contract.sellerBankAccountName,
-                sellerBankBsb: contract.sellerBankBsb, sellerBankAccount: contract.sellerBankAccount,
-                buyerName: contract.buyerName, buyerEmail: contract.buyerEmail,
-                buyerAddress: contract.buyerAddress, buyerPhone: contract.buyerPhone,
-                fillerName: contract.fillerName, fillerEmail: contract.fillerEmail,
-                fillerRole: contract.fillerRole,
-                buyerSignature: contract.buyerSignature, sellerSignature: contract.sellerSignature,
-                submittedAt: contract.submittedAt, createdAt: contract.createdAt,
-              })}>
-              <FileDown className="h-3.5 w-3.5 mr-1.5" /> Preview PDF
-            </Button>
-          </div>
-
-          {contract.status !== "voided" && (
-            <Button size="sm" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50"
-              disabled={voidMutation.isPending} onClick={() => voidMutation.mutate()}>
-              <XCircle className="h-3.5 w-3.5 mr-1.5" />
-              {voidMutation.isPending ? "Voiding…" : "Void Contract"}
-            </Button>
-          )}
-
-          {contract.status === "voided" && (
-            <Button size="sm" variant="outline" className="w-full" onClick={() => setShowGenForm(true)}>
-              <Link2 className="h-3.5 w-3.5 mr-1.5" /> Regenerate Link
-            </Button>
+            </>
           )}
         </div>
       )}
