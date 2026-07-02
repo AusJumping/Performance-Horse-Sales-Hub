@@ -445,23 +445,25 @@ export function openContractPrintWindow(data: ContractPdfData): void {
   <button onclick="window.print()">⬇&nbsp; ${barLabel}</button>
 </div>
 <script>
-  // Push content below the fixed bar
   document.addEventListener("DOMContentLoaded", function() {
-    var body = document.body;
-    body.style.marginTop = "52px";
+    document.body.style.marginTop = "52px";
   });
-  // Auto-open print dialog for submitted contracts
   ${isSubmitted ? "window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 400); });" : ""}
 </script>`;
 
   const html = baseHtml.replace("</body>", printBar + "\n</body>");
 
-  const popup = window.open("", "_blank", "width=960,height=860,scrollbars=yes,resizable=yes");
-  if (!popup) {
-    alert("Please allow pop-ups for this site to open the contract document.");
-    return;
+  // Use a blob URL — avoids popup blocker issues in proxied/iframe environments
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) {
+    // Fallback: let the user download the HTML file directly
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(data.horseName ?? "Contract").replace(/[^a-z0-9]/gi, "_")}_Contract_of_Sale.html`;
+    a.click();
   }
-  popup.document.open();
-  popup.document.write(html);
-  popup.document.close();
+  // Revoke after a short delay to allow the tab to load
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

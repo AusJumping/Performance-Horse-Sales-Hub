@@ -904,6 +904,7 @@ export default function SubmissionDetail() {
     if (contractData) {
       if (contractData.salesPrice) setContractSalesPrice(contractData.salesPrice);
       if (contractData.holdingDepositAmount) setContractHoldingDeposit(contractData.holdingDepositAmount);
+      if (contractData.customClauses) setContractCustomClauses(contractData.customClauses);
       setContractParties({
         sellerName: contractData.sellerName ?? "",
         sellerEmail: contractData.sellerEmail ?? "",
@@ -929,6 +930,7 @@ export default function SubmissionDetail() {
         body: JSON.stringify({
           salesPrice: contractSalesPrice,
           holdingDepositAmount: contractHoldingDeposit,
+          customClauses: contractCustomClauses,
           ...contractParties,
         }),
       });
@@ -2037,6 +2039,15 @@ export default function SubmissionDetail() {
                             value={contractHoldingDeposit}
                             onChange={(e) => setContractHoldingDeposit(e.target.value)}
                             placeholder="e.g. $1,500"
+                          />
+                        </div>
+                        <div className="space-y-1.5 col-span-2">
+                          <Label className="text-sm">Additional Custom Clauses <span className="text-stone-400 font-normal text-xs">(optional)</span></Label>
+                          <Textarea
+                            value={contractCustomClauses}
+                            onChange={(e) => setContractCustomClauses(e.target.value)}
+                            placeholder="Any extra terms or clauses to add to the contract…"
+                            rows={3}
                           />
                         </div>
                       </div>

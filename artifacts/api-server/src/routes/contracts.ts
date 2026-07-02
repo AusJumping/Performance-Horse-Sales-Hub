@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { randomUUID } from "crypto";
 import { db } from "@workspace/db";
 import { contractsTable, submissionsTable, aiOutputsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, ne } from "drizzle-orm";
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
@@ -93,7 +93,7 @@ router.patch("/submissions/:id/contract", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const {
-    salesPrice, holdingDepositAmount,
+    salesPrice, holdingDepositAmount, customClauses,
     sellerName, sellerEmail, sellerAddress, sellerPhone,
     sellerBankAccountName, sellerBankBsb, sellerBankAccount,
     buyerName, buyerEmail, buyerAddress, buyerPhone,
@@ -104,6 +104,7 @@ router.patch("/submissions/:id/contract", async (req, res) => {
     .set({
       ...(salesPrice !== undefined ? { salesPrice: salesPrice || null } : {}),
       ...(holdingDepositAmount !== undefined ? { holdingDepositAmount: holdingDepositAmount || null } : {}),
+      ...(customClauses !== undefined ? { customClauses: customClauses || null } : {}),
       sellerName: sellerName ?? undefined,
       sellerEmail: sellerEmail ?? undefined,
       sellerAddress: sellerAddress ?? undefined,
@@ -117,10 +118,10 @@ router.patch("/submissions/:id/contract", async (req, res) => {
       buyerPhone: buyerPhone ?? undefined,
       updatedAt: new Date(),
     })
-    .where(eq(contractsTable.submissionId, id))
+    .where(and(eq(contractsTable.submissionId, id), ne(contractsTable.status, "voided")))
     .returning();
 
-  if (!updated) return res.status(404).json({ error: "No contract found" });
+  if (!updated) return res.status(404).json({ error: "No active contract found" });
   return res.json(updated);
 });
 
