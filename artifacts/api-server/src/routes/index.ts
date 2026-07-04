@@ -12,6 +12,7 @@ import driveRouter from "./drive";
 import horseSearchesRouter from "./horse-searches";
 import contractsRouter from "./contracts";
 import horseSearchDocumentsRouter from "./horse-search-documents";
+import listingAgreementRouter from "./listing-agreement";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/drive", driveRouter);
 router.use("/horse-searches", horseSearchesRouter);
 router.use(contractsRouter);
 router.use(horseSearchDocumentsRouter);
+router.use(listingAgreementRouter);
 
 export default router;

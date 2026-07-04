@@ -41,7 +41,7 @@ import {
   Trash2, FileText, Image as ImageIcon, Send, Link as LinkIcon, Download, Copy,
   UploadCloud, Video, Loader2, Eye, Film, Lock, ClipboardEdit, Save, PhoneCall, FileDown,
   MailOpen, PackageCheck, AlertCircle, FileSignature, HardDrive, FolderOpen, ExternalLink, Mail,
-  RefreshCw
+  RefreshCw, Link2, XCircle
 } from "lucide-react";
 import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
@@ -963,6 +963,42 @@ export default function SubmissionDetail() {
   const [laListingPeriod, setLaListingPeriod] = useState<number>(sub?.listingPeriodDays ?? 90);
   const [laTermsNotes, setLaTermsNotes] = useState(sub?.listingTermsNotes ?? "");
   const [laSaving, setLaSaving] = useState(false);
+  const [laGeneratingLink, setLaGeneratingLink] = useState(false);
+
+  const laToken: string | null = (sub as any)?.listingAgreementToken ?? null;
+  const laSellerSignature: string | null = (sub as any)?.listingAgreementSellerSignature ?? null;
+  const laSigningUrl = laToken ? `${window.location.origin}/listing-agreement/${laToken}` : null;
+
+  const handleGenerateLaLink = async () => {
+    setLaGeneratingLink(true);
+    try {
+      await handleSaveLaTerms();
+      const res = await fetch(`/api/submissions/${submissionId}/listing-agreement/generate-link`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to generate link");
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      refetchSubmission();
+      toast({ title: "Signing link generated", description: "Copy it below and send to the seller." });
+    } catch {
+      toast({ title: "Error generating link", variant: "destructive" });
+    } finally {
+      setLaGeneratingLink(false);
+    }
+  };
+
+  const handleRevokeLaLink = async () => {
+    setLaSaving(true);
+    try {
+      const res = await fetch(`/api/submissions/${submissionId}/listing-agreement/signing-link`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to revoke link");
+      queryClient.invalidateQueries({ queryKey: getGetSubmissionQueryKey(submissionId) });
+      refetchSubmission();
+      toast({ title: "Signing link revoked" });
+    } catch {
+      toast({ title: "Error revoking link", variant: "destructive" });
+    } finally {
+      setLaSaving(false);
+    }
+  };
 
   const laStatus = sub?.listingAgreementStatus ?? "not_started";
   const laStatusLabel: Record<string, { label: string; className: string }> = {
@@ -1810,7 +1846,7 @@ export default function SubmissionDetail() {
 
                   {/* Action buttons */}
                   <div className="flex flex-col gap-2 pt-1">
-                    {/* Save + generate PDF */}
+                    {/* Save + preview PDF */}
                     <Button
                       className="w-full bg-[#24384e] hover:bg-[#1a2d3f]"
                       disabled={laSaving}
@@ -1840,44 +1876,90 @@ export default function SubmissionDetail() {
                       data-testid="button-generateListingAgreement"
                     >
                       {laSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-                      Save & Generate Listing Agreement PDF
+                      Save & Preview Listing Agreement PDF
                     </Button>
 
-                    {/* Mark as sent */}
-                    {laStatus === "agreement_generated" && (
+                    {/* Generate signing link — shown when no active token and not yet signed */}
+                    {laStatus !== "signed" && !laToken && (
                       <Button
                         variant="outline"
                         className="w-full border-violet-400 text-violet-700 hover:bg-violet-50"
-                        disabled={laSaving}
-                        onClick={() => handleLaStatusUpdate("sent_to_seller")}
-                        data-testid="button-laMarkSent"
+                        disabled={laGeneratingLink || laSaving}
+                        onClick={handleGenerateLaLink}
+                        data-testid="button-laGenerateLink"
                       >
-                        <Send className="h-4 w-4 mr-2" /> Mark as Sent to Seller
+                        {laGeneratingLink ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Link2 className="h-4 w-4 mr-2" />}
+                        Generate Signing Link for Seller
                       </Button>
                     )}
 
-                    {/* Mark as signed */}
-                    {laStatus === "sent_to_seller" && (
-                      <Button
-                        variant="outline"
-                        className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-                        disabled={laSaving}
-                        onClick={() => handleLaStatusUpdate("signed")}
-                        data-testid="button-laMarkSigned"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" /> Mark as Signed
-                      </Button>
+                    {/* Signing link display — shown when token exists and not yet signed */}
+                    {laToken && laStatus !== "signed" && laSigningUrl && (
+                      <div className="space-y-2">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2.5">
+                          <p className="text-xs text-muted-foreground mb-1">Signing link — send to seller</p>
+                          <p className="text-xs font-mono text-stone-700 break-all">{laSigningUrl}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              navigator.clipboard.writeText(laSigningUrl);
+                              toast({ title: "Link copied!" });
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                            disabled={laSaving}
+                            onClick={handleRevokeLaLink}
+                          >
+                            <XCircle className="h-3.5 w-3.5 mr-1.5" /> Revoke Link
+                          </Button>
+                        </div>
+                        {/* Manual fallback */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                          disabled={laSaving}
+                          onClick={() => handleLaStatusUpdate("signed")}
+                          data-testid="button-laMarkSigned"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5 mr-1.5" /> Mark as Signed Manually
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Signed confirmation */}
+                    {laStatus === "signed" && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-emerald-700 font-semibold">
+                          <CheckCircle className="h-4 w-4" /> Agreement Signed
+                        </div>
+                        {laSellerSignature && (
+                          <div>
+                            <p className="text-xs text-stone-500 mb-1">Seller signature</p>
+                            <img src={laSellerSignature} alt="Seller signature" className="border rounded max-h-16 bg-white object-contain w-full" />
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
                   {/* Timestamps */}
-                  {(sub.listingAgreementSentAt || sub.listingAgreementSignedAt) && (
+                  {((sub as any).listingAgreementSentAt || (sub as any).listingAgreementSignedAt) && (
                     <div className="text-xs text-muted-foreground space-y-0.5 pt-1 border-t">
-                      {sub.listingAgreementSentAt && (
-                        <p>Sent to seller: {new Date(sub.listingAgreementSentAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      {(sub as any).listingAgreementSentAt && (
+                        <p>Link sent: {new Date((sub as any).listingAgreementSentAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
                       )}
-                      {sub.listingAgreementSignedAt && (
-                        <p>Signed: {new Date(sub.listingAgreementSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      {(sub as any).listingAgreementSignedAt && (
+                        <p>Signed: {new Date((sub as any).listingAgreementSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</p>
                       )}
                     </div>
                   )}

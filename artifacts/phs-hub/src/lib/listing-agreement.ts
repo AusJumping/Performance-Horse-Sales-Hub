@@ -294,12 +294,14 @@ export function generateListingAgreementHtml(data: ListingAgreementData): string
 
 export function openListingAgreementWindow(data: ListingAgreementData): void {
   const html = generateListingAgreementHtml(data);
-  const popup = window.open("", "_blank", "width=880,height=760,scrollbars=yes,resizable=yes");
-  if (!popup) {
-    alert("Please allow pop-ups to open the Listing Agreement.");
-    return;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const tab = window.open(url, "_blank");
+  if (!tab) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Listing Agreement — ${data.horseName}.html`;
+    a.click();
   }
-  popup.document.open();
-  popup.document.write(html);
-  popup.document.close();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

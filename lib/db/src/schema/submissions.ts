@@ -90,6 +90,10 @@ export const submissionsTable = pgTable("submissions", {
   listingAgreementSentAt: timestamp("listing_agreement_sent_at", { withTimezone: true }),
   listingAgreementSignedAt: timestamp("listing_agreement_signed_at", { withTimezone: true }),
 
+  // Digital signing link (UUID token for seller-facing signing page)
+  listingAgreementToken: text("listing_agreement_token").unique(),
+  listingAgreementSellerSignature: text("listing_agreement_seller_signature"),
+
   // ── Google Drive (Phase 6) ────────────────────────────────────────────────
   driveFolderId: text("drive_folder_id"),
   driveFolderLink: text("drive_folder_link"),

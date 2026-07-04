@@ -25,6 +25,7 @@ import DriveSettings from "./pages/admin/drive/index";
 import ContractPage from "./pages/contract";
 import HorseSearchAgreementPage from "./pages/horse-search-agreement";
 import HorseSearchContractPage from "./pages/horse-search-contract";
+import ListingAgreementPage from "./pages/listing-agreement";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/contract/:token" component={ContractPage} />
       <Route path="/horse-search-agreement/:token" component={HorseSearchAgreementPage} />
       <Route path="/horse-search-contract/:token" component={HorseSearchContractPage} />
+      <Route path="/listing-agreement/:token" component={ListingAgreementPage} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin">
         <AdminGuard>
