@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { openOrcPrintWindow, generateOrcHtml, generateOrcDriveHtml } from "@/lib/orc-pdf";
 import { openApprovalPackWindow, generateApprovalPackHtml, generateSellerEmailDraft } from "@/lib/approval-pack";
-import { openListingAgreementWindow, generateListingAgreementHtml } from "@/lib/listing-agreement";
+import { openListingAgreementWindow, generateListingAgreementHtml, openSignedListingAgreementWindow } from "@/lib/listing-agreement";
 import { openContractPrintWindow } from "@/lib/contract-pdf";
 import { openHorseDescriptionPrintWindow } from "@/lib/horse-description-pdf";
 import { StatusBadge } from "@/components/status-badge";
@@ -1948,6 +1948,39 @@ export default function SubmissionDetail() {
                             <img src={laSellerSignature} alt="Seller signature" className="border rounded max-h-16 bg-white object-contain w-full" />
                           </div>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-[#24384e] text-[#24384e] hover:bg-[#24384e]/5"
+                          onClick={() => {
+                            const laData = {
+                              horseName: sub.horseName ?? "Horse",
+                              breed: sub.breed,
+                              colour: sub.colour ?? sub.workingRecord?.colour,
+                              age: sub.age ?? sub.workingRecord?.age,
+                              sex: sub.sex ?? sub.workingRecord?.sex,
+                              height: sub.workingRecord?.height ?? sub.height,
+                              askingPrice: sub.askingPrice,
+                              sellerName: sub.sellerName,
+                              sellerEmail: sub.sellerEmail,
+                              sellerPhone: sub.sellerPhone,
+                              submissionId: sub.id,
+                              commissionRate: laCommissionRate,
+                              minimumFee: laMinimumFee || undefined,
+                              maximumFee: laMaximumFee || undefined,
+                              listingPeriodDays: laListingPeriod,
+                              listingTermsNotes: laTermsNotes || undefined,
+                              agreementDate: (sub as any).listingAgreementSignedAt ?? undefined,
+                            };
+                            if (laSellerSignature) {
+                              openSignedListingAgreementWindow(laData, laSellerSignature, (sub as any).listingAgreementSignedAt);
+                            } else {
+                              openListingAgreementWindow(laData);
+                            }
+                          }}
+                        >
+                          <FileDown className="h-3.5 w-3.5 mr-1.5" /> Download Signed PDF
+                        </Button>
                       </div>
                     )}
                   </div>

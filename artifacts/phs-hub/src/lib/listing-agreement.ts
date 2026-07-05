@@ -305,3 +305,68 @@ export function openListingAgreementWindow(data: ListingAgreementData): void {
   }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
+
+export function generateSignedListingAgreementHtml(
+  data: ListingAgreementData,
+  sellerSignatureDataUrl: string,
+  signedAt?: Date | string | null,
+): string {
+  const today = data.agreementDate ? new Date(data.agreementDate) : new Date();
+  const dateStr = today.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + (data.listingPeriodDays ?? 90));
+  const endDateStr = endDate.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+
+  const signedDate = signedAt ? new Date(signedAt) : new Date();
+  const signedDateStr = signedDate.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  const signedTimeStr = signedDate.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+
+  const commissionNumeric = parseFloat(data.commissionRate.replace("%", "").trim());
+  const commissionDisplay = isNaN(commissionNumeric) ? data.commissionRate : `${commissionNumeric}%`;
+
+  // Re-use the full listing agreement HTML but override the signature section
+  const base = generateListingAgreementHtml(data);
+
+  // Replace the print bar button label
+  const withPrintLabel = base.replace(
+    "Print / Save as PDF",
+    "Print / Save Signed PDF"
+  );
+
+  // Replace the blank seller signature block with the embedded image + signed stamp
+  const signedSellerBlock = `
+    <div class="sig-block" style="position:relative">
+      <div style="position:absolute;top:-8px;right:0;background:#d4edda;border:1.5px solid #28a745;border-radius:4px;padding:2px 8px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#155724">✓ Signed</div>
+      <div class="sig-name">${escapeHtml(data.sellerName ?? "Seller")}</div>
+      <div class="sig-role">Horse Owner / Authorised Agent</div>
+      <div style="margin-top:6px;border:1px solid #e0e0e0;border-radius:4px;background:#fafafa;padding:4px">
+        <img src="${sellerSignatureDataUrl}" alt="Seller signature" style="max-height:60px;width:100%;object-fit:contain;display:block" />
+      </div>
+      <div style="font-size:10px;color:#666;margin-top:4px">Signed: ${escapeHtml(signedDateStr)} at ${escapeHtml(signedTimeStr)}</div>
+    </div>`;
+
+  const result = withPrintLabel.replace(
+    /<div class="sig-block">\s*<div class="sig-name">[^<]*<\/div>\s*<div class="sig-role">Horse Owner[^<]*<\/div>\s*<div class="sig-line">[^<]*<\/div>\s*<\/div>/,
+    signedSellerBlock
+  );
+
+  return result;
+}
+
+export function openSignedListingAgreementWindow(
+  data: ListingAgreementData,
+  sellerSignatureDataUrl: string,
+  signedAt?: Date | string | null,
+): void {
+  const html = generateSignedListingAgreementHtml(data, sellerSignatureDataUrl, signedAt);
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const tab = window.open(url, "_blank");
+  if (!tab) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Signed Listing Agreement — ${data.horseName}.html`;
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}

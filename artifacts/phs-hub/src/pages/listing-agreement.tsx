@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams } from "wouter";
+import { openSignedListingAgreementWindow } from "@/lib/listing-agreement";
 
 const API_BASE = "/api";
 
@@ -186,6 +187,33 @@ export default function ListingAgreementPage() {
     </div>
   );
 
+  const handleDownloadSigned = () => {
+    if (!agreement || !sellerSignature) return;
+    openSignedListingAgreementWindow(
+      {
+        horseName: agreement.horseName ?? "Horse",
+        breed: agreement.breed,
+        sex: agreement.sex,
+        age: agreement.age,
+        colour: agreement.colour,
+        height: agreement.height,
+        askingPrice: agreement.askingPrice,
+        location: agreement.location,
+        sellerName: agreement.sellerName,
+        sellerEmail: agreement.sellerEmail,
+        sellerPhone: agreement.sellerPhone,
+        submissionId: 0,
+        commissionRate: agreement.commissionRate ?? "5%",
+        minimumFee: agreement.minimumFee,
+        maximumFee: agreement.maximumFee,
+        listingPeriodDays: agreement.listingPeriodDays ?? 90,
+        listingTermsNotes: agreement.listingTermsNotes,
+      },
+      sellerSignature,
+      new Date(),
+    );
+  };
+
   if (submitted) return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-emerald-200 p-8 text-center shadow-sm">
@@ -194,7 +222,19 @@ export default function ListingAgreementPage() {
         <p className="text-stone-600 text-sm leading-relaxed">
           Thank you, {agreement?.sellerName ?? ""}. Your Listing Agreement for <strong>{agreement?.horseName}</strong> has been signed and submitted to Performance Horse Sales. We'll be in touch to get your listing underway.
         </p>
-        <p className="text-stone-400 text-xs mt-4">You can close this window.</p>
+        {sellerSignature && (
+          <button
+            type="button"
+            onClick={handleDownloadSigned}
+            className="mt-6 w-full bg-[#24384e] hover:bg-[#1a2d3f] text-white font-semibold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download Your Signed Copy
+          </button>
+        )}
+        <p className="text-stone-400 text-xs mt-4">You can close this window after downloading.</p>
       </div>
     </div>
   );
