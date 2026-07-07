@@ -14,7 +14,8 @@ export const contractsTable = pgTable("contracts", {
     .references(() => submissionsTable.id, { onDelete: "cascade" }),
 
   token: text("token").notNull().unique(),
-  status: text("status").notNull().default("pending"), // pending | submitted | voided
+  // pending | seller_signed | buyer_signed | fully_signed | submitted (legacy) | voided
+  status: text("status").notNull().default("pending"),
 
   horseName: text("horse_name").notNull(),
   salesPrice: text("sales_price"),
@@ -49,6 +50,8 @@ export const contractsTable = pgTable("contracts", {
   agreedSellerDeclaration: boolean("agreed_seller_declaration").notNull().default(false),
   agreedBuyerDeclaration: boolean("agreed_buyer_declaration").notNull().default(false),
 
+  sellerSignedAt: timestamp("seller_signed_at", { withTimezone: true }),
+  buyerSignedAt: timestamp("buyer_signed_at", { withTimezone: true }),
   submittedAt: timestamp("submitted_at", { withTimezone: true }),
   drivePdfLink: text("drive_pdf_link"),
   driveFileId: text("drive_file_id"),

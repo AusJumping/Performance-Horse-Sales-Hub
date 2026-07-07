@@ -7,6 +7,8 @@ import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
+const FULLY_SIGNED_STATUSES = ["fully_signed", "submitted"];
+
 // ── Admin: get contract for submission ─────────────────────────────────────
 router.get("/submissions/:id/contract", async (req, res) => {
   const id = parseInt(req.params.id);
@@ -52,7 +54,6 @@ router.post("/submissions/:id/contract", async (req, res) => {
     .where(eq(aiOutputsTable.submissionId, id));
 
   const horseDescription = aiOutput?.masterListing ?? null;
-
   const token = randomUUID();
 
   // Void any existing pending contract first
@@ -164,6 +165,8 @@ router.get("/contract/:token", async (req, res) => {
     horseDescription: contract.horseDescription,
     customClauses: contract.customClauses,
     submittedAt: contract.submittedAt,
+    sellerSignedAt: contract.sellerSignedAt,
+    buyerSignedAt: contract.buyerSignedAt,
     sellerName: contract.sellerName,
     sellerEmail: contract.sellerEmail,
     sellerAddress: contract.sellerAddress,
@@ -178,7 +181,7 @@ router.get("/contract/:token", async (req, res) => {
   });
 });
 
-// ── Public: submit contract ─────────────────────────────────────────────────
+// ── Public: submit contract (per-party) ─────────────────────────────────────
 router.post("/contract/:token/submit", async (req, res) => {
   const { token } = req.params;
 
@@ -188,51 +191,90 @@ router.post("/contract/:token/submit", async (req, res) => {
     .where(eq(contractsTable.token, token));
 
   if (!contract) return res.status(404).json({ error: "Contract not found" });
-  if (contract.status !== "pending") {
-    return res.status(409).json({ error: "This contract has already been submitted or is no longer active." });
+  if (contract.status === "voided") {
+    return res.status(410).json({ error: "This contract link has been voided." });
+  }
+  if (FULLY_SIGNED_STATUSES.includes(contract.status)) {
+    return res.status(409).json({ error: "This contract has already been fully signed by both parties." });
   }
 
   const {
-    fillerName, fillerEmail, fillerRole,
-    sellerName, sellerEmail, sellerAddress, sellerPhone,
-    buyerName, buyerEmail, buyerAddress, buyerPhone,
-    buyerSignature, sellerSignature,
+    role,
+    name, email, address, phone,
+    signature,
     agreedSalesPrice, agreedHoldingDeposit, agreedDescription,
     agreedSection3, agreedSection4, agreedSellerDeclaration, agreedBuyerDeclaration,
   } = req.body as Record<string, any>;
 
-  const [updated] = await db
-    .update(contractsTable)
-    .set({
-      status: "submitted",
-      fillerName: fillerName || null,
-      fillerEmail: fillerEmail || null,
-      fillerRole: fillerRole || null,
-      sellerName: sellerName || null,
-      sellerEmail: sellerEmail || null,
-      sellerAddress: sellerAddress || null,
-      sellerPhone: sellerPhone || null,
-      buyerName: buyerName || null,
-      buyerEmail: buyerEmail || null,
-      buyerAddress: buyerAddress || null,
-      buyerPhone: buyerPhone || null,
-      buyerSignature: buyerSignature || null,
-      sellerSignature: sellerSignature || null,
-      agreedSalesPrice: agreedSalesPrice === true,
-      agreedHoldingDeposit: agreedHoldingDeposit === true,
-      agreedDescription: agreedDescription === true,
-      agreedSection3: agreedSection3 === true,
-      agreedSection4: agreedSection4 === true,
-      agreedSellerDeclaration: agreedSellerDeclaration === true,
-      agreedBuyerDeclaration: agreedBuyerDeclaration === true,
-      submittedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(contractsTable.token, token))
-    .returning();
+  if (role === "seller") {
+    if (contract.sellerSignedAt) {
+      return res.status(409).json({ error: "The seller has already signed this contract." });
+    }
+    if (!signature) return res.status(400).json({ error: "Signature is required." });
 
-  logger.info("Contract submitted", { token, fillerName, fillerRole });
-  return res.json(updated);
+    const bothSigned = !!contract.buyerSignedAt;
+    const now = new Date();
+    const [updated] = await db
+      .update(contractsTable)
+      .set({
+        status: bothSigned ? "fully_signed" : "seller_signed",
+        sellerName: name || contract.sellerName,
+        sellerEmail: email || contract.sellerEmail,
+        sellerAddress: address || contract.sellerAddress,
+        sellerPhone: phone || contract.sellerPhone,
+        sellerSignature: signature,
+        sellerSignedAt: now,
+        fillerRole: "seller",
+        agreedSalesPrice: agreedSalesPrice === true,
+        agreedDescription: agreedDescription === true,
+        agreedSection3: agreedSection3 === true,
+        agreedSection4: agreedSection4 === true,
+        agreedSellerDeclaration: agreedSellerDeclaration === true,
+        ...(bothSigned ? { submittedAt: now } : {}),
+        updatedAt: now,
+      })
+      .where(eq(contractsTable.token, token))
+      .returning();
+
+    logger.info("Contract seller signed", { token, bothSigned });
+    return res.json(updated);
+  }
+
+  if (role === "buyer") {
+    if (contract.buyerSignedAt) {
+      return res.status(409).json({ error: "The buyer has already signed this contract." });
+    }
+    if (!signature) return res.status(400).json({ error: "Signature is required." });
+
+    const bothSigned = !!contract.sellerSignedAt;
+    const now = new Date();
+    const [updated] = await db
+      .update(contractsTable)
+      .set({
+        status: bothSigned ? "fully_signed" : "buyer_signed",
+        buyerName: name || contract.buyerName,
+        buyerEmail: email || contract.buyerEmail,
+        buyerAddress: address || contract.buyerAddress,
+        buyerPhone: phone || contract.buyerPhone,
+        buyerSignature: signature,
+        buyerSignedAt: now,
+        fillerRole: "buyer",
+        agreedHoldingDeposit: agreedHoldingDeposit === true,
+        agreedDescription: agreedDescription === true,
+        agreedSection3: agreedSection3 === true,
+        agreedSection4: agreedSection4 === true,
+        agreedBuyerDeclaration: agreedBuyerDeclaration === true,
+        ...(bothSigned ? { submittedAt: now } : {}),
+        updatedAt: now,
+      })
+      .where(eq(contractsTable.token, token))
+      .returning();
+
+    logger.info("Contract buyer signed", { token, bothSigned });
+    return res.json(updated);
+  }
+
+  return res.status(400).json({ error: "Invalid role. Must be 'seller' or 'buyer'." });
 });
 
 export default router;

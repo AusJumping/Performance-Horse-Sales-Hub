@@ -848,6 +848,7 @@ export default function SubmissionDetail() {
     buyerSignature: string | null; sellerSignature: string | null;
     agreedSalesPrice: boolean; agreedHoldingDeposit: boolean; agreedDescription: boolean;
     agreedSection3: boolean; agreedSection4: boolean; agreedSellerDeclaration: boolean; agreedBuyerDeclaration: boolean;
+    sellerSignedAt: string | null; buyerSignedAt: string | null;
     submittedAt: string | null; createdAt: string;
   } | null>({
     queryKey: ["contract", submissionId],
@@ -2014,12 +2015,18 @@ export default function SubmissionDetail() {
                     </div>
                     {contractData && contractData.status !== "voided" && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
-                        contractData.status === "submitted" ? "bg-emerald-50 text-emerald-700 border-emerald-500" :
-                        contractData.status === "pending"   ? "bg-sky-50 text-sky-700 border-sky-400" :
-                        "bg-stone-100 text-stone-600 border-stone-300"
+                        contractData.status === "fully_signed" || contractData.status === "submitted"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-500"
+                          : contractData.status === "seller_signed" || contractData.status === "buyer_signed"
+                          ? "bg-amber-50 text-amber-700 border-amber-400"
+                          : contractData.status === "pending"
+                          ? "bg-sky-50 text-sky-700 border-sky-400"
+                          : "bg-stone-100 text-stone-600 border-stone-300"
                       }`}>
-                        {contractData.status === "submitted" ? "Submitted" :
-                         contractData.status === "pending"   ? "Link Active" : contractData.status}
+                        {contractData.status === "fully_signed" || contractData.status === "submitted" ? "Fully Signed" :
+                         contractData.status === "seller_signed" ? "Seller Signed" :
+                         contractData.status === "buyer_signed"  ? "Buyer Signed" :
+                         contractData.status === "pending"       ? "Link Active" : contractData.status}
                       </span>
                     )}
                     {(!contractData || contractData.status === "voided") && (
@@ -2167,10 +2174,10 @@ export default function SubmissionDetail() {
                         </div>
                       </div>
 
-                      {/* Link */}
-                      {contractData.status === "pending" && contractUrl && (
+                      {/* Link — show while any party still needs to sign */}
+                      {(contractData.status === "pending" || contractData.status === "seller_signed" || contractData.status === "buyer_signed") && contractUrl && (
                         <div className="space-y-2">
-                          <Label className="text-sm">Contract Link (share with buyer & seller)</Label>
+                          <Label className="text-sm">Contract Link (share with buyer &amp; seller)</Label>
                           <div className="flex gap-2">
                             <Input value={contractUrl} readOnly className="text-xs font-mono bg-stone-50" />
                             <Button variant="outline" size="icon" onClick={handleCopyContractUrl} title="Copy link">
@@ -2182,33 +2189,58 @@ export default function SubmissionDetail() {
                               </a>
                             </Button>
                           </div>
-                          <p className="text-xs text-stone-400">This link is unique to this horse. Share it with both parties to review and sign.</p>
+                          <p className="text-xs text-stone-400">This link is unique to this horse. Share it with both parties — each signs separately by selecting their role.</p>
                         </div>
                       )}
 
-                      {/* Submitted: show details */}
-                      {contractData.status === "submitted" && (
+                      {/* Signing progress for partial signatures */}
+                      {(contractData.status === "seller_signed" || contractData.status === "buyer_signed") && (
+                        <div className="border border-amber-200 bg-amber-50 rounded-lg p-4 space-y-2">
+                          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Signing Progress</p>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              {contractData.sellerSignedAt
+                                ? <><CheckCircle className="h-4 w-4 text-emerald-600" /><span className="text-emerald-800 font-medium">Seller signed</span><span className="text-stone-400 text-xs">{new Date(contractData.sellerSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></>
+                                : <><div className="h-4 w-4 rounded-full border-2 border-stone-300" /><span className="text-stone-500">Awaiting seller signature</span></>
+                              }
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              {contractData.buyerSignedAt
+                                ? <><CheckCircle className="h-4 w-4 text-emerald-600" /><span className="text-emerald-800 font-medium">Buyer signed</span><span className="text-stone-400 text-xs">{new Date(contractData.buyerSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></>
+                                : <><div className="h-4 w-4 rounded-full border-2 border-stone-300" /><span className="text-stone-500">Awaiting buyer signature</span></>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Fully signed: show details */}
+                      {(contractData.status === "fully_signed" || contractData.status === "submitted") && (
                         <div className="space-y-4">
                           <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 text-sm text-emerald-800">
-                            <strong>Contract submitted</strong> on {contractData.submittedAt ? new Date(contractData.submittedAt).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                            <strong>Contract fully signed by both parties</strong>
+                            {(contractData.submittedAt || contractData.sellerSignedAt) && (
+                              <> — fully signed {new Date(contractData.submittedAt ?? contractData.sellerSignedAt!).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}</>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-3">
                               <div>
-                                <p className="text-xs text-stone-500 mb-0.5">Filled in by</p>
-                                <p className="font-medium">{contractData.fillerName ?? "—"} <span className="text-stone-400">({contractData.fillerRole ?? "—"})</span></p>
-                                <p className="text-stone-500 text-xs">{contractData.fillerEmail ?? ""}</p>
-                              </div>
-                              <div>
                                 <p className="text-xs text-stone-500 mb-0.5">Seller</p>
                                 <p className="font-medium">{contractData.sellerName ?? "—"}</p>
                                 <p className="text-stone-500 text-xs">{contractData.sellerEmail ?? ""}</p>
+                                {contractData.sellerSignedAt && (
+                                  <p className="text-emerald-700 text-xs mt-0.5">✓ Signed {new Date(contractData.sellerSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</p>
+                                )}
                               </div>
                               <div>
                                 <p className="text-xs text-stone-500 mb-0.5">Buyer</p>
                                 <p className="font-medium">{contractData.buyerName ?? "—"}</p>
                                 <p className="text-stone-500 text-xs">{contractData.buyerEmail ?? ""}</p>
+                                {contractData.buyerSignedAt && (
+                                  <p className="text-emerald-700 text-xs mt-0.5">✓ Signed {new Date(contractData.buyerSignedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</p>
+                                )}
                               </div>
                             </div>
                             <div className="space-y-2">

@@ -7,6 +7,8 @@ export interface ContractPdfData {
   status?: string;
   createdAt?: string;
   submittedAt?: string | null;
+  sellerSignedAt?: string | null;
+  buyerSignedAt?: string | null;
   fillerName?: string | null;
   fillerEmail?: string | null;
   fillerRole?: string | null;
@@ -186,6 +188,9 @@ const SHARED_STYLES = `
   }
   .submitted-banner strong { font-weight: 700; }
 
+  .status-bar.pending { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+  .status-bar.pending .status-dot { background: #f59e0b; }
+
   .doc-footer {
     background: #24384e; padding: 16px 48px;
     display: flex; align-items: center; justify-content: space-between;
@@ -204,15 +209,24 @@ const SHARED_STYLES = `
 `;
 
 export function generateContractHtml(data: ContractPdfData): string {
-  const isSubmitted = data.status === "submitted";
+  const isFullySigned = data.status === "fully_signed" || data.status === "submitted";
+  const isSellerSigned = isFullySigned || data.status === "seller_signed";
+  const isBuyerSigned = isFullySigned || data.status === "buyer_signed";
+  // legacy alias
+  const isSubmitted = isFullySigned;
 
   const holdingText = data.holdingDepositAmount
     ? `Holding deposit due today: ${esc(data.holdingDepositAmount)}`
     : "A holding deposit is required as per our terms — 10% or minimum $1,000, whichever is higher.";
 
-  const statusBarHtml = isSubmitted
-    ? `<div class="status-bar submitted"><div class="status-dot"></div><span><strong>Signed &amp; Submitted</strong> — ${fmtDatetime(data.submittedAt)}</span></div>`
-    : "";
+  let statusBarHtml = "";
+  if (isFullySigned) {
+    statusBarHtml = `<div class="status-bar submitted"><div class="status-dot"></div><span><strong>Fully Signed by Both Parties</strong> — ${fmtDatetime(data.submittedAt ?? data.sellerSignedAt ?? data.buyerSignedAt)}</span></div>`;
+  } else if (data.status === "seller_signed") {
+    statusBarHtml = `<div class="status-bar pending"><div class="status-dot"></div><span><strong>Seller Signed</strong> ${data.sellerSignedAt ? `— ${fmtDatetime(data.sellerSignedAt)}` : ""} &nbsp;·&nbsp; Awaiting buyer signature</span></div>`;
+  } else if (data.status === "buyer_signed") {
+    statusBarHtml = `<div class="status-bar pending"><div class="status-dot"></div><span><strong>Buyer Signed</strong> ${data.buyerSignedAt ? `— ${fmtDatetime(data.buyerSignedAt)}` : ""} &nbsp;·&nbsp; Awaiting seller signature</span></div>`;
+  }
 
   const priceHtml = data.salesPrice
     ? `<div class="price-box"><div class="price-label">Agreed Sale Price</div><div class="price-value">${esc(data.salesPrice)}</div></div>`
