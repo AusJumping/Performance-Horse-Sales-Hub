@@ -296,6 +296,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
   const [genHoldingDeposit, setGenHoldingDeposit] = useState("");
   const [genSellerName, setGenSellerName] = useState("");
   const [genSellerEmail, setGenSellerEmail] = useState("");
+  const [genSellerPhone, setGenSellerPhone] = useState("");
+  const [genSellerAddress, setGenSellerAddress] = useState("");
   const [genSellerBankName, setGenSellerBankName] = useState("");
   const [genSellerBsb, setGenSellerBsb] = useState("");
   const [genSellerAccount, setGenSellerAccount] = useState("");
@@ -309,6 +311,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
   const [editHoldingDeposit, setEditHoldingDeposit] = useState("");
   const [editSellerName, setEditSellerName] = useState("");
   const [editSellerEmail, setEditSellerEmail] = useState("");
+  const [editSellerPhone, setEditSellerPhone] = useState("");
+  const [editSellerAddress, setEditSellerAddress] = useState("");
   const [editSellerBankName, setEditSellerBankName] = useState("");
   const [editSellerBsb, setEditSellerBsb] = useState("");
   const [editSellerAccount, setEditSellerAccount] = useState("");
@@ -338,6 +342,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
           holdingDepositAmount: genHoldingDeposit || undefined,
           sellerName: genSellerName || undefined,
           sellerEmail: genSellerEmail || undefined,
+          sellerPhone: genSellerPhone || undefined,
+          sellerAddress: genSellerAddress || undefined,
           sellerBankAccountName: genSellerBankName || undefined,
           sellerBankBsb: genSellerBsb || undefined,
           sellerBankAccount: genSellerAccount || undefined,
@@ -371,6 +377,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
           customClauses: editCustomClauses,
           sellerName: editSellerName,
           sellerEmail: editSellerEmail,
+          sellerPhone: editSellerPhone,
+          sellerAddress: editSellerAddress,
           sellerBankAccountName: editSellerBankName,
           sellerBankBsb: editSellerBsb,
           sellerBankAccount: editSellerAccount,
@@ -408,6 +416,8 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
     setEditCustomClauses(c.customClauses ?? "");
     setEditSellerName(c.sellerName ?? "");
     setEditSellerEmail(c.sellerEmail ?? "");
+    setEditSellerPhone(c.sellerPhone ?? "");
+    setEditSellerAddress(c.sellerAddress ?? "");
     setEditSellerBankName(c.sellerBankAccountName ?? "");
     setEditSellerBsb(c.sellerBankBsb ?? "");
     setEditSellerAccount(c.sellerBankAccount ?? "");
@@ -435,6 +445,10 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         <div className="grid grid-cols-2 gap-2">
           <ContractDetailForm label="Seller name" value={genSellerName} onChange={setGenSellerName} />
           <ContractDetailForm label="Seller email" value={genSellerEmail} onChange={setGenSellerEmail} type="email" />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <ContractDetailForm label="Seller phone" value={genSellerPhone} onChange={setGenSellerPhone} placeholder="04xx xxx xxx" />
+          <ContractDetailForm label="Seller address" value={genSellerAddress} onChange={setGenSellerAddress} placeholder="Street, suburb, state" />
         </div>
         <div className="grid grid-cols-3 gap-2 mt-2">
           <ContractDetailForm label="BSB" value={genSellerBsb} onChange={setGenSellerBsb} placeholder="000-000" />
@@ -476,6 +490,10 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         <div className="grid grid-cols-2 gap-2">
           <ContractDetailForm label="Seller name" value={editSellerName} onChange={setEditSellerName} />
           <ContractDetailForm label="Seller email" value={editSellerEmail} onChange={setEditSellerEmail} type="email" />
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <ContractDetailForm label="Seller phone" value={editSellerPhone} onChange={setEditSellerPhone} placeholder="04xx xxx xxx" />
+          <ContractDetailForm label="Seller address" value={editSellerAddress} onChange={setEditSellerAddress} placeholder="Street, suburb, state" />
         </div>
         <div className="grid grid-cols-3 gap-2 mt-2">
           <ContractDetailForm label="BSB" value={editSellerBsb} onChange={setEditSellerBsb} placeholder="000-000" />
