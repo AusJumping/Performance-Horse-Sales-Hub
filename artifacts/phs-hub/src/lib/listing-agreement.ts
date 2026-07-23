@@ -255,9 +255,8 @@ export function generateListingAgreementHtml(data: ListingAgreementData): string
         <li data-n="7"><strong>Seller's Warranties.</strong> The Seller warrants that: (a) they are the lawful owner of the horse or are authorised to act on the owner's behalf; (b) the horse is free from any undisclosed finance, encumbrance or lien; and (c) all information provided to PHS is accurate and complete to the best of their knowledge.</li>
         <li data-n="8"><strong>Enquiries &amp; Viewings.</strong> PHS will manage buyer enquiries and coordinate viewings. The Seller agrees to make reasonable efforts to facilitate viewings and respond to enquiries in a timely manner.</li>
         <li data-n="9"><strong>Price Changes.</strong> The Seller must notify PHS in writing of any change to the asking price or material change to the horse's condition.</li>
-        <li data-n="10"><strong>Cancellation.</strong> Either party may terminate this agreement by providing 14 days' written notice. If the horse is sold during the listing period — or within 60 days after termination to a buyer introduced by PHS — the commission remains payable.</li>
-        <li data-n="11"><strong>Limitation of Liability.</strong> PHS acts as a facilitating consultant only and accepts no liability for the accuracy of seller-provided information, the fitness of the horse for any purpose, or any disputes arising between buyer and seller.</li>
-        <li data-n="12"><strong>Governing Law.</strong> This agreement is governed by the laws of Australia. Any disputes shall be resolved in the jurisdiction of the state in which the Seller resides.</li>
+        <li data-n="10"><strong>Limitation of Liability.</strong> PHS acts as a facilitating consultant only and accepts no liability for the accuracy of seller-provided information, the fitness of the horse for any purpose, or any disputes arising between buyer and seller.</li>
+        <li data-n="11"><strong>Governing Law.</strong> This agreement is governed by the laws of Australia. Any disputes shall be resolved in the jurisdiction of the state in which the Seller resides.</li>
       </ol>
     </div>
 

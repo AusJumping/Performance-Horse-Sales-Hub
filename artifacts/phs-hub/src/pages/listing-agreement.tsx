@@ -385,15 +385,11 @@ export default function ListingAgreementPage() {
               <p className="mt-1">PHS will manage buyer enquiries and coordinate viewings. The Seller agrees to make reasonable efforts to facilitate viewings and respond to enquiries in a timely manner.</p>
             </div>
             <div>
-              <p className="font-semibold text-stone-800">9. Cancellation</p>
-              <p className="mt-1">Either party may terminate this agreement by providing 14 days' written notice. If the horse is sold during the listing period — or within 60 days after termination to a buyer introduced by PHS — the commission remains payable.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-stone-800">10. Limitation of Liability</p>
+              <p className="font-semibold text-stone-800">9. Limitation of Liability</p>
               <p className="mt-1">PHS acts as a facilitating consultant only and accepts no liability for the accuracy of seller-provided information, the fitness of the horse for any purpose, or any disputes arising between buyer and seller.</p>
             </div>
             <div>
-              <p className="font-semibold text-stone-800">11. Governing Law</p>
+              <p className="font-semibold text-stone-800">10. Governing Law</p>
               <p className="mt-1">This agreement is governed by the laws of Australia. Any disputes shall be resolved in the jurisdiction of the state in which the Seller resides.</p>
             </div>
           </div>
