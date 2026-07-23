@@ -548,7 +548,7 @@ export default function Home() {
             <p className="font-semibold text-[#24384e]">Our Listing Service includes all administration including contract of sale, marketing, communication including negotiation and advice/support for both parties.</p>
             <p className="font-bold text-[#24384e]">Listing Service</p>
             <p>Cost: $0 upfront</p>
-            <p>Then 5% commission/ completion fee - minimum $500/ capped at $2000.</p>
+            <p>Then 5% commission/ completion fee - minimum $1000/ capped at $2000.</p>
             <p>We offer a 10% discount off commission, when paid upfront.</p>
             <p className="text-xs italic text-stone-500">Please note prices are PLUS GST</p>
           </div>
