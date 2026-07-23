@@ -358,7 +358,7 @@ export default function ListingAgreementPage() {
             </div>
             <div>
               <p className="font-semibold text-stone-800">2. Commission / Completion Fee</p>
-              <p className="mt-1">The Seller agrees to pay PHS a commission of {commissionRate} of the listing price (plus GST){agreement?.minimumFee || agreement?.maximumFee ? `, subject to a minimum fee of ${agreement?.minimumFee ?? "—"}${agreement?.maximumFee ? ` and a maximum fee of ${agreement.maximumFee}` : ""}` : ""}. The fee is due — whichever occurs first — when: (a) a deposit is paid or vetting is booked; (b) the horse is leased or sent on trial; (c) the horse is sold by any means or channel; or (d) three months have passed since listing commencement. The commission is payable within 24 hours of the invoice being issued. All fees are plus GST.</p>
+              <p className="mt-1">The Seller agrees to pay PHS a commission of {commissionRate} of the listing price (plus GST), subject to a minimum fee of {agreement?.minimumFee ?? "$1,000"}{agreement?.maximumFee ? ` and a maximum fee of ${agreement.maximumFee}` : ""}. The fee is due — whichever occurs first — when: (a) a deposit is paid or vetting is booked; (b) the horse is leased or sent on trial; (c) the horse is sold by any means or channel; or (d) three months have passed since listing commencement. The commission is payable within 24 hours of the invoice being issued. All fees are plus GST.</p>
             </div>
             <div>
               <p className="font-semibold text-stone-800">3. Retained Deposit</p>
