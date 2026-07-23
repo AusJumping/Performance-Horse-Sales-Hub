@@ -370,7 +370,7 @@ export default function ListingAgreementPage() {
             </div>
             <div>
               <p className="font-semibold text-stone-800">5. Pro Rata Administration Fee</p>
-              <p className="mt-1">If PHS has commenced marketing and the horse subsequently becomes unavailable, no longer listed exclusively with PHS, or has not sold within 90 days and the Seller is not following PHS advice — a pro rata administration fee is payable based on days listed. A minimum charge of $500 applies regardless of calculation.</p>
+              <p className="mt-1">If PHS has commenced marketing and the horse subsequently becomes unavailable, no longer listed exclusively with PHS, or has not sold within 90 days and the Seller is not following PHS advice — a pro rata administration fee is payable based on days listed. The calculation is based on a range of ($1,000–$2,000). A minimum charge of $500 applies regardless of calculation.</p>
             </div>
             <div>
               <p className="font-semibold text-stone-800">6. Marketing</p>
