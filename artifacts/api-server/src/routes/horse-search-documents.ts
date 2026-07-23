@@ -331,11 +331,13 @@ router.get("/horse-search-contract/:token", async (req, res) => {
     buyerEmail: contract.buyerEmail,
     buyerAddress: contract.buyerAddress,
     buyerPhone: contract.buyerPhone,
+    sellerSignedAt: contract.sellerSignedAt,
+    buyerSignedAt: contract.buyerSignedAt,
     submittedAt: contract.submittedAt,
   });
 });
 
-// Public: submit signed contract
+// Public: submit signed contract (two-party flow)
 router.post("/horse-search-contract/:token/submit", async (req, res) => {
   const { token } = req.params;
   const [contract] = await db
@@ -343,7 +345,10 @@ router.post("/horse-search-contract/:token/submit", async (req, res) => {
     .from(horseSearchContractsTable)
     .where(eq(horseSearchContractsTable.token, token));
   if (!contract) return res.status(404).json({ error: "Contract not found" });
-  if (contract.status !== "pending") return res.status(409).json({ error: "This contract has already been submitted or is no longer active." });
+  if (contract.status === "voided") return res.status(410).json({ error: "This contract has been voided." });
+  if (contract.status === "fully_signed" || contract.status === "submitted") {
+    return res.status(409).json({ error: "This contract has already been fully signed." });
+  }
 
   const {
     fillerName, fillerEmail, fillerRole,
@@ -354,10 +359,25 @@ router.post("/horse-search-contract/:token/submit", async (req, res) => {
     agreedSection3, agreedSection4, agreedSellerDeclaration, agreedBuyerDeclaration,
   } = req.body as Record<string, any>;
 
+  // Block if this party already signed
+  if (fillerRole === "seller" && contract.sellerSignedAt) {
+    return res.status(409).json({ error: "The seller has already signed this contract." });
+  }
+  if (fillerRole === "buyer" && contract.buyerSignedAt) {
+    return res.status(409).json({ error: "The buyer has already signed this contract." });
+  }
+
+  const now = new Date();
+  const sellerNowSigned = fillerRole === "seller" || !!contract.sellerSignedAt;
+  const buyerNowSigned  = fillerRole === "buyer"  || !!contract.buyerSignedAt;
+  const newStatus = sellerNowSigned && buyerNowSigned ? "fully_signed"
+    : fillerRole === "seller" ? "seller_signed"
+    : "buyer_signed";
+
   const [updated] = await db
     .update(horseSearchContractsTable)
     .set({
-      status: "submitted",
+      status: newStatus,
       fillerName: fillerName || null,
       fillerEmail: fillerEmail || null,
       fillerRole: fillerRole || null,
@@ -369,22 +389,21 @@ router.post("/horse-search-contract/:token/submit", async (req, res) => {
       buyerEmail: buyerEmail || contract.buyerEmail,
       buyerAddress: buyerAddress || contract.buyerAddress,
       buyerPhone: buyerPhone || contract.buyerPhone,
-      buyerSignature: buyerSignature || null,
-      sellerSignature: sellerSignature || null,
+      ...(fillerRole === "seller"
+        ? { sellerSignature: sellerSignature || null, sellerSignedAt: now, agreedSellerDeclaration: agreedSellerDeclaration === true }
+        : { buyerSignature: buyerSignature || null, buyerSignedAt: now, agreedBuyerDeclaration: agreedBuyerDeclaration === true }),
       agreedSalesPrice: agreedSalesPrice === true,
       agreedHoldingDeposit: agreedHoldingDeposit === true,
       agreedDescription: agreedDescription === true,
       agreedSection3: agreedSection3 === true,
       agreedSection4: agreedSection4 === true,
-      agreedSellerDeclaration: agreedSellerDeclaration === true,
-      agreedBuyerDeclaration: agreedBuyerDeclaration === true,
-      submittedAt: new Date(),
-      updatedAt: new Date(),
+      submittedAt: newStatus === "fully_signed" ? now : contract.submittedAt,
+      updatedAt: now,
     })
     .where(eq(horseSearchContractsTable.token, token))
     .returning();
 
-  logger.info("Horse search contract submitted", { token, fillerName, fillerRole });
+  logger.info("Horse search contract signed", { token, fillerName, fillerRole, newStatus });
   return res.json(updated);
 });
 

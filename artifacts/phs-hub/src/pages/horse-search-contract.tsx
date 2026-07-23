@@ -118,6 +118,7 @@ interface SearchContract {
   sellerName?: string; sellerEmail?: string; sellerAddress?: string; sellerPhone?: string;
   sellerBankAccountName?: string; sellerBankBsb?: string; sellerBankAccount?: string;
   buyerName?: string; buyerEmail?: string; buyerAddress?: string; buyerPhone?: string;
+  sellerSignedAt?: string | null; buyerSignedAt?: string | null;
   submittedAt?: string;
 }
 
@@ -129,6 +130,7 @@ export default function HorseSearchContractPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [fullyComplete, setFullyComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -165,7 +167,7 @@ export default function HorseSearchContractPage() {
         setSellerAddress(d.sellerAddress || ""); setSellerPhone(d.sellerPhone || "");
         setBuyerName(d.buyerName || ""); setBuyerEmail(d.buyerEmail || "");
         setBuyerAddress(d.buyerAddress || ""); setBuyerPhone(d.buyerPhone || "");
-        if (d.status === "submitted") setSubmitted(true);
+        if (d.status === "fully_signed" || d.status === "submitted") { setSubmitted(true); setFullyComplete(true); }
       })
       .catch(() => setError("Failed to load the contract. Please try again."))
       .finally(() => setLoading(false));
@@ -196,7 +198,11 @@ export default function HorseSearchContractPage() {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Submission failed");
       }
+      const result = await res.json();
       setSubmitted(true);
+      if (result.status === "fully_signed" || result.status === "submitted") {
+        setFullyComplete(true);
+      }
     } catch (e: any) {
       setValidationError(e.message || "Something went wrong. Please try again.");
     } finally {
@@ -223,9 +229,20 @@ export default function HorseSearchContractPage() {
   if (submitted) return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-emerald-200 p-8 text-center shadow-sm">
-        <div className="text-4xl mb-4">✅</div>
-        <h1 className="text-xl font-bold text-emerald-800 mb-2">Contract Submitted</h1>
-        <p className="text-stone-600 text-sm leading-relaxed">Thank you. The Bill of Sale for <strong>{contract?.horseName}</strong> has been signed and submitted. You can close this window.</p>
+        <div className="text-4xl mb-4">{fullyComplete ? "✅" : "🖊️"}</div>
+        <h1 className="text-xl font-bold text-emerald-800 mb-2">
+          {fullyComplete ? "Contract Fully Signed" : "Signature Received"}
+        </h1>
+        {fullyComplete ? (
+          <p className="text-stone-600 text-sm leading-relaxed">
+            Both parties have signed. The Bill of Sale for <strong>{contract?.horseName}</strong> is complete. You can close this window.
+          </p>
+        ) : (
+          <p className="text-stone-600 text-sm leading-relaxed">
+            Thank you — your signature has been recorded for <strong>{contract?.horseName}</strong>.<br /><br />
+            The same link has been sent to the other party. Once they sign, the contract will be fully executed. You can close this window.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -242,6 +259,21 @@ export default function HorseSearchContractPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+        {/* Signing progress banner — shown when one party has already signed */}
+        {(contract?.status === "seller_signed" || contract?.status === "buyer_signed") && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <p className="font-semibold mb-2">Signing in progress</p>
+            <div className="flex gap-4">
+              <span className={contract.sellerSignedAt ? "text-emerald-700 font-medium" : "text-stone-400"}>
+                {contract.sellerSignedAt ? "✓ Seller signed" : "◯ Seller — awaiting signature"}
+              </span>
+              <span className={contract.buyerSignedAt ? "text-emerald-700 font-medium" : "text-stone-400"}>
+                {contract.buyerSignedAt ? "✓ Buyer signed" : "◯ Buyer — awaiting signature"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Horse & Price */}
         <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-6">

@@ -104,6 +104,7 @@ interface SearchContract {
   buyerSignature?: string; sellerSignature?: string;
   agreedSalesPrice?: boolean; agreedHoldingDeposit?: boolean; agreedDescription?: boolean;
   agreedSection3?: boolean; agreedSection4?: boolean; agreedSellerDeclaration?: boolean; agreedBuyerDeclaration?: boolean;
+  sellerSignedAt?: string | null; buyerSignedAt?: string | null;
   submittedAt?: string; createdAt: string;
 }
 
@@ -525,11 +526,15 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
         <h3 className="font-semibold text-stone-700">Bill of Sale</h3>
         {contract && (
           <span className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full ${
-            contract.status === "submitted" ? "bg-emerald-100 text-emerald-700" :
+            contract.status === "fully_signed" || contract.status === "submitted" ? "bg-emerald-100 text-emerald-700" :
+            contract.status === "seller_signed" || contract.status === "buyer_signed" ? "bg-blue-100 text-blue-700" :
             contract.status === "voided" ? "bg-red-100 text-red-600" :
             "bg-amber-100 text-amber-700"}`}
           >
-            {contract.status === "submitted" ? "Signed" : contract.status === "voided" ? "Voided" : "Awaiting Signature"}
+            {contract.status === "fully_signed" || contract.status === "submitted" ? "Fully Signed" :
+             contract.status === "seller_signed" ? "Seller Signed" :
+             contract.status === "buyer_signed" ? "Buyer Signed" :
+             contract.status === "voided" ? "Voided" : "Awaiting Signature"}
           </span>
         )}
       </div>
@@ -555,19 +560,31 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
               <div className="text-sm font-semibold text-stone-700">{contract.horseName}</div>
               {contract.salesPrice && <div className="text-xs text-stone-500">Sale price: <strong>{contract.salesPrice}</strong></div>}
 
-              {contract.status === "submitted" ? (
+              {contract.status === "fully_signed" || contract.status === "submitted" ? (
                 <div className="flex items-center gap-2 text-sm text-emerald-700">
                   <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>Signed {contract.submittedAt ? format(new Date(contract.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
+                  <span>Fully signed {contract.submittedAt ? format(new Date(contract.submittedAt), "d MMM yyyy, h:mm a") : ""}</span>
                 </div>
               ) : (
-                <div className="bg-stone-50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-stone-500 mb-1">Signing link</p>
-                  <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
-                </div>
+                <>
+                  <div className="bg-stone-50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-stone-500 mb-1">Signing link (share with both parties)</p>
+                    <p className="text-xs font-mono text-stone-700 break-all">{signingUrl}</p>
+                  </div>
+                  {(contract.status === "seller_signed" || contract.status === "buyer_signed") && (
+                    <div className="flex gap-3 text-xs">
+                      <span className={contract.sellerSignedAt ? "text-emerald-700 font-medium" : "text-stone-400"}>
+                        {contract.sellerSignedAt ? `✓ Seller signed ${format(new Date(contract.sellerSignedAt), "d MMM")}` : "◯ Seller — awaiting"}
+                      </span>
+                      <span className={contract.buyerSignedAt ? "text-emerald-700 font-medium" : "text-stone-400"}>
+                        {contract.buyerSignedAt ? `✓ Buyer signed ${format(new Date(contract.buyerSignedAt), "d MMM")}` : "◯ Buyer — awaiting"}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
 
-              {contract.status === "submitted" && (contract.buyerSignature || contract.sellerSignature) && (
+              {(contract.buyerSignature || contract.sellerSignature) && (
                 <div className="grid grid-cols-2 gap-2">
                   {contract.sellerSignature && (
                     <div>
@@ -585,7 +602,7 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
               )}
 
               <div className="flex gap-2 flex-wrap">
-                {contract.status === "pending" && (
+                {(contract.status === "pending" || contract.status === "seller_signed" || contract.status === "buyer_signed") && (
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(signingUrl, toast)}>
                     <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Link
                   </Button>
@@ -607,11 +624,11 @@ function ContractPanel({ id, hs }: { id: string; hs: HorseSearch }) {
                     buyerSignature: contract.buyerSignature, sellerSignature: contract.sellerSignature,
                     submittedAt: contract.submittedAt, createdAt: contract.createdAt,
                   })}>
-                  <FileDown className="h-3.5 w-3.5 mr-1.5" /> {contract.status === "submitted" ? "Download PDF" : "Preview PDF"}
+                  <FileDown className="h-3.5 w-3.5 mr-1.5" /> {contract.status === "fully_signed" || contract.status === "submitted" ? "Download PDF" : "Preview PDF"}
                 </Button>
               </div>
 
-              {contract.status === "pending" && (
+              {(contract.status === "pending" || contract.status === "seller_signed" || contract.status === "buyer_signed") && (
                 <Button size="sm" variant="outline" className="w-full" onClick={() => openEditForm(contract)}>
                   <FileSignature className="h-3.5 w-3.5 mr-1.5" /> Edit Details
                 </Button>

@@ -58,7 +58,7 @@ export const horseSearchContractsTable = pgTable("horse_search_contracts", {
     .references(() => horseSearchesTable.id, { onDelete: "cascade" }),
 
   token: text("token").notNull().unique(),
-  status: text("status").notNull().default("pending"), // pending | submitted | voided
+  status: text("status").notNull().default("pending"), // pending | seller_signed | buyer_signed | fully_signed | submitted (legacy) | voided
 
   horseName: text("horse_name").notNull().default("Horse"),
   salesPrice: text("sales_price"),
@@ -94,6 +94,8 @@ export const horseSearchContractsTable = pgTable("horse_search_contracts", {
   agreedSellerDeclaration: boolean("agreed_seller_declaration").notNull().default(false),
   agreedBuyerDeclaration: boolean("agreed_buyer_declaration").notNull().default(false),
 
+  sellerSignedAt: timestamp("seller_signed_at", { withTimezone: true }),
+  buyerSignedAt: timestamp("buyer_signed_at", { withTimezone: true }),
   submittedAt: timestamp("submitted_at", { withTimezone: true }),
 
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
