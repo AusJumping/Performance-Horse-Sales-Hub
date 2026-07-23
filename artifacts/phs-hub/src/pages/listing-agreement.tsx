@@ -407,7 +407,7 @@ export default function ListingAgreementPage() {
               I have read and agree to the Terms &amp; Conditions of this Listing Agreement, and I understand that this is a legally binding document.
             </AgreementBox>
             <AgreementBox id="agreedFee" checked={agreedFee} onChange={setAgreedFee}>
-              I understand and agree to the commission structure: <strong>{commissionRate}</strong> of the final sale price (plus GST){agreement?.minimumFee ? `, minimum ${agreement.minimumFee}` : ""}{agreement?.maximumFee ? `, maximum ${agreement.maximumFee}` : ""}.
+              I understand and agree to the commission structure: <strong>{commissionRate}</strong> of the final sale price (plus GST), minimum {agreement?.minimumFee ?? "$1,000"}{agreement?.maximumFee ? ` and maximum ${agreement.maximumFee}` : ""}.
             </AgreementBox>
             <AgreementBox id="agreedPeriod" checked={agreedPeriod} onChange={setAgreedPeriod}>
               I agree to list exclusively with Performance Horse Sales for a period of <strong>{agreement?.listingPeriodDays ?? 90} days</strong> from {dateStr}, expiring on {endDateStr}.
