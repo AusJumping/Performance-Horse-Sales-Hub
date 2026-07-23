@@ -959,7 +959,7 @@ export default function SubmissionDetail() {
 
   // ── Listing Agreement ────────────────────────────────────────────────────
   const [laCommissionRate, setLaCommissionRate] = useState(sub?.commissionRate ?? "5%");
-  const [laMinimumFee, setLaMinimumFee] = useState(sub?.minimumFee ?? "$500");
+  const [laMinimumFee, setLaMinimumFee] = useState(sub?.minimumFee ?? "$1,000");
   const [laMaximumFee, setLaMaximumFee] = useState(sub?.maximumFee ?? "$2,000");
   const [laListingPeriod, setLaListingPeriod] = useState<number>(sub?.listingPeriodDays ?? 90);
   const [laTermsNotes, setLaTermsNotes] = useState(sub?.listingTermsNotes ?? "");
@@ -1803,7 +1803,7 @@ export default function SubmissionDetail() {
                       <Input
                         value={laMinimumFee}
                         onChange={(e) => setLaMinimumFee(e.target.value)}
-                        placeholder="e.g. $500"
+                        placeholder="e.g. $1,000"
                         data-testid="input-minimumFee"
                       />
                     </div>
